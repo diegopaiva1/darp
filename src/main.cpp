@@ -1,11 +1,12 @@
 /**
  * @file    main.cpp
- * @author  Diego Paiva e Silva
+ * @author  Diego Paiva
  * @date    24/09/2019
  */
 
 #include <iostream>
 #include "data-structures/Instance.hpp"
+#include "algorithms/InsertionHeuristic.hpp"
 
 #define MIN_ARGS_AMOUNT 1
 
@@ -20,17 +21,15 @@ int main(int argc, char *argv[])
 
   Instance instance(argv[1]);
 
-  for (Node *n : instance.nodes) {
-    printf("%d %4d\t %6.3f\t %6.3f\t %6d\t %6d\t %6d\t %6d\t %6d %6.3f\n",
-    n->type, n->id, n->point->x, n->point->y, n->serviceTime,
-    n->maxRideTime, n->load, n->arrivalTime, n->departureTime, n->rechargingRate);
-  }
+  Solution s = InsertionHeuristic::getSolution(instance);
 
-  printf("\n");
+  for (Route *r : s.routes) {
+    printf("Rota %d: ", r->vehicle->id);
 
-  for (Vehicle *v : instance.vehicles) {
-    printf("%d %4d\t %6.3f\t %6.3f\t %6.3f\t %6.3f\n",
-    v->id, v->capacity, v->batteryCapacity, v->initialBatteryLevel, v->minFinalBatteryRatioLevel, v->dischargingRate);
+    for (Node *n : r->path)
+      printf("%d ", n->id);
+
+    printf("\n");
   }
 
   return 0;

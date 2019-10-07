@@ -18,6 +18,7 @@
 class Instance
 {
 public:
+  int requestsAmount;
   std::vector<Node *> nodes;
   std::vector<Vehicle *> vehicles;
   std::vector<Request *> requests;
@@ -32,7 +33,6 @@ public:
   {
     std::ifstream file(instanceFileName);
     int vehiclesAmount;
-    int requestsAmount;
     int originDepots;
     int destinationDepots;
     int stations;
@@ -111,23 +111,29 @@ public:
         }
       }
 
-    for (Node *n : nodes)
-      if (n->isStation())
-        file >> n->rechargingRate;
-      else
-        n->rechargingRate = 0.0;
+      for (Node *n : nodes)
+        if (n->isStation())
+          file >> n->rechargingRate;
+        else
+          n->rechargingRate = 0.0;
 
-    float dischargingRate;
-    file >> dischargingRate;
+      float dischargingRate;
+      file >> dischargingRate;
 
-    for (Vehicle *v : vehicles)
-      v->dischargingRate = dischargingRate;
+      for (Vehicle *v : vehicles)
+        v->dischargingRate = dischargingRate;
+
+      for (int i = 1; i <= requestsAmount; i++)
+        requests.push_back(new Request(getNode(i), getNode(i + requestsAmount)));
     }
   }
 
   Node* getNode(int id)
   {
-    if (hasNode(id)) return nodes.at(id); else throw "Unknown node for this instance";
+    if (nodes.at(id - 1) != nullptr)
+      return nodes.at(id - 1);
+    else
+      throw "Unknown node for this instance";
   }
 
   Request* getRequest(Node *pickup)
@@ -135,24 +141,19 @@ public:
     return requests.at(pickup->id - 1);
   }
 
-  Node* getDepartureDepot()
+  Node* getOriginDepot()
   {
-    return nodes.front();
+    return nodes.at(2 * requestsAmount);
   }
 
-  Node* getArrivalDepot()
+  Node* getDestinationDepot()
   {
-    return nodes.back();
+    return nodes.at(2 * requestsAmount + 1);
   }
 
   float getTravelTime(Node *n1, Node *n2)
   {
     return travelTimes[n1->id][n2->id];
-  }
-private:
-  bool hasNode(int id)
-  {
-    return nodes.at(id) != nullptr;
   }
 };
 
