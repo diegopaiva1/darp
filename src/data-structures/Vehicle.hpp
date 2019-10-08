@@ -13,12 +13,9 @@ public:
 
   Vehicle() {}
 
-  Vehicle(int id) { this->id = id; }
-
-  Vehicle(int id, int capacity)
+  Vehicle(int id)
   {
     this->id = id;
-    this->capacity = capacity;
   }
 
   ~Vehicle() {}
