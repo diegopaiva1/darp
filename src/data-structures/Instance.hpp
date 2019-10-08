@@ -32,12 +32,10 @@ public:
   {
     std::ifstream file(instanceFileName);
     int vehiclesAmount;
-    int requestsAmount;
+    int usersAmount;
     int originDepots;
     int destinationDepots;
     int stations;
-    int replications;
-    int timeHorizon;
 
     if (!file.is_open()) {
       printf("Failed to read file\n");
@@ -45,83 +43,68 @@ public:
     }
     else {
       file >> vehiclesAmount;
-      file >> requestsAmount;
+      file >> usersAmount;
       file >> originDepots;
       file >> destinationDepots;
       file >> stations;
-      file >> replications;
-      file >> timeHorizon;
 
+      // Add a vehicle for each line that defines a vehicle
       for (int i = 1; i <= vehiclesAmount; i++) {
         Vehicle *vehicle = new Vehicle(i);
+        file >> vehicle->capacity;
+        file >> vehicle->batteryCapacity;
+        file >> vehicle->initialBatteryLevel;
+        file >> vehicle->minFinalBatteryRatioLevel;
+        file >> vehicle->dischargingRate;
         vehicles.push_back(vehicle);
       }
 
-      int nodesAmount = 2 * (requestsAmount + vehiclesAmount) + originDepots + destinationDepots + stations;
+      // This is always the number of nodes for dataset A
+      int nodesAmount = (2 * usersAmount) + originDepots + destinationDepots + stations;
 
-      for (int i = 0; i < nodesAmount; i++) {
+      // Build all instance nodes
+      for (int i = 1; i <= nodesAmount; i++) {
         Node *node = new Node();
         file >> node->id;
         file >> node->point->x;
         file >> node->point->y;
         file >> node->serviceTime;
+        file >> node->maxRideTime;
         file >> node->load;
         file >> node->arrivalTime;
         file >> node->departureTime;
 
-        if (node->id >= 1 && node->id <= requestsAmount)
+        if (node->id == 0 || node->id == 2 * usersAmount + 1)
+          node->type = Type::DEPOT;
+        else if (node->id >= 1 && node->id <= usersAmount)
           node->type = Type::PICKUP;
-        else if (node->id > requestsAmount && node->id <= 2 * requestsAmount)
+        else if (node->id > usersAmount && node->id <= 2 * usersAmount)
           node->type = Type::DELIVERY;
+        else
+          node->type = Type::STATION;
 
         nodes.push_back(node);
       }
 
-      int id;
-      file >> id;
-      nodes.at(id - 1)->type = Type::DEPOT;
-      file >> id;
-      nodes.at(id - 1)->type = Type::DEPOT;
+      // Finally, adding the recharging rate for every node
+      for (Node *node : nodes)
+        if (node->isStation())
+          file >> node->rechargingRate;
+        else
+          node->rechargingRate = 0.0;
 
-      for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < vehiclesAmount; j++) {
-          file >> id;
-          nodes.at(id - 1)->type = Type::DEPOT;
-        }
+      travelTimes.resize(nodesAmount);
+      // Fill the travel times matrix
+      for (int i = 0; i < nodesAmount; i++) {
+        travelTimes[i].resize(nodesAmount);
+
+        for (int j = 0; j < nodesAmount; j++)
+          travelTimes[i][j] = nodes.at(i)->point->getDistanceFrom(nodes.at(j)->point);
       }
 
-      for (int i = 0; i < stations; i++) {
-        file >> id;
-        nodes.at(id - 1)->type = Type::STATION;
-      }
-
-      for (int i = 0; i < requestsAmount; i++)
-        file >> nodes.at(i)->maxRideTime;
-
-      for (int i = 0; i < 4; i++) {
-        for (Vehicle *v : vehicles) {
-          if (i == 0)
-            file >> v->capacity;
-          else if (i == 1)
-            file >> v->initialBatteryLevel;
-          else if (i == 2)
-            file >> v->batteryCapacity;
-          else
-            file >> v->minFinalBatteryRatioLevel;
-        }
-      }
-
-    for (Node *n : nodes)
-      if (n->isStation())
-        file >> n->rechargingRate;
-      else
-        n->rechargingRate = 0.0;
-
-    float dischargingRate;
-    file >> dischargingRate;
-
-    for (Vehicle *v : vehicles)
-      v->dischargingRate = dischargingRate;
+      // Add all the requests
+      for (int i = 1; i <= usersAmount; i++)
+        requests.push_back(new Request(getNode(i), getNode(i + usersAmount)));
     }
   }
 
