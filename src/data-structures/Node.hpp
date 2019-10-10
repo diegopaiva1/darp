@@ -19,18 +19,27 @@ public:
   Point *point;
   int serviceTime;
   int maxRideTime;
-  int departureTime;
-  int arrivalTime;
+  float departureTime;
+  float arrivalTime;
   float rechargingRate;
   Type type;
 
-  Node(int id) { this->point = new Point(); this->id = id; }
+  Node()
+  {
+    this->point = new Point();
+  }
 
-  Node() { this->point = new Point(); }
+  Node(int id)
+  {
+    this->point = new Point(); this->id = id;
+  }
 
   ~Node() {};
 
-  float getTimeWindowMedian() { return (arrivalTime + departureTime) / 2; }
+  float getTimeWindowMedian()
+  {
+    return (arrivalTime + departureTime)/2;
+  }
 
   bool isPickup()
   {

@@ -33,7 +33,6 @@ public:
   {
     std::ifstream file(instanceFileName);
     int vehiclesAmount;
-    int usersAmount;
     int originDepots;
     int destinationDepots;
     int stations;
@@ -44,7 +43,7 @@ public:
     }
     else {
       file >> vehiclesAmount;
-      file >> usersAmount;
+      file >> requestsAmount;
       file >> originDepots;
       file >> destinationDepots;
       file >> stations;
@@ -61,7 +60,7 @@ public:
       }
 
       // This is always the number of nodes for dataset A
-      int nodesAmount = (2 * usersAmount) + originDepots + destinationDepots + stations;
+      int nodesAmount = (2 * requestsAmount) + originDepots + destinationDepots + stations;
 
       // Build all instance nodes
       for (int i = 1; i <= nodesAmount; i++) {
@@ -75,11 +74,11 @@ public:
         file >> node->arrivalTime;
         file >> node->departureTime;
 
-        if (node->id == 0 || node->id == 2 * usersAmount + 1)
+        if (node->id == 0 || node->id == 2 * requestsAmount + 1)
           node->type = Type::DEPOT;
-        else if (node->id >= 1 && node->id <= usersAmount)
+        else if (node->id >= 1 && node->id <= requestsAmount)
           node->type = Type::PICKUP;
-        else if (node->id > usersAmount && node->id <= 2 * usersAmount)
+        else if (node->id > requestsAmount && node->id <= 2 * requestsAmount)
           node->type = Type::DELIVERY;
         else
           node->type = Type::STATION;
@@ -104,15 +103,15 @@ public:
       }
 
       // Add all the requests
-      for (int i = 1; i <= usersAmount; i++)
-        requests.push_back(new Request(getNode(i), getNode(i + usersAmount)));
+      for (int i = 1; i <= requestsAmount; i++)
+        requests.push_back(new Request(getNode(i), getNode(i + requestsAmount)));
     }
   }
 
   Node* getNode(int id)
   {
-    if (nodes.at(id - 1) != nullptr)
-      return nodes.at(id - 1);
+    if (nodes.at(id) != nullptr)
+      return nodes.at(id);
     else
       throw "Unknown node for this instance";
   }
@@ -124,7 +123,7 @@ public:
 
   Node* getOriginDepot()
   {
-    return nodes.at(2 * requestsAmount);
+    return nodes.at(0);
   }
 
   Node* getDestinationDepot()

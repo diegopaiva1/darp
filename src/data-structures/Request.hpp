@@ -43,7 +43,7 @@ public:
   // TODO: Melhorar a lógica que determina se a requisição é outbound
   bool isOutbound()
   {
-    return delivery->departureTime != 0;
+    return delivery->arrivalTime + delivery->departureTime != 1440;
   }
 };
 

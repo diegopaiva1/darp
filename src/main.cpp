@@ -20,16 +20,12 @@ int main(int argc, char *argv[])
   }
 
   Instance instance(argv[1]);
-
   Solution s = InsertionHeuristic::getSolution(instance);
 
   for (Route *r : s.routes) {
-    printf("Rota %d: ", r->vehicle->id);
-
-    for (Node *n : r->path)
-      printf("%d ", n->id);
-
+    r->printPath();
     printf("\n");
+    r->printSchedule();
   }
 
   return 0;

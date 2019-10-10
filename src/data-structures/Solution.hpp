@@ -18,15 +18,15 @@ public:
 
   ~Solution() { }
 
-  // float cost()
-  // {
-  //   float cost = 0.0;
+  float cost()
+  {
+    float cost = 0.0;
 
-  //   for (Route *route : routes)
-  //     cost += route->getTotalDistance();
+    for (Route *route : routes)
+      cost += route->getTotalDistance();
 
-  //   return cost;
-  // }
+    return cost;
+  }
 
   // float evaluate(float &alpha, float &beta, float &gamma, float &tau, float &delta)
   // {
@@ -60,13 +60,13 @@ public:
   //   float loadViolation = patientSeatsLoadViolation + staffSeatsLoadViolation +
   //                         wheelchairsLoadViolation  + stretchersLoadViolation;
 
-  //   float factor = 1 + delta;
+    // float factor = 1 + delta;
 
-  //   // Ajusta os parâmetros de penalidade para cada restrição
-  //   loadViolation            == 0 ? alpha /= factor : alpha *= factor;
-  //   routeDurationViolation   == 0 ? beta  /= factor : beta  *= factor;
-  //   timeWindowViolation      == 0 ? gamma /= factor : gamma *= factor;
-  //   maximumRideTimeViolation == 0 ? tau   /= factor : tau   *= factor;
+    // // Ajusta os parâmetros de penalidade para cada restrição
+    // loadViolation            == 0 ? alpha /= factor : alpha *= factor;
+    // routeDurationViolation   == 0 ? beta  /= factor : beta  *= factor;
+    // timeWindowViolation      == 0 ? gamma /= factor : gamma *= factor;
+    // maximumRideTimeViolation == 0 ? tau   /= factor : tau   *= factor;
 
   //   // TODO: Adicionar a violação do nível da bateria na função
   //   return cost() + alpha * (loadViolation) + beta * (routeDurationViolation) +

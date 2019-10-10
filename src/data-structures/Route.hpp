@@ -304,43 +304,43 @@ public:
   //   if (allRidingTimesRespected)
   //     return;
 
-  //   for (int i = 1; i < path.size() - 1; i++) {
-  //     if (path[i]->type == Type::PICKUP) {
-  //       float forwardSlackTime = calculateForwardSlackTime(i, n);
+    // for (int i = 1; i < path.size() - 1; i++) {
+    //   if (path[i]->type == Type::PICKUP) {
+    //     float forwardSlackTime = calculateForwardSlackTime(i, n);
 
-  //       float waitingTimeSum = 0.0;
-  //       for (int p = i + 1; p < path.size() - 1; p++)
-  //         waitingTimeSum += waitingTimes[p];
+    //     float waitingTimeSum = 0.0;
+    //     for (int p = i + 1; p < path.size() - 1; p++)
+    //       waitingTimeSum += waitingTimes[p];
 
-  //       waitingTimes[i] += std::min(forwardSlackTime, waitingTimeSum);
-  //       serviceBeginningTimes[i] = arrivalTimes[i] + waitingTimes[i];
-  //       departureTimes[i] = serviceBeginningTimes[i] + path[i]->serviceTime;
+    //     waitingTimes[i] += std::min(forwardSlackTime, waitingTimeSum);
+    //     serviceBeginningTimes[i] = arrivalTimes[i] + waitingTimes[i];
+    //     departureTimes[i] = serviceBeginningTimes[i] + path[i]->serviceTime;
 
-  //       // Atualizamos os vetores para cada nó posterior ao nó do índice i
-  //       for (int j = i + 1; j < path.size(); j++) {
-  //         updateArrivalTime(j);
-  //         updateServiceBeginningTime(j);
-  //         updateWaitingTime(j);
-  //         updateDepartureTime(j);
-  //       }
+    //     // Atualizamos os vetores para cada nó posterior ao nó do índice i
+    //     for (int j = i + 1; j < path.size(); j++) {
+    //       updateArrivalTime(j);
+    //       updateServiceBeginningTime(j);
+    //       updateWaitingTime(j);
+    //       updateDepartureTime(j);
+    //     }
 
-  //       bool allRidingTimesRespected = true;
+    //     bool allRidingTimesRespected = true;
 
-  //       for (int k = i + 1; k < path.size() - 1; k++) {
-  //         if (path[k]->type == Type::DELIVERY) {
-  //           int pickupIndex = getPickupIndexOf(k, n);
+    //     for (int k = i + 1; k < path.size() - 1; k++) {
+    //       if (path[k]->type == Type::DELIVERY) {
+    //         int pickupIndex = getPickupIndexOf(k, n);
 
-  //           updateRidingTime(pickupIndex, n);
+    //         updateRidingTime(pickupIndex, n);
 
-  //           if (ridingTimes[pickupIndex] > path[pickupIndex]->maxUserRideTime)
-  //             allRidingTimesRespected = false;
-  //         }
-  //       }
+    //         if (ridingTimes[pickupIndex] > path[pickupIndex]->maxUserRideTime)
+    //           allRidingTimesRespected = false;
+    //       }
+    //     }
 
-  //       if (allRidingTimesRespected)
-  //         return;
-  //     }
-  //   }
+    //     if (allRidingTimesRespected)
+    //       return;
+    //   }
+    // }
   // }
 
   // /* O forward slack time é calculado como o menor de todos os slack times entre
@@ -518,28 +518,25 @@ public:
   //   return wasFeasiblyInserted;
   // }
 
-  // void printPath()
-  // {
-  //   for (Node *node : path)
-  //     printf("%d ", node->id);
-  // }
+  void printPath()
+  {
+    for (Node *node : path)
+      printf("%d ", node->id);
+  }
 
-  // void printSchedule()
-  // {
-  //   for (int j = 0; j < path.size(); j++) {
-  //     printf("A[%02d] = %6.4g\t", j,  arrivalTimes[j]);
-  //     printf("B[%02d] = %6.4g\t", j,  serviceBeginningTimes[j]);
-  //     printf("D[%02d] = %6.4g\t", j,  departureTimes[j]);
-  //     printf("W[%02d] = %.4g\t",  j,  waitingTimes[j]);
-  //     printf("R[%02d] = %.4g\t",  j,  ridingTimes[j]);
-  //     printf("Z[%02d] = %.4g\t",  j,  batteryLevels[j]);
-  //     printf("Q0[%02d] = %d  ",   j,  staffSeatsLoad[j]);
-  //     printf("Q1[%02d] = %d  ",   j,  patientSeatsLoad[j]);
-  //     printf("Q2[%02d] = %d  ",   j,  wheelchairsLoad[j]);
-  //     printf("Q3[%02d] = %d  ",   j,  stretchersLoad[j]);
-  //     printf("\n");
-  //   }
-  // }
+  void printSchedule()
+  {
+    for (int i = 0; i < path.size(); i++) {
+      printf("A[%02d] = %6.4g\t", i,  arrivalTimes[i]);
+      printf("B[%02d] = %6.4g\t", i,  serviceBeginningTimes[i]);
+      printf("D[%02d] = %6.4g\t", i,  departureTimes[i]);
+      printf("W[%02d] = %.4g\t",  i,  waitingTimes[i]);
+      printf("R[%02d] = %.4g\t",  i,  ridingTimes[i]);
+      printf("Z[%02d] = %.4g\t",  i,  batteryLevels[i]);
+      printf("Q0[%02d] = %d  ",   i,  load[i]);
+      printf("\n");
+    }
+  }
 };
 
 #endif // ROUTE_H_INCLUDED
