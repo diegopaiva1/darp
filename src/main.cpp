@@ -5,14 +5,14 @@
  */
 
 #include <iostream>
-#include "data-structures/Instance.hpp"
-#include "algorithms/InsertionHeuristic.hpp"
+
+#include "data-structures/Singleton.hpp"
+#include "algorithms/Grasp.hpp"
 
 #define MIN_ARGS_AMOUNT 1
 
 int main(int argc, char *argv[])
 {
-  srand(time(NULL));
   int argsGiven = argc - 1;
 
   if (argsGiven < MIN_ARGS_AMOUNT) {
@@ -20,8 +20,10 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  Instance instance(argv[1]);
-  Solution s = InsertionHeuristic::getSolution(instance);
+  Singleton *instance = Singleton::getInstance();
+  instance->init(argv[1]);
+
+  Solution s = Grasp::solve();
 
   for (Route *r : s.routes) {
     printf("Rota %d: ", r->vehicle->id);

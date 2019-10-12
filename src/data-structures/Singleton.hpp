@@ -1,11 +1,11 @@
 /**
- * @file    Instance.hpp
+ * @file    Singleton.hpp
  * @author  Diego Paiva e Silva
  * @date    25/09/2019
  */
 
-#ifndef INSTANCE_H_INCLUDED
-#define INSTANCE_H_INCLUDED
+#ifndef SINGLETON_H_INCLUDED
+#define SINGLETON_H_INCLUDED
 
 #include <vector>
 #include <fstream>
@@ -15,8 +15,11 @@
 #include "Vehicle.hpp"
 #include "Request.hpp"
 
-class Instance
+class Singleton
 {
+private:
+  Singleton() {}; // Private constructor to prevent external instancing
+  inline static Singleton *instance;
 public:
   int requestsAmount;
   std::vector<Node *> nodes;
@@ -24,12 +27,16 @@ public:
   std::vector<Request *> requests;
   std::vector<std::vector<float>> travelTimes;
 
-  Instance(std::string instanceFileName) { mount(instanceFileName); };
+  static Singleton* getInstance()
+  {
+    if (!instance)
+      instance = new Singleton();
 
-  ~Instance() {};
+    return instance;
+  }
 
-  // Build the nodes, vehicles and requests to this object through the instance file passed as arg
-  void mount(std::string instanceFileName)
+  // Build the nodes, vehicles and requests to this unique object through the file passed as arg
+  void init(std::string instanceFileName)
   {
     std::ifstream file(instanceFileName);
     int vehiclesAmount;
@@ -137,4 +144,4 @@ public:
   }
 };
 
-#endif // INSTANCE_H_INCLUDED
+#endif // SINGLETON_H_INCLUDED

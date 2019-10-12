@@ -1,29 +1,32 @@
 /**
- * @file    InsertionHeuristic.hpp
+ * @file    Grasp.hpp
  * @author  Diego Paiva
  * @date    26/09/2019
  */
 
-#ifndef INSERTIONHEURISTIC_H_INCLUDED
-#define INSERTIONHEURISTIC_H_INCLUDED
+#ifndef GRASP_H_INCLUDED
+#define GRASP_H_INCLUDED
 
-#include "../data-structures/Instance.hpp"
+#include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
 
-class InsertionHeuristic
+class Grasp
 {
 public:
-  static Solution getSolution(Instance instance)
+  static Solution solve()
   {
     float alpha = 1.0, beta = 1.0, gama = 1.0, delta = Prng::generateFloatInRange(0.05, 0.10);
     Solution solution;
     std::vector<Request*> requests;
 
-    for (Request *r : instance.requests)
+    for (Request *r : Singleton::getInstance()->requests)
       requests.push_back(r);
 
-    for (Vehicle *v : instance.vehicles)
+    for (Request *r : requests)
+      printf("(%d, %d)", r->pickup->id, r->delivery->id);
+
+    for (Vehicle *v : Singleton::getInstance()->vehicles)
       solution.routes.push_back(new Route(v));
 
     std::sort(requests.begin(), requests.end(), [](Request *&r1, Request *&r2) {
@@ -35,8 +38,8 @@ public:
     for (Route *route : solution.routes) {
       Request *request = requests[0];
 
-      route->path.push_back(instance.getOriginDepot());
-      route->path.push_back(instance.getDestinationDepot());
+      route->path.push_back(Singleton::getInstance()->getOriginDepot());
+      route->path.push_back(Singleton::getInstance()->getDestinationDepot());
       route->path.insert(route->path.begin() + 1, request->pickup);
       route->path.insert(route->path.begin() + 2, request->delivery);
 
@@ -45,17 +48,16 @@ public:
 
     while (!requests.empty()) {
       Request *request = requests[0];
-      performCheapestFeasibleInsertion(request, solution, instance, alpha, beta, gama, delta);
+      performCheapestFeasibleInsertion(request, solution, alpha, beta, gama, delta);
       requests.erase(requests.begin());
     }
 
-    float f = performEightStepEvaluationScheme(solution, instance, alpha, beta, gama, delta);
+    float f = performEightStepEvaluationScheme(solution, alpha, beta, gama, delta);
 
     return solution;
   }
 
-  static float performEightStepEvaluationScheme(Solution &solution, Instance instance,
-                                                float &alpha, float &beta, float &gama, float delta)
+  static float performEightStepEvaluationScheme(Solution &solution, float &alpha, float &beta, float &gama, float delta)
   {
     for (Route *&r : solution.routes) {
       int size = r->path.size();
@@ -82,7 +84,7 @@ public:
       // ================== STEP 2 ==================
       for (int i = 0; i < r->path.size(); i++) {
         computeLoad(r, i);
-        computeArrivalTime(r, i, instance);
+        computeArrivalTime(r, i);
         computeServiceBeginningTime(r, i);
         computeWaitingTime(r, i);
         computeDepartureTime(r, i);
@@ -95,7 +97,7 @@ public:
       }
 
       // ===================== STEP 3 =====================
-      float f0 = calculateForwardSlackTime(0, r, instance);
+      float f0 = calculateForwardSlackTime(0, r);
 
       // ===================== STEP 4 =====================
       float waitingTimeSum = 0.0;
@@ -106,7 +108,7 @@ public:
 
       // ===================== STEP 5 =====================
       for (int i = 0; i < r->path.size(); i++) {
-        computeArrivalTime(r, i, instance);
+        computeArrivalTime(r, i);
         computeServiceBeginningTime(r, i);
         computeWaitingTime(r, i);
         computeDepartureTime(r, i);
@@ -117,7 +119,7 @@ public:
 
       for (int i = 1; i < r->path.size() - 1; i++) {
         if (r->path[i]->type == Type::PICKUP) {
-          computeRidingTime(r, i, instance.requestsAmount);
+          computeRidingTime(r, i);
 
           if (r->ridingTimes[i] > r->path[i]->maxRideTime)
             allRidingTimesRespected = false;
@@ -132,7 +134,7 @@ public:
       for (int i = 1; i < r->path.size() - 1; i++) {
         if (r->path[i]->type == Type::PICKUP) {
           // ===================== STEP 7.a =====================
-          float forwardSlackTime = calculateForwardSlackTime(i, r, instance);
+          float forwardSlackTime = calculateForwardSlackTime(i, r);
 
           // ===================== STEP 7.b =====================
           float waitingTimeSum = 0.0;
@@ -145,7 +147,7 @@ public:
 
           // ===================== STEP 7.c =====================
           for (int j = i + 1; j < r->path.size(); j++) {
-            computeArrivalTime(r, j, instance);
+            computeArrivalTime(r, j);
             computeServiceBeginningTime(r, j);
             computeWaitingTime(r, j);
             computeDepartureTime(r, j);
@@ -156,9 +158,9 @@ public:
 
           for (int k = i + 1; k < r->path.size() - 1; k++) {
             if (r->path[k]->type == Type::DELIVERY) {
-              int pickupIndex = getPickupIndexOf(r, k, instance.requestsAmount);
+              int pickupIndex = getPickupIndexOf(r, k);
 
-              computeRidingTime(r, pickupIndex, instance.requestsAmount);
+              computeRidingTime(r, pickupIndex);
 
               if (r->ridingTimes[pickupIndex] > r->path[pickupIndex]->maxRideTime)
                 allRidingTimesRespected = false;
@@ -212,7 +214,7 @@ public:
   /* O forward slack time é calculado como o menor de todos os slack times entre
    * o index (ponto da rota que se deseja calcular) e o ponto final da rota
    */
-  static float calculateForwardSlackTime(int index, Route *r, Instance instance)
+  static float calculateForwardSlackTime(int index, Route *r)
   {
     float forwardSlackTime;
 
@@ -226,7 +228,7 @@ public:
         waitingTimeSum += r->waitingTimes[p];
 
       for (int i = 1; i < r->path.size() - 1; i++)
-        if (r->path[i]->id == j - instance.requestsAmount)
+        if (r->path[i]->id == j - Singleton::getInstance()->requestsAmount)
           pid = i;
 
       if (r->path[j]->type == Type::DELIVERY && pid < index)
@@ -249,7 +251,7 @@ public:
   }
 
 
-  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution, Instance instance, float &alpha, float &beta, float &gama, float delta)
+  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution, float &alpha, float &beta, float &gama, float delta)
   {
     float bestCost = std::numeric_limits<float>::max();
     int routeId = -9999;
@@ -265,7 +267,7 @@ public:
         for (int d = p + 1; d < r->path.size(); d++) {
           r->path.insert(r->path.begin() + d, request->delivery);
 
-          float f = performEightStepEvaluationScheme(solution, instance, alpha, beta, gama, delta);
+          float f = performEightStepEvaluationScheme(solution, alpha, beta, gama, delta);
           //std::cout << f << " = " << r->getTotalDistance() << "\n";
 
           if (f == r->getTotalDistance() && f < bestCost) {
@@ -284,10 +286,10 @@ public:
 
     if (routeId == -9999 && bestPickupIndex == -9999 && bestDeliveryIndex == -9999) {
       Route *route = new Route(new Vehicle(solution.routes.size() + 1));
-      route->path.push_back(instance.getOriginDepot());
+      route->path.push_back(Singleton::getInstance()->getOriginDepot());
       route->path.push_back(request->pickup);
       route->path.push_back(request->delivery);
-      route->path.push_back(instance.getDestinationDepot());
+      route->path.push_back(Singleton::getInstance()->getDestinationDepot());
       solution.routes.push_back(route);
     }
     else {
@@ -305,12 +307,12 @@ public:
       r->load[i] = r->load[i - 1] + r->path[i]->load;
   }
 
-  static void computeArrivalTime(Route *&r, int i, Instance instance)
+  static void computeArrivalTime(Route *&r, int i)
   {
     if (i == 0)
       r->arrivalTimes[i] = 0;
     else
-      r->arrivalTimes[i] = r->departureTimes[i - 1] + instance.getTravelTime(r->path[i - 1], r->path[i]);
+      r->arrivalTimes[i] = r->departureTimes[i - 1] + Singleton::getInstance()->getTravelTime(r->path[i - 1], r->path[i]);
   }
 
   static void computeServiceBeginningTime(Route *&r, int i)
@@ -337,32 +339,32 @@ public:
       r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
   }
 
-  static void computeRidingTime(Route *&r, int i, int n)
+  static void computeRidingTime(Route *&r, int i)
   {
-    r->ridingTimes[i] = r->serviceBeginningTimes[getDeliveryIndexOf(r, i, n)] - r->departureTimes[i];
+    r->ridingTimes[i] = r->serviceBeginningTimes[getDeliveryIndexOf(r, i)] - r->departureTimes[i];
   }
 
   // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota
-  static int getDeliveryIndexOf(Route *&r, int j, int n)
+  static int getDeliveryIndexOf(Route *&r, int j)
   {
     if (r->path[j]->type != Type::PICKUP)
       throw "O nó fornecido não é um ponto de embarque";
 
     for (int i = 1; i < r->path.size(); i++)
-      if (r->path[i]->id == r->path[j]->id + n)
+      if (r->path[i]->id == r->path[j]->id + Singleton::getInstance()->requestsAmount)
         return i;
   }
 
   // Retorna o índice 'i' de embarque (pickup) de um nó 'j' de desembarque (delivery) da rota
-  static int getPickupIndexOf(Route *&r, int j, int n)
+  static int getPickupIndexOf(Route *&r, int j)
   {
     if (r->path[j]->type != Type::DELIVERY)
       throw "O nó fornecido não é um ponto de desembarque";
 
     for (int i = 1; i < r->path.size(); i++)
-      if (r->path[i]->id == r->path[j]->id - n)
+      if (r->path[i]->id == r->path[j]->id - Singleton::getInstance()->requestsAmount)
         return i;
   }
 };
 
-#endif // INSERTIONHEURISTIC_H_INCLUDED
+#endif // GRASP_H_INCLUDED
