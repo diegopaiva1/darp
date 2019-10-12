@@ -12,6 +12,7 @@
 
 int main(int argc, char *argv[])
 {
+  srand(time(NULL));
   int argsGiven = argc - 1;
 
   if (argsGiven < MIN_ARGS_AMOUNT) {
@@ -23,6 +24,7 @@ int main(int argc, char *argv[])
   Solution s = InsertionHeuristic::getSolution(instance);
 
   for (Route *r : s.routes) {
+    printf("Rota %d: ", r->vehicle->id);
     r->printPath();
     printf("\n");
     r->printSchedule();

@@ -16,6 +16,7 @@ class InsertionHeuristic
 public:
   static Solution getSolution(Instance instance)
   {
+    float alpha = 1.0, beta = 1.0, gama = 1.0, delta = Prng::generateFloatInRange(0.05, 0.10);
     Solution solution;
     std::vector<Request*> requests;
 
@@ -29,23 +30,32 @@ public:
       return r1->getTimeWindowMedian() < r2->getTimeWindowMedian();
     });
 
+    // std::random_shuffle(requests.begin(), requests.end(), [](int i) { return rand() % i; });
+
     for (Route *route : solution.routes) {
+      Request *request = requests[0];
+
       route->path.push_back(instance.getOriginDepot());
       route->path.push_back(instance.getDestinationDepot());
+      route->path.insert(route->path.begin() + 1, request->pickup);
+      route->path.insert(route->path.begin() + 2, request->delivery);
+
+      requests.erase(requests.begin());
     }
 
     while (!requests.empty()) {
       Request *request = requests[0];
-      performCheapestInsertion(request, solution);
+      performCheapestFeasibleInsertion(request, solution, instance, alpha, beta, gama, delta);
       requests.erase(requests.begin());
     }
 
-    float f = performEightStepEvaluationScheme(solution, instance);
-    printf("f(s) = %f e c(s) = %f", f, solution.cost());
+    float f = performEightStepEvaluationScheme(solution, instance, alpha, beta, gama, delta);
+
     return solution;
   }
 
-  static float performEightStepEvaluationScheme(Solution solution, Instance instance)
+  static float performEightStepEvaluationScheme(Solution &solution, Instance instance,
+                                                float &alpha, float &beta, float &gama, float delta)
   {
     for (Route *&r : solution.routes) {
       int size = r->path.size();
@@ -71,28 +81,17 @@ public:
 
       // ================== STEP 2 ==================
       for (int i = 0; i < r->path.size(); i++) {
-        i == 0 ? r->load[i] = 0
-               : r->load[i] = r->load[i - 1] + r->path[i]->load;
+        computeLoad(r, i);
+        computeArrivalTime(r, i, instance);
+        computeServiceBeginningTime(r, i);
+        computeWaitingTime(r, i);
+        computeDepartureTime(r, i);
+      }
 
-        // Detected load violation, this solution is infeasible
-        if (r->load[i] > r->vehicle->capacity)
-          return violations(solution);
-
-        i == 0 ? r->arrivalTimes[i] = 0
-               : r->arrivalTimes[i] = r->departureTimes[i - 1] + instance.getTravelTime(r->path[i - 1], r->path[i]);
-
-        i == 0 ? r->serviceBeginningTimes[i] = r->departureTimes[i]
-               : r->serviceBeginningTimes[i] = std::max(r->arrivalTimes[i], r->path[i]->arrivalTime);
-
-        // Detected time window violation, this solution is infeasible
-        if (r->serviceBeginningTimes[i] > r->path[i]->departureTime)
-          return violations(solution);
-
-        i == 0 ? r->waitingTimes[i] = 0
-               : r->waitingTimes[i] = r->serviceBeginningTimes[i] - r->arrivalTimes[i];
-
-        i == r->path.size() - 1 ? r->departureTimes[i] = 0
-                                : r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
+      for (int i = 0; i < r->path.size(); i++) {
+        // Detected load violation or time window violation thus solution is infeasible
+        if (r->load[i] > r->vehicle->capacity || r->serviceBeginningTimes[i] > r->path[i]->departureTime)
+          return violations(solution, alpha, beta, gama, delta);
       }
 
       // ===================== STEP 3 =====================
@@ -107,17 +106,10 @@ public:
 
       // ===================== STEP 5 =====================
       for (int i = 0; i < r->path.size(); i++) {
-        i == 0 ? r->arrivalTimes[i] = 0
-               : r->arrivalTimes[i] = r->departureTimes[i - 1] + instance.getTravelTime(r->path[i - 1], r->path[i]);
-
-        i == 0 ? r->serviceBeginningTimes[i] = r->departureTimes[i]
-               : r->serviceBeginningTimes[i] = std::max(r->arrivalTimes[i], r->path[i]->arrivalTime);
-
-        i == 0 ? r->waitingTimes[i] = 0
-               : r->waitingTimes[i] = r->serviceBeginningTimes[i] - r->arrivalTimes[i];
-
-        i == r->path.size() - 1 ? r->departureTimes[i] = 0
-                                : r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
+        computeArrivalTime(r, i, instance);
+        computeServiceBeginningTime(r, i);
+        computeWaitingTime(r, i);
+        computeDepartureTime(r, i);
       }
 
       // ===================== STEP 6 =====================
@@ -125,13 +117,7 @@ public:
 
       for (int i = 1; i < r->path.size() - 1; i++) {
         if (r->path[i]->type == Type::PICKUP) {
-          int did;
-
-          for (int j = 1; j < r->path.size() - 1; i++)
-            if (r->path[j]->id == i + instance.requestsAmount)
-              did = j;
-
-          r->ridingTimes[i] = r->serviceBeginningTimes[did] - r->departureTimes[i];
+          computeRidingTime(r, i, instance.requestsAmount);
 
           if (r->ridingTimes[i] > r->path[i]->maxRideTime)
             allRidingTimesRespected = false;
@@ -140,7 +126,7 @@ public:
 
       // This solution is feasible
       if (allRidingTimesRespected)
-        return violations(solution);
+        return violations(solution, alpha, beta, gama, delta);
 
       // ===================== STEP 7 =====================
       for (int i = 1; i < r->path.size() - 1; i++) {
@@ -159,17 +145,10 @@ public:
 
           // ===================== STEP 7.c =====================
           for (int j = i + 1; j < r->path.size(); j++) {
-            i == 0 ? r->arrivalTimes[i] = 0
-                   : r->arrivalTimes[i] = r->departureTimes[i - 1] + instance.getTravelTime(r->path[i - 1], r->path[i]);
-
-            i == 0 ? r->serviceBeginningTimes[i] = r->departureTimes[i]
-                   : r->serviceBeginningTimes[i] = std::max(r->arrivalTimes[i], r->path[i]->arrivalTime);
-
-            i == 0 ? r->waitingTimes[i] = 0
-                   : r->waitingTimes[i] = r->serviceBeginningTimes[i] - r->arrivalTimes[i];
-
-            i == r->path.size() - 1 ? r->departureTimes[i] = 0
-                                    : r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
+            computeArrivalTime(r, j, instance);
+            computeServiceBeginningTime(r, j);
+            computeWaitingTime(r, j);
+            computeDepartureTime(r, j);
           }
 
           // ===================== STEP 7.d =====================
@@ -177,42 +156,38 @@ public:
 
           for (int k = i + 1; k < r->path.size() - 1; k++) {
             if (r->path[k]->type == Type::DELIVERY) {
-              int pid;
+              int pickupIndex = getPickupIndexOf(r, k, instance.requestsAmount);
 
-              for (int req = 1; req < r->path.size() - 1; req++)
-                if (r->path[req]->id == k - instance.requestsAmount)
-                  pid = req;
+              computeRidingTime(r, pickupIndex, instance.requestsAmount);
 
-              r->ridingTimes[pid] = r->serviceBeginningTimes[k] - r->departureTimes[pid];
-
-              if (r->ridingTimes[pid] > r->path[pid]->maxRideTime)
+              if (r->ridingTimes[pickupIndex] > r->path[pickupIndex]->maxRideTime)
                 allRidingTimesRespected = false;
             }
           }
 
           // This solution is feasible
           if (allRidingTimesRespected)
-            return violations(solution);
+            return violations(solution, alpha, beta, gama, delta);
         }
       }
     }
 
-    return violations(solution);
+    return violations(solution, alpha, beta, gama, delta);
   }
 
-  static float violations(Solution s)
+  static float violations(Solution s, float &alpha, float &beta, float &gama, float delta)
   {
-    float alpha = 1.0;
-    float beta  = 1.0;
-    float gama  = 1.0;
-
+    float routeCost            = 0.0;
     float timeWindowViolation  = 0.0;
     float maxRideTimeViolation = 0.0;
-    float loadViolation        = 0.0;
+    int   loadViolation        = 0.0;
 
     for (Route *r : s.routes) {
       for (int i = 0; i < r->path.size(); i++) {
         Node *node = r->path[i];
+
+        if (i != r->path.size() - 1)
+          routeCost += r->path[i]->point->getDistanceFrom(r->path[i + 1]->point);
 
         if (node->type == Type::PICKUP)
           maxRideTimeViolation += std::max(0.0f, r->ridingTimes[i] - node->maxRideTime);
@@ -222,16 +197,16 @@ public:
           timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - node->departureTime);
         }
 
-        // float factor = 1 + delta;
+        float factor = 1 + delta;
 
-        // // Ajusta os parâmetros de penalidade para cada restrição
-        // loadViolation        == 0 ? alpha /= factor : alpha *= factor;
-        // timeWindowViolation  == 0 ? beta  /= factor : beta  *= factor;
-        // maxRideTimeViolation == 0 ? gama   /= factor : gama   *= factor;
+        // Ajusta os parâmetros de penalidade para cada restrição
+        loadViolation        == 0 ? alpha /= factor : alpha *= factor;
+        timeWindowViolation  == 0 ? beta  /= factor : beta  *= factor;
+        maxRideTimeViolation == 0 ? gama  /= factor : gama  *= factor;
       }
     }
 
-    return s.cost() + alpha * timeWindowViolation + beta * maxRideTimeViolation + gama * loadViolation;
+    return routeCost + alpha * loadViolation + beta * timeWindowViolation + gama * maxRideTimeViolation;
   }
 
   /* O forward slack time é calculado como o menor de todos os slack times entre
@@ -274,12 +249,12 @@ public:
   }
 
 
-  static void performCheapestInsertion(Request *&request, Solution &solution)
+  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution, Instance instance, float &alpha, float &beta, float &gama, float delta)
   {
     float bestCost = std::numeric_limits<float>::max();
-    int routeId;
-    int bestPickupIndex;
-    int bestDeliveryIndex;
+    int routeId = -9999;
+    int bestPickupIndex = -9999;
+    int bestDeliveryIndex = -9999;
 
     for (int i = 0; i < solution.routes.size(); i++) {
       Route *r = solution.routes[i];
@@ -290,8 +265,11 @@ public:
         for (int d = p + 1; d < r->path.size(); d++) {
           r->path.insert(r->path.begin() + d, request->delivery);
 
-          if (r->getTotalDistance() < bestCost) {
-            bestCost = r->getTotalDistance();
+          float f = performEightStepEvaluationScheme(solution, instance, alpha, beta, gama, delta);
+          //std::cout << f << " = " << r->getTotalDistance() << "\n";
+
+          if (f == r->getTotalDistance() && f < bestCost) {
+            bestCost = f;
             routeId = i;
             bestPickupIndex = p;
             bestDeliveryIndex = d;
@@ -304,9 +282,86 @@ public:
       }
     }
 
-    Route *best = solution.routes.at(routeId);
-    best->path.insert(best->path.begin() + bestPickupIndex,   request->pickup);
-    best->path.insert(best->path.begin() + bestDeliveryIndex, request->delivery);
+    if (routeId == -9999 && bestPickupIndex == -9999 && bestDeliveryIndex == -9999) {
+      Route *route = new Route(new Vehicle(solution.routes.size() + 1));
+      route->path.push_back(instance.getOriginDepot());
+      route->path.push_back(request->pickup);
+      route->path.push_back(request->delivery);
+      route->path.push_back(instance.getDestinationDepot());
+      solution.routes.push_back(route);
+    }
+    else {
+      Route *best = solution.routes.at(routeId);
+      best->path.insert(best->path.begin() + bestPickupIndex,   request->pickup);
+      best->path.insert(best->path.begin() + bestDeliveryIndex, request->delivery);
+    }
+  }
+
+  static void computeLoad(Route *&r, int i)
+  {
+    if (i == 0)
+      r->load[i] = 0;
+    else
+      r->load[i] = r->load[i - 1] + r->path[i]->load;
+  }
+
+  static void computeArrivalTime(Route *&r, int i, Instance instance)
+  {
+    if (i == 0)
+      r->arrivalTimes[i] = 0;
+    else
+      r->arrivalTimes[i] = r->departureTimes[i - 1] + instance.getTravelTime(r->path[i - 1], r->path[i]);
+  }
+
+  static void computeServiceBeginningTime(Route *&r, int i)
+  {
+    if (i == 0)
+      r->serviceBeginningTimes[i] = r->departureTimes[i];
+    else
+      r->serviceBeginningTimes[i] = std::max(r->arrivalTimes[i], r->path[i]->arrivalTime);
+  }
+
+  static void computeWaitingTime(Route *&r, int i)
+  {
+    if (i == 0)
+      r->waitingTimes[i] = 0;
+    else
+      r->waitingTimes[i] = r->serviceBeginningTimes[i] - r->arrivalTimes[i];
+  }
+
+  static void computeDepartureTime(Route *&r, int i)
+  {
+    if (i == r->path.size() - 1)
+      r->departureTimes[i] = 0;
+    else
+      r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
+  }
+
+  static void computeRidingTime(Route *&r, int i, int n)
+  {
+    r->ridingTimes[i] = r->serviceBeginningTimes[getDeliveryIndexOf(r, i, n)] - r->departureTimes[i];
+  }
+
+  // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota
+  static int getDeliveryIndexOf(Route *&r, int j, int n)
+  {
+    if (r->path[j]->type != Type::PICKUP)
+      throw "O nó fornecido não é um ponto de embarque";
+
+    for (int i = 1; i < r->path.size(); i++)
+      if (r->path[i]->id == r->path[j]->id + n)
+        return i;
+  }
+
+  // Retorna o índice 'i' de embarque (pickup) de um nó 'j' de desembarque (delivery) da rota
+  static int getPickupIndexOf(Route *&r, int j, int n)
+  {
+    if (r->path[j]->type != Type::DELIVERY)
+      throw "O nó fornecido não é um ponto de desembarque";
+
+    for (int i = 1; i < r->path.size(); i++)
+      if (r->path[i]->id == r->path[j]->id - n)
+        return i;
   }
 };
 
