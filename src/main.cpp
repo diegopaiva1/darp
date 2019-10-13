@@ -50,13 +50,12 @@ int main(int argc, char *argv[])
   Solution solution = Grasp::solve();
 
   for (Route *r : solution.routes) {
-    printf("Rota %d: ", r->vehicle->id);
     r->printPath();
-    printf("\n");
     r->printSchedule();
+    printf("\n");
   }
 
-  std::cout << '\n' << isFeasible(solution) << '\n';
+  std::cout << '\n' << isFeasible(solution) << " " << solution.cost() << "\n";
 
   return 0;
 }

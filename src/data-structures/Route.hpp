@@ -25,6 +25,7 @@ public:
   std::vector<float>  waitingTimes;
   std::vector<float>  ridingTimes;
   std::vector<float>  batteryLevels;
+  std::vector<float>  chargingTimes;
 
   Route(Vehicle *vehicle) { this->vehicle = vehicle; }
 
@@ -520,8 +521,10 @@ public:
 
   void printPath()
   {
+    printf("Rota %d: ", vehicle->id);
     for (Node *node : path)
       printf("%d ", node->id);
+    printf("\n");
   }
 
   void printSchedule()
@@ -533,7 +536,8 @@ public:
       printf("W[%02d] = %.4g\t",  i,  waitingTimes[i]);
       printf("R[%02d] = %.4g\t",  i,  ridingTimes[i]);
       printf("Z[%02d] = %.4g\t",  i,  batteryLevels[i]);
-      printf("Q0[%02d] = %d  ",   i,  load[i]);
+      printf("E[%02d] = %.4g\t",  i,  chargingTimes[i]);
+      printf("Q[%02d] = %d",    i,  load[i]);
       printf("\n");
     }
   }
