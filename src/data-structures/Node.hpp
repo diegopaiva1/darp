@@ -17,8 +17,8 @@ public:
   int id;
   int load;
   Point *point;
-  int serviceTime;
-  int maxRideTime;
+  float serviceTime;
+  float maxRideTime;
   float departureTime;
   float arrivalTime;
   float rechargingRate;
