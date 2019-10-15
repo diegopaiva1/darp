@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     printf("\n");
   }
 
-  std::cout << '\n' << isFeasible(solution) << " " << solution.cost() << "\n";
+  std::cout << '\n' << isFeasible(solution) << " " << solution.cost << "\n";
 
   return 0;
 }

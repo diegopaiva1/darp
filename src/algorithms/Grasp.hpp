@@ -7,6 +7,8 @@
 #ifndef GRASP_H_INCLUDED
 #define GRASP_H_INCLUDED
 
+#define ITERATIONS 1
+
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
@@ -19,9 +21,17 @@ public:
   static Solution solve()
   {
     Solution best;
+
+    // In the beginning of the search, all penalty parameters are initialized with 1.0
+    std::vector<float> penaltyParams = {1.0, 1.0, 1.0};
+
+    // Random value helps adjusting the penalty parameters dinamically
+    float delta = Prng::generateFloatInRange(0.05, 0.10);
+
+    // GRASP's random factors vector
     std::vector<float> alphas = {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50};
 
-    for (int it = 1; it <= 1000; it++) {
+    for (int it = 1; it <= ITERATIONS; it++) {
       int index;
       int alphaIndex = Prng::generateIntegerInRange(0, alphas.size() - 1);
       Solution currSolution;
@@ -53,58 +63,40 @@ public:
       while (!requests.empty()) {
         it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
         Request *request = requests[index];
-        performCheapestFeasibleInsertion(request, currSolution);
+        performCheapestFeasibleInsertion(request, currSolution, penaltyParams, delta);
         requests.erase(requests.begin() + index);
       }
 
-      bool feasible = true;
-      for (Route *r : currSolution.routes) {
-        performEightStepEvaluationScheme(r);
-        int size = r->path.size();
-
-        for (int i = 0; i < size; i++) {
-          if (r->batteryLevels[i] < 0) {
-            int loadAtZero;
-
-            for (int j = i - 1; j >= 0; j--) {
-              if (r->load[j] == 0) {
-                loadAtZero = j;
-                break;
-              }
-            }
-
-            int stationPosition = loadAtZero + 1;
-            r->path.insert(r->path.begin() + stationPosition, instance->getNearestStation(r->path[stationPosition + 1]));
-            performEightStepEvaluationScheme(r);
-          }
-        }
-      }
-
-
-      for (Route *r : currSolution.routes) {
-        for (int i = 0; i < r->path.size(); i++) {
-          if (!isFeasible(r) || r->batteryLevels[i] < 0 || (r->path[i]->isStation() && r->load[i] != 0))
-            feasible = false;
-        }
-      }
-
       for (Route *r : currSolution.routes)
-        performEightStepEvaluationScheme(r);
+        currSolution.cost += performEightStepEvaluationScheme(r, penaltyParams, delta);
+
+     /* Everytime a new incumbent solution is found, we randomly choose a new delta. According to
+      * (Parragh et. al, 2010) this works as a diversification mecanism and avoids cycling
+      */
+      delta = Prng::generateFloatInRange(0.05, 0.10);
 
       if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
-          (currSolution.routes.size() == best.routes.size() && feasible && currSolution.cost() < best.cost()))
+          (currSolution.routes.size() == best.routes.size() && currSolution.cost < best.cost))
         best = currSolution;
 
       printf("%d\n", it);
 
-      std::cout << currSolution.cost() << '\n';
+      std::cout << currSolution.cost << '\n';
     }
 
     return best;
   }
 
-  static void performEightStepEvaluationScheme(Route *&r)
+ /* The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003)
+  * for the DARP which evaluates a given route in terms of cost and feasibility. This procedure
+  * optimizes route duration and xcomplies with ride time constraint
+  */
+  static float performEightStepEvaluationScheme(Route *&r, std::vector<float> &penaltyParams, float &delta)
   {
+    bool  allRidingTimesRespected;
+    float forwardSlackTimeAtBeginning;
+    float waitingTimeSum;
+
     int size = r->path.size();
     r->arrivalTimes.clear();
     r->arrivalTimes.resize(size);
@@ -123,102 +115,129 @@ public:
     r->chargingTimes.clear();
     r->chargingTimes.resize(size);
 
-    // STEP 1: B_0 = e_0; D_0 = B_0
-    r->serviceBeginningTimes[0] = r->path[0]->arrivalTime;
-    r->departureTimes[0] = r->serviceBeginningTimes[0];
-    r->batteryLevels[0] = r->vehicle->initialBatteryLevel/5;
+    STEP1:
+      r->departureTimes[0] = r->serviceBeginningTimes[0];
 
-    // STEP 2: Compute A_i, W_i, B_i, D_i and Q_i for each vertex i in the route
-    for (int i = 1; i < r->path.size(); i++) {
-      computeLoad(r, i);
-      computeBatteryLevel(r, i);
+    STEP2:
+      for (int i = 0; i < r->path.size(); i++) {
+        computeLoad(r, i);
 
-      // Violated vehicle capacity, that's an irreparable violation
-      if (r->load[i] > r->vehicle->capacity) return;
+        // Violated vehicle capacity, that's an irreparable violation
+        if (r->load[i] > r->vehicle->capacity)
+          goto STEP8;
 
-      computeArrivalTime(r, i);
-      computeServiceBeginningTime(r, i);
+        computeArrivalTime(r, i);
+        computeServiceBeginningTime(r, i);
 
-      // Violated time windows, that's an irreparable violation
-      if (r->serviceBeginningTimes[i] > r->path[i]->departureTime) return;
+        // Violated time windows, that's an irreparable violation
+        if (r->serviceBeginningTimes[i] > r->path[i]->departureTime)
+          goto STEP8;
 
-      computeWaitingTime(r, i);
-      computeDepartureTime(r, i);
-    }
+        computeWaitingTime(r, i);
+        computeDepartureTime(r, i);
+      }
 
-    // STEP 3: Compute F_0
-    float f0 = calculateForwardSlackTime(0, r);
+    STEP3:
+      forwardSlackTimeAtBeginning = calculateForwardSlackTime(0, r);
 
-    // STEP 4: B_0 = e_0 + min{f_0, sum(W_p)}; D_0 = B_0
-    float waitingTimeSum = 0.0;
+    STEP4:
+      waitingTimeSum = 0.0;
 
-    for (int i = 1; i < r->path.size(); i++)
-      waitingTimeSum += r->waitingTimes[i];
+      for (int i = 1; i < r->path.size(); i++)
+        waitingTimeSum += r->waitingTimes[i];
 
-    r->serviceBeginningTimes[0] = r->path[0]->arrivalTime + std::min(f0, waitingTimeSum);
-    r->departureTimes[0] = r->serviceBeginningTimes[0];
+      r->departureTimes[0] = r->path[0]->arrivalTime + std::min(forwardSlackTimeAtBeginning, waitingTimeSum);
 
-    // STEP 5: Update A_i, W_i, B_i and D_i for each vertex i in the route
-    for (int i = 1; i < r->path.size(); i++) {
-      computeArrivalTime(r, i);
-      computeServiceBeginningTime(r, i);
-      computeWaitingTime(r, i);
-      computeDepartureTime(r, i);
-    }
+    STEP5:
+      for (int i = 0; i < r->path.size(); i++) {
+        computeArrivalTime(r, i);
+        computeServiceBeginningTime(r, i);
+        computeWaitingTime(r, i);
+        computeDepartureTime(r, i);
+      }
 
-    // STEP 6: Compute R_i for each request in the route
-    for (int i = 1; i < r->path.size() - 1; i++)
-      if (r->path[i]->isPickup())
-        computeRidingTime(r, i);
+    STEP6:
+      allRidingTimesRespected = true;
 
-    // STEP 7: For every vertex i that is an origin
-    for (int i = 1; i < r->path.size() - 1; i++) {
-      if (r->path[i]->isPickup()) {
-        // STEP 7.a - Compute F_i
-        float forwardSlackTime = calculateForwardSlackTime(i, r);
+      for (int i = 1; i < r->path.size() - 1; i++)
+        if (r->path[i]->isPickup()) {
+          computeRidingTime(r, i);
 
-        // STEP 7.b - Set W_i = W_i + min{F_i, sum(W_p)}; B_i = A_i + W_i; D_i = B_i + d_i
-        float waitingTimeSum = 0.0;
-        for (int p = i + 1; p < r->path.size(); p++)
-          waitingTimeSum += r->waitingTimes[p];
-
-        r->serviceBeginningTimes[i] += std::min(forwardSlackTime, waitingTimeSum);
-        r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
-        r->waitingTimes[i] = r->serviceBeginningTimes[i] - r->arrivalTimes[i];
-
-        // STEP 7.c - Update A_j, W_j, B_j and D_j for each vertex j that comes after i in the route
-        for (int j = i + 1; j < r->path.size(); j++) {
-          computeArrivalTime(r, j);
-          computeServiceBeginningTime(r, j);
-          computeWaitingTime(r, j);
-          computeDepartureTime(r, j);
+          if (r->ridingTimes[i] > r->path[i]->maxRideTime)
+            allRidingTimesRespected = false;
         }
 
-        // STEP 7.d - Update R_j for each request j whose destination is after i
-        for (int j = i + 1; j < r->path.size() - 1; j++) {
-          if (r->path[j]->isDelivery()) {
-            int pickupIndex = getPickupIndexOf(r, j);
-            computeRidingTime(r, pickupIndex);
-          }
+      if (allRidingTimesRespected)
+        goto STEP8;
+
+    STEP7:
+      for (int i = 1; i < r->path.size() - 1; i++) {
+        if (r->path[i]->isPickup()) {
+          STEP7a:
+            float forwardSlackTime = calculateForwardSlackTime(i, r);
+
+          STEP7b:
+            float waitingTimeSum = 0.0;
+
+            for (int p = i + 1; p < r->path.size(); p++)
+              waitingTimeSum += r->waitingTimes[p];
+
+            r->waitingTimes[i] += std::min(forwardSlackTime, waitingTimeSum);
+            r->serviceBeginningTimes[i] = r->arrivalTimes[i] + r->waitingTimes[i];
+            r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
+
+          STEP7c:
+            for (int j = i + 1; j < r->path.size(); j++) {
+              computeArrivalTime(r, j);
+              computeServiceBeginningTime(r, j);
+              computeWaitingTime(r, j);
+              computeDepartureTime(r, j);
+            }
+
+          STEP7d:
+            allRidingTimesRespected = true;
+
+            for (int j = i + 1; j < r->path.size() - 1; j++)
+              if (r->path[j]->isDelivery()) {
+                int pickupIndex = getPickupIndexOf(r, j);
+                computeRidingTime(r, pickupIndex);
+
+                if (r->ridingTimes[pickupIndex] > r->path[pickupIndex]->maxRideTime)
+                  allRidingTimesRespected = false;
+              }
+
+            if (allRidingTimesRespected)
+              goto STEP8;
         }
       }
-    }
-  }
 
-  static bool isFeasible(Route *r)
-  {
-    for (int i = 0; i < r->path.size(); i++) {
-      if (r->serviceBeginningTimes[i] > r->path[i]->departureTime)
-        return false;
+    STEP8:
+      r->cost                 = 0.0;
+      r->loadViolation        = 0;
+      r->timeWindowViolation  = 0.0;
+      r->maxRideTimeViolation = 0.0;
 
-      if (r->path[i]->isPickup() && r->ridingTimes[i] > r->path[i]->maxRideTime)
-        return false;
+      for (int i = 0; i < r->path.size(); i++) {
+        if (i > 0)
+          r->cost += instance->getTravelTime(r->path[i], r->path[i - 1]);
 
-      if (r->load[i] > r->vehicle->capacity)
-        return false;
-    }
+        if (r->path[i]->isPickup())
+          r->maxRideTimeViolation += std::max(0.0f, r->ridingTimes[i] - r->path[i]->maxRideTime);
 
-    return true;
+        r->loadViolation       += std::max(0, r->load[i] - r->vehicle->capacity);
+        r->timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - r->path[i]->departureTime);
+      }
+
+      // In below code, we adjust penalty parameters according to the violations
+      float factor = 1 + delta;
+
+      r->loadViolation        == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
+      r->timeWindowViolation  == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
+      r->maxRideTimeViolation == 0 ? penaltyParams[2] /= factor : penaltyParams[2] *= factor;
+
+      return r->cost + r->loadViolation        * penaltyParams[0] +
+                       r->timeWindowViolation  * penaltyParams[1] +
+                       r->maxRideTimeViolation * penaltyParams[2];
   }
 
   /* O forward slack time é calculado como o menor de todos os slack times entre
@@ -263,7 +282,7 @@ public:
   }
 
 
-  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution)
+  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution, std::vector<float> &penaltyParams, float &delta)
   {
     float bestCost = std::numeric_limits<float>::max();
     int routeId = -9999;
@@ -279,10 +298,10 @@ public:
         for (int d = p + 1; d < r->path.size(); d++) {
           r->path.insert(r->path.begin() + d, request->delivery);
 
-          performEightStepEvaluationScheme(r);
+          r->cost = performEightStepEvaluationScheme(r, penaltyParams, delta);
 
-          if (isFeasible(r) && r->getTotalDistance() < bestCost) {
-            bestCost = r->getTotalDistance();
+          if (r->isFeasible() && r->cost < bestCost) {
+            bestCost = r->cost;
             routeId = i;
             bestPickupIndex = p;
             bestDeliveryIndex = d;
@@ -346,9 +365,9 @@ public:
   {
     if (i == r->path.size() - 1)
       r->departureTimes[i] = 0;
-    else if (r->path[i]->isStation())
-      r->departureTimes[i] = r->serviceBeginningTimes[i] + (r->batteryLevels[i] - r->batteryLevels[i - 1])/
-      r->path[i]->rechargingRate;
+    // else if (r->path[i]->isStation())
+    //   r->departureTimes[i] = r->serviceBeginningTimes[i] + (r->batteryLevels[i] - r->batteryLevels[i - 1])/
+    //   r->path[i]->rechargingRate;
     else
       r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
   }
