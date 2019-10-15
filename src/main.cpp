@@ -29,6 +29,16 @@ bool isFeasible(Solution s)
         printf("Vehicle load violation at point %d in route %d\n", i, r->vehicle->id);
         return false;
       }
+
+      if (r->batteryLevels[i] < 0) {
+        printf("Battery level violation at point %d in route %d\n", i, r->vehicle->id);
+        return false;
+      }
+
+      if (r->path[i]->isStation() && r->load[i] != 0) {
+        printf("Load violation at station %d in route %d\n", i, r->vehicle->id);
+        return false;
+      }
     }
   }
 
@@ -49,9 +59,9 @@ int main(int argc, char *argv[])
 
   Solution solution = Grasp::solve();
 
-  for (Route *r : solution.routes) {
-    r->printPath();
-    r->printSchedule();
+  for (Route *route : solution.routes) {
+    route->printPath();
+    route->printSchedule();
     printf("\n");
   }
 

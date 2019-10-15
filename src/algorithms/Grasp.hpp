@@ -21,7 +21,7 @@ public:
     Solution best;
     std::vector<float> alphas = {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50};
 
-    for (int it = 1; it <= 1; it++) {
+    for (int it = 1; it <= 1000; it++) {
       int index;
       int alphaIndex = Prng::generateIntegerInRange(0, alphas.size() - 1);
       Solution currSolution;
@@ -57,12 +57,45 @@ public:
         requests.erase(requests.begin() + index);
       }
 
+      bool feasible = true;
+      for (Route *r : currSolution.routes) {
+        performEightStepEvaluationScheme(r);
+        int size = r->path.size();
+
+        for (int i = 0; i < size; i++) {
+          if (r->batteryLevels[i] < 0) {
+            int loadAtZero;
+
+            for (int j = i - 1; j >= 0; j--) {
+              if (r->load[j] == 0) {
+                loadAtZero = j;
+                break;
+              }
+            }
+
+            int stationPosition = loadAtZero + 1;
+            r->path.insert(r->path.begin() + stationPosition, instance->getNearestStation(r->path[stationPosition + 1]));
+            performEightStepEvaluationScheme(r);
+          }
+        }
+      }
+
+
+      for (Route *r : currSolution.routes) {
+        for (int i = 0; i < r->path.size(); i++) {
+          if (!isFeasible(r) || r->batteryLevels[i] < 0 || (r->path[i]->isStation() && r->load[i] != 0))
+            feasible = false;
+        }
+      }
+
       for (Route *r : currSolution.routes)
         performEightStepEvaluationScheme(r);
 
       if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
-          (currSolution.routes.size() == best.routes.size() && currSolution.cost() < best.cost()))
+          (currSolution.routes.size() == best.routes.size() && feasible && currSolution.cost() < best.cost()))
         best = currSolution;
+
+      printf("%d\n", it);
 
       std::cout << currSolution.cost() << '\n';
     }
@@ -98,6 +131,7 @@ public:
     // STEP 2: Compute A_i, W_i, B_i, D_i and Q_i for each vertex i in the route
     for (int i = 1; i < r->path.size(); i++) {
       computeLoad(r, i);
+      computeBatteryLevel(r, i);
 
       // Violated vehicle capacity, that's an irreparable violation
       if (r->load[i] > r->vehicle->capacity) return;
@@ -110,8 +144,6 @@ public:
 
       computeWaitingTime(r, i);
       computeDepartureTime(r, i);
-      computeBatteryLevel(r, i);
-      computeChargingTimes(r, i);
     }
 
     // STEP 3: Compute F_0
@@ -314,6 +346,9 @@ public:
   {
     if (i == r->path.size() - 1)
       r->departureTimes[i] = 0;
+    else if (r->path[i]->isStation())
+      r->departureTimes[i] = r->serviceBeginningTimes[i] + (r->batteryLevels[i] - r->batteryLevels[i - 1])/
+      r->path[i]->rechargingRate;
     else
       r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
   }
@@ -323,7 +358,8 @@ public:
     r->ridingTimes[i] = r->serviceBeginningTimes[getDeliveryIndexOf(r, i)] - r->departureTimes[i];
   }
 
-  static void computeChargingTimes(Route *&r, int i) {
+  static void computeChargingTime(Route *&r, int i)
+  {
     if (r->path[i]->isStation())
       r->chargingTimes[i] = r->serviceBeginningTimes[i] - r->serviceBeginningTimes[i - 1] -
                             instance->getTravelTime(r->path[i - 1], r->path[i]);
@@ -331,14 +367,19 @@ public:
       r->chargingTimes[i] = 0.0;
   }
 
+  // TODO: recarga parcial...
   static void computeBatteryLevel(Route *&r, int i)
   {
-    if (r->path[i - 1]->isStation())
-      r->batteryLevels[i] = r->batteryLevels[i - 1] + r->path[i]->rechargingRate * r->chargingTimes[i - 1] -
-                            instance->getTravelTime(r->path[i - 1], r->path[i]);
+    // if (r->path[i]->isStation() || r->path[i]->isDepot())
+    //   r->batteryLevels[i] = r->vehicle->batteryCapacity/5;
+    // else
+    //   r->batteryLevels[i] = r->batteryLevels[i - 1] -
+    //                         r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
+    if (r->path[i]->isStation() || r->path[i]->isDepot())
+      r->batteryLevels[i] = r->vehicle->batteryCapacity/5;
     else
-      r->batteryLevels[i] = r->batteryLevels[i - 1] - r->vehicle->dischargingRate *
-                            instance->getTravelTime(r->path[i - 1], r->path[i]);
+      r->batteryLevels[i] = r->batteryLevels[i - 1] -
+                            r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
   }
 
   // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota

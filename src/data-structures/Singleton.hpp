@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <fstream>
+#include <limits>
 #include <iostream>
 
 #include "Node.hpp"
@@ -141,6 +142,25 @@ public:
   float getTravelTime(Node *n1, Node *n2)
   {
     return travelTimes[n1->id][n2->id];
+  }
+
+  Node* getNearestStation(Node *ref)
+  {
+    Node *nearestStation;
+    float minDistance = std::numeric_limits<float>::max();
+
+    for (Node *node : nodes) {
+      if (node->isStation()) {
+        float distance = node->point->getDistanceFrom(ref->point);
+
+        if (distance < minDistance) {
+          nearestStation = node;
+          minDistance = distance;
+        }
+      }
+    }
+
+    return nearestStation;
   }
 };
 
