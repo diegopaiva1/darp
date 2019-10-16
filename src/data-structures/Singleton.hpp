@@ -44,6 +44,7 @@ public:
     int originDepots;
     int destinationDepots;
     int stations;
+    float planningHorizon;
 
     if (!file.is_open()) {
       printf("Failed to read file\n");
@@ -55,6 +56,7 @@ public:
       file >> originDepots;
       file >> destinationDepots;
       file >> stations;
+      file >> planningHorizon;
 
       // Add a vehicle for each line that defines a vehicle
       for (int i = 1; i <= vehiclesAmount; i++) {
@@ -110,9 +112,56 @@ public:
           travelTimes[i][j] = nodes.at(i)->point->getDistanceFrom(nodes.at(j)->point);
       }
 
-      // Add all the requests
-      for (int i = 1; i <= requestsAmount; i++)
-        requests.push_back(new Request(getNode(i), getNode(i + requestsAmount)));
+    // Add all the requests
+    for (int i = 1; i <= requestsAmount; i++) {
+        Request *request = new Request(getNode(i), getNode(i + requestsAmount));
+        Node *pickup   = request->pickup;
+        Node *delivery = request->delivery;
+
+        // Tigthen time windows as possible
+        if (request->isInbound()) {
+          delivery->arrivalTime = std::max(
+            0.0f, pickup->arrivalTime + pickup->serviceTime + pickup->point->getDistanceFrom(delivery->point)
+          );
+
+          delivery->departureTime = std::min(
+            pickup->departureTime + pickup->maxRideTime + pickup->serviceTime, planningHorizon
+          );
+        }
+        else {
+          pickup->arrivalTime = std::max(
+            0.0f, delivery->arrivalTime - pickup->maxRideTime - pickup->serviceTime
+          );
+
+          pickup->departureTime = std::min(
+            delivery->departureTime - pickup->point->getDistanceFrom(delivery->point) - pickup->serviceTime, planningHorizon
+          );
+        }
+
+        requests.push_back(request);
+      }
+
+      float min =  std::numeric_limits<float>::max();
+      float max = -std::numeric_limits<float>::max();
+
+      for (Node *n : nodes) {
+        if (n->isPickup() || n->isDelivery()) {
+          float arr = n->arrivalTime - getTravelTime(getNode(0), n);
+          float dep = n->departureTime + n->serviceTime + getTravelTime(n, getNode(2 * requestsAmount + 1));
+
+          if (arr < min)
+            min = arr;
+
+          if (dep > max)
+            max = dep;
+        }
+      }
+
+      getNode(0)->arrivalTime   = min;
+      getNode(0)->departureTime = max;
+      getNode(2 * requestsAmount + 1)->arrivalTime   = min;
+      getNode(2 * requestsAmount + 1)->departureTime = max;
+
     }
   }
 
