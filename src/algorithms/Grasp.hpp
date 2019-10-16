@@ -251,10 +251,16 @@ private:
 
       for (int i = 0; i < r->path.size(); i++) {
         if (i > 0)
-          r->cost += instance->getTravelTime(r->path[i], r->path[i - 1]);
+          r->cost += 0.75 * instance->getTravelTime(r->path[i], r->path[i - 1]);
 
-        if (r->path[i]->isPickup())
+        if (r->path[i]->isPickup()) {
+          int d = getDeliveryIndexOf(r, i);
+          float rideTimeExcess = r->serviceBeginningTimes[d] - r->serviceBeginningTimes[i] -
+                                 r->path[i]->serviceTime - instance->getTravelTime(r->path[i], r->path[d]);
+
+          r->cost += 0.25 * rideTimeExcess;
           r->maxRideTimeViolation += std::max(0.0f, r->ridingTimes[i] - r->path[i]->maxRideTime);
+        }
 
         r->loadViolation       += std::max(0, r->load[i] - r->vehicle->capacity);
         r->timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - r->path[i]->departureTime);

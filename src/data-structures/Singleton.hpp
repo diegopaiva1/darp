@@ -140,28 +140,6 @@ public:
 
         requests.push_back(request);
       }
-
-      float min =  std::numeric_limits<float>::max();
-      float max = -std::numeric_limits<float>::max();
-
-      for (Node *n : nodes) {
-        if (n->isPickup() || n->isDelivery()) {
-          float arr = n->arrivalTime - getTravelTime(getNode(0), n);
-          float dep = n->departureTime + n->serviceTime + getTravelTime(n, getNode(2 * requestsAmount + 1));
-
-          if (arr < min)
-            min = arr;
-
-          if (dep > max)
-            max = dep;
-        }
-      }
-
-      getNode(0)->arrivalTime   = min;
-      getNode(0)->departureTime = max;
-      getNode(2 * requestsAmount + 1)->arrivalTime   = min;
-      getNode(2 * requestsAmount + 1)->departureTime = max;
-
     }
   }
 
