@@ -26,9 +26,15 @@ public:
   * @param  alphas GRASP's vector of random factors
   * @return a solution (instanceof Solution)
   */
-  static Solution solve(int iterations = 500, std::vector<float> alphas = {0.10, 0.20, 0.30, 0.40, 0.50})
+  static Solution solve(int iterations = 1000, int iterationBlocks = 100, std::vector<float> alphas = {0.10, 0.20})
   {
     Solution best;
+
+    int n = alphas.size();
+    std::vector<double> probabilities (10, 1.0/n);
+    std::vector<double> costs (n, 0.0);
+    std::vector<int>    counter (n, 0);
+    std::vector<double> q (n, 0.0);
 
     // In the beginning of the search, all penalty parameters are initialized with 1.0
     std::vector<float> penaltyParams = {1.0, 1.0, 1.0};
@@ -41,6 +47,14 @@ public:
       int alphaIndex = Prng::generateIntegerInRange(0, alphas.size() - 1);
       Solution currSolution;
       std::vector<Request*> requests;
+
+      if (it != 1) {
+        alphaIndex = chooseAlphaIndex(probabilities);
+        counter[alphaIndex] += 1;
+      }
+
+      if (it % iterationBlocks == 0)
+        updateProbabilities(probabilities, q);
 
       for (Request *r : instance->requests)
         requests.push_back(r);
@@ -89,13 +103,66 @@ public:
           (currSolution.routes.size() == best.routes.size() && currSolution.isFeasible() && currSolution.cost < best.cost))
         best = currSolution;
 
-      std::cout << currSolution.cost << '\n';
+      if (it != 1) {
+        int param1 = 0;
+        int param2 = 0;
+
+        if (currSolution.routes.size() > instance->vehicles.size())
+          param1 = 1000;
+
+        if (best.routes.size() > instance->vehicles.size())
+          param2 = 1000;
+
+        costs[alphaIndex] += currSolution.cost + param1 * currSolution.routes.size();
+        q[alphaIndex] = (best.cost + param2 * best.routes.size())/(costs[alphaIndex]/counter[alphaIndex]);
+
+        printf("\ns* = %.2f e a[%d] = %.2f", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex]);
+      }
+
+      if (it == iterations) {
+        printf("\n\nAlphas:\n");
+        for (int p = 0; p < probabilities.size(); p++)
+          printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
+      }
     }
 
     return best;
   }
 
 private:
+  static int chooseAlphaIndex(std::vector<double> probabilities)
+  {
+    double rand = Prng::generateFloatInRange(0, 1);
+
+    double sum = 0.0;
+
+    for (int i = 0; i < probabilities.size(); i++) {
+      sum += probabilities[i];
+
+      if (rand <= sum)
+        return i;
+    }
+
+    return 0;
+  }
+
+  static void updateProbabilities(std::vector<double> &probabilities, std::vector<double> q)
+  {
+    for (int i = 0; i < probabilities.size(); i++)
+      probabilities[i] = q[i]/sum(q);
+  }
+
+  template<typename T>
+  static T sum(std::vector<T> v)
+  {
+    T sum = 0;
+
+    for (T el : v)
+      sum += el;
+
+    return sum;
+  }
+
  /**
   * Adjust the penalty parameters according to the solution computed violations. Whenever a violation is found,
   * it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
@@ -167,6 +234,7 @@ private:
 
         computeWaitingTime(r, i);
         computeDepartureTime(r, i);
+        computeBatteryLevel(r, i);
       }
 
     STEP3:
@@ -424,13 +492,8 @@ private:
   // TODO: recarga parcial...
   static void computeBatteryLevel(Route *&r, int i)
   {
-    // if (r->path[i]->isStation() || r->path[i]->isDepot())
-    //   r->batteryLevels[i] = r->vehicle->batteryCapacity/5;
-    // else
-    //   r->batteryLevels[i] = r->batteryLevels[i - 1] -
-    //                         r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
-    if (r->path[i]->isStation() || r->path[i]->isDepot())
-      r->batteryLevels[i] = r->vehicle->batteryCapacity/5;
+    if (i == 0)
+      r->batteryLevels[i] = r->vehicle->initialBatteryLevel;
     else
       r->batteryLevels[i] = r->batteryLevels[i - 1] -
                             r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);

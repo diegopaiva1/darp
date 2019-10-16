@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
   Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
-  Solution solution = Grasp::solve(1000, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
+  Solution solution = Grasp::solve(10000, 1000, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
 
   for (Route *route : solution.routes) {
     route->printPath();
