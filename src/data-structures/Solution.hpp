@@ -14,13 +14,24 @@ class Solution
 public:
   std::vector<Route *> routes;
   float cost;
+  int loadViolation;
+  float timeWindowViolation;
+  float maxRideTimeViolation;
 
   Solution()
   {
-    cost = 0.0;
+    cost                 = 0.0;
+    loadViolation        = 0;
+    timeWindowViolation  = 0.0;
+    maxRideTimeViolation = 0.0;
   }
 
   ~Solution() { }
+
+  bool isFeasible()
+  {
+    return loadViolation == 0 && timeWindowViolation == 0 && maxRideTimeViolation == 0;
+  }
 };
 
 #endif // SOLUTION_H_INCLUDED

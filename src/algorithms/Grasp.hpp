@@ -7,7 +7,8 @@
 #ifndef GRASP_H_INCLUDED
 #define GRASP_H_INCLUDED
 
-#define ITERATIONS 1
+#define MAX_INT   std::numeric_limits<int>::max()
+#define MAX_FLOAT std::numeric_limits<float>::max()
 
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
@@ -18,20 +19,24 @@ Singleton *instance = Singleton::getInstance();
 class Grasp
 {
 public:
-  static Solution solve()
+ /**
+  * Use GRASP metaheuristic to solve the instance
+  *
+  * @param  iterations the total number of iterations
+  * @param  alphas GRASP's vector of random factors
+  * @return a solution (instanceof Solution)
+  */
+  static Solution solve(int iterations = 500, std::vector<float> alphas = {0.10, 0.20, 0.30, 0.40, 0.50})
   {
     Solution best;
 
     // In the beginning of the search, all penalty parameters are initialized with 1.0
     std::vector<float> penaltyParams = {1.0, 1.0, 1.0};
 
-    // Random value helps adjusting the penalty parameters dinamically
+    // Random value that helps adjusting the penalty parameters dinamically
     float delta = Prng::generateFloatInRange(0.05, 0.10);
 
-    // GRASP's random factors vector
-    std::vector<float> alphas = {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50};
-
-    for (int it = 1; it <= ITERATIONS; it++) {
+    for (int it = 1; it <= iterations; it++) {
       int index;
       int alphaIndex = Prng::generateIntegerInRange(0, alphas.size() - 1);
       Solution currSolution;
@@ -63,12 +68,17 @@ public:
       while (!requests.empty()) {
         it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
         Request *request = requests[index];
-        performCheapestFeasibleInsertion(request, currSolution, penaltyParams, delta);
+        performCheapestFeasibleInsertion(request, currSolution);
         requests.erase(requests.begin() + index);
       }
 
       for (Route *r : currSolution.routes)
-        currSolution.cost += performEightStepEvaluationScheme(r, penaltyParams, delta);
+        currSolution.cost += performEightStepEvaluationScheme(r) +
+                             currSolution.loadViolation        * penaltyParams[0] +
+                             currSolution.timeWindowViolation  * penaltyParams[1] +
+                             currSolution.maxRideTimeViolation * penaltyParams[2];
+
+      adjustPenaltyParams(currSolution, penaltyParams, delta);
 
      /* Everytime a new incumbent solution is found, we randomly choose a new delta. According to
       * (Parragh et. al, 2010) this works as a diversification mecanism and avoids cycling
@@ -76,10 +86,8 @@ public:
       delta = Prng::generateFloatInRange(0.05, 0.10);
 
       if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
-          (currSolution.routes.size() == best.routes.size() && currSolution.cost < best.cost))
+          (currSolution.routes.size() == best.routes.size() && currSolution.isFeasible() && currSolution.cost < best.cost))
         best = currSolution;
-
-      printf("%d\n", it);
 
       std::cout << currSolution.cost << '\n';
     }
@@ -87,14 +95,38 @@ public:
     return best;
   }
 
- /* The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003)
-  * for the DARP which evaluates a given route in terms of cost and feasibility. This procedure
-  * optimizes route duration and xcomplies with ride time constraint
+private:
+ /**
+  * Adjust the penalty parameters according to the solution computed violations. Whenever a violation is found,
+  * it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
+  * factor.
+  *
+  * @param s is a solution
+  * @param penaltyParams is the vector containing the value of each penalty parameter
+  * @param delta is a random value
   */
-  static float performEightStepEvaluationScheme(Route *&r, std::vector<float> &penaltyParams, float &delta)
+  static void adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta)
+  {
+    float factor = 1 + delta;
+
+    s.loadViolation        == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
+    s.timeWindowViolation  == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
+    s.maxRideTimeViolation == 0 ? penaltyParams[2] /= factor : penaltyParams[2] *= factor;
+  }
+
+ /**
+  * The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
+  * which evaluates a given route in terms of cost and feasibility. This procedure compute the routes violations,
+  * optimizes route duration and complies with ride time constraint.
+  * Note that this procedure as implemented has a lot of side effects.
+  *
+  * @param  r is the route to be evaluated
+  * @return r's total cost
+  */
+  static float performEightStepEvaluationScheme(Route *&r)
   {
     bool  allRidingTimesRespected;
-    float forwardSlackTimeAtBeginning;
+    float forwardTimeSlackAtBeginning;
     float waitingTimeSum;
 
     int size = r->path.size();
@@ -138,7 +170,7 @@ public:
       }
 
     STEP3:
-      forwardSlackTimeAtBeginning = calculateForwardSlackTime(0, r);
+      forwardTimeSlackAtBeginning = computeForwardTimeSlack(0, r);
 
     STEP4:
       waitingTimeSum = 0.0;
@@ -146,7 +178,7 @@ public:
       for (int i = 1; i < r->path.size(); i++)
         waitingTimeSum += r->waitingTimes[i];
 
-      r->departureTimes[0] = r->path[0]->arrivalTime + std::min(forwardSlackTimeAtBeginning, waitingTimeSum);
+      r->departureTimes[0] = r->path[0]->arrivalTime + std::min(forwardTimeSlackAtBeginning, waitingTimeSum);
 
     STEP5:
       for (int i = 0; i < r->path.size(); i++) {
@@ -174,7 +206,7 @@ public:
       for (int i = 1; i < r->path.size() - 1; i++) {
         if (r->path[i]->isPickup()) {
           STEP7a:
-            float forwardSlackTime = calculateForwardSlackTime(i, r);
+            float forwardTimeSlack = computeForwardTimeSlack(i, r);
 
           STEP7b:
             float waitingTimeSum = 0.0;
@@ -182,7 +214,7 @@ public:
             for (int p = i + 1; p < r->path.size(); p++)
               waitingTimeSum += r->waitingTimes[p];
 
-            r->waitingTimes[i] += std::min(forwardSlackTime, waitingTimeSum);
+            r->waitingTimes[i] += std::min(forwardTimeSlack, waitingTimeSum);
             r->serviceBeginningTimes[i] = r->arrivalTimes[i] + r->waitingTimes[i];
             r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
 
@@ -228,24 +260,20 @@ public:
         r->timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - r->path[i]->departureTime);
       }
 
-      // In below code, we adjust penalty parameters according to the violations
-      float factor = 1 + delta;
-
-      r->loadViolation        == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
-      r->timeWindowViolation  == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
-      r->maxRideTimeViolation == 0 ? penaltyParams[2] /= factor : penaltyParams[2] *= factor;
-
-      return r->cost + r->loadViolation        * penaltyParams[0] +
-                       r->timeWindowViolation  * penaltyParams[1] +
-                       r->maxRideTimeViolation * penaltyParams[2];
+      return r->cost;
   }
 
-  /* O forward slack time é calculado como o menor de todos os slack times entre
-   * o index (ponto da rota que se deseja calcular) e o ponto final da rota
-   */
-  static float calculateForwardSlackTime(int index, Route *r)
+ /**
+  * The forward time slack at index i in route r is the maximum amount of time that the departure from i
+  * can be delayed without violating time constraints for the later nodes
+  *
+  * @param  index is the index of the node in the route
+  * @param  r is the route itself
+  * @return the forward time slack at index i in route r
+  */
+  static float computeForwardTimeSlack(int index, Route *r)
   {
-    float forwardSlackTime;
+    float forwardTimeSlack;
 
     for (int j = index; j < r->path.size(); j++) {
       float waitingTimeSum = 0.0;
@@ -274,20 +302,25 @@ public:
       else
         slackTime = 0.0;
 
-      if (j == index || slackTime < forwardSlackTime)
-        forwardSlackTime = slackTime;
+      if (j == index || slackTime < forwardTimeSlack)
+        forwardTimeSlack = slackTime;
     }
 
-    return forwardSlackTime;
+    return forwardTimeSlack;
   }
 
-
-  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution, std::vector<float> &penaltyParams, float &delta)
+ /**
+  * Performs the cheapest feasible insertion of a given request in a given solution
+  *
+  * @param request is the request to be inserted
+  * @param solution is the solution where the request will be inserted
+  */
+  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution)
   {
-    float bestCost = std::numeric_limits<float>::max();
-    int routeId = -9999;
-    int bestPickupIndex = -9999;
-    int bestDeliveryIndex = -9999;
+    float bestCost        =  MAX_FLOAT;
+    int routeId           = -MAX_INT;
+    int bestPickupIndex   = -MAX_INT;
+    int bestDeliveryIndex = -MAX_INT;
 
     for (int i = 0; i < solution.routes.size(); i++) {
       Route *r = solution.routes[i];
@@ -298,7 +331,7 @@ public:
         for (int d = p + 1; d < r->path.size(); d++) {
           r->path.insert(r->path.begin() + d, request->delivery);
 
-          r->cost = performEightStepEvaluationScheme(r, penaltyParams, delta);
+          r->cost = performEightStepEvaluationScheme(r);
 
           if (r->isFeasible() && r->cost < bestCost) {
             bestCost = r->cost;
@@ -314,7 +347,10 @@ public:
       }
     }
 
-    if (routeId == -9999 && bestPickupIndex == -9999 && bestDeliveryIndex == -9999) {
+   /* In this case the request could not be feasibly inserted,
+    * so we open a new route (thus solution will be unfeasible)
+    */
+    if (routeId == -MAX_INT && bestPickupIndex == -MAX_INT && bestDeliveryIndex == -MAX_INT) {
       Route *route = new Route(new Vehicle(solution.routes.size() + 1));
       route->path.push_back(instance->getOriginDepot());
       route->path.push_back(request->pickup);
