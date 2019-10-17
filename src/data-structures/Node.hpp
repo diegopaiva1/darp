@@ -7,8 +7,6 @@
 #ifndef NODE_H_INCLUDED
 #define NODE_H_INCLUDED
 
-#include "Point.hpp"
-
 enum class Type {DEPOT, PICKUP, DELIVERY, STATION};
 
 class Node
@@ -16,7 +14,8 @@ class Node
 public:
   int id;
   int load;
-  Point *point;
+  float latitude;
+  float longitude;
   float serviceTime;
   float maxRideTime;
   float departureTime;
@@ -24,14 +23,11 @@ public:
   float rechargingRate;
   Type type;
 
-  Node()
-  {
-    this->point = new Point();
-  }
+  Node() { }
 
   Node(int id)
   {
-    this->point = new Point(); this->id = id;
+    this->id = id;
   }
 
   ~Node() {};

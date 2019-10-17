@@ -11,6 +11,7 @@
 #include <fstream>
 #include <limits>
 #include <iostream>
+#include <cmath>
 
 #include "Node.hpp"
 #include "Vehicle.hpp"
@@ -51,6 +52,7 @@ public:
       exit(1);
     }
     else {
+      // Read the header of the file
       file >> vehiclesAmount;
       file >> requestsAmount;
       file >> originDepots;
@@ -76,8 +78,8 @@ public:
       for (int i = 1; i <= nodesAmount; i++) {
         Node *node = new Node();
         file >> node->id;
-        file >> node->point->x;
-        file >> node->point->y;
+        file >> node->latitude;
+        file >> node->longitude;
         file >> node->serviceTime;
         file >> node->maxRideTime;
         file >> node->load;
@@ -103,13 +105,17 @@ public:
         else
           node->rechargingRate = 0.0;
 
+      // Below code initializes the travel time matrix
       travelTimes.resize(nodesAmount);
-      // Fill the travel times matrix
+
       for (int i = 0; i < nodesAmount; i++) {
         travelTimes[i].resize(nodesAmount);
+        Node *n1 = getNode(i);
 
-        for (int j = 0; j < nodesAmount; j++)
-          travelTimes[i][j] = nodes.at(i)->point->getDistanceFrom(nodes.at(j)->point);
+        for (int j = 0; j < nodesAmount; j++) {
+          Node *n2 = getNode(j);
+          travelTimes[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
+        }
       }
 
     // Add all the requests
@@ -118,10 +124,10 @@ public:
         Node *pickup   = request->pickup;
         Node *delivery = request->delivery;
 
-        // Tigthen time windows as possible
+        // Tigthen time windows
         if (request->isInbound()) {
           delivery->arrivalTime = std::max(
-            0.0f, pickup->arrivalTime + pickup->serviceTime + pickup->point->getDistanceFrom(delivery->point)
+            0.0f, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
           );
 
           delivery->departureTime = std::min(
@@ -134,7 +140,7 @@ public:
           );
 
           pickup->departureTime = std::min(
-            delivery->departureTime - pickup->point->getDistanceFrom(delivery->point) - pickup->serviceTime, planningHorizon
+            delivery->departureTime - getTravelTime(pickup, delivery) - pickup->serviceTime, planningHorizon
           );
         }
 
@@ -178,7 +184,7 @@ public:
 
     for (Node *node : nodes) {
       if (node->isStation()) {
-        float distance = node->point->getDistanceFrom(ref->point);
+        float distance = getTravelTime(node, ref);
 
         if (distance < minDistance) {
           nearestStation = node;

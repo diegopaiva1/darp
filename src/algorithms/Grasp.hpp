@@ -365,9 +365,8 @@ private:
       if (r->path[j]->isDelivery() && jMinusNIsVisitedBeforeIndex)
         userRideTimeWithDeliveryAtJ = r->ridingTimes[getPickupIndexOf(r, j)];
 
-      float slackTime = waitingTimeSum +
-                    std::max(0.0f, std::min(r->path[j]->departureTime - r->serviceBeginningTimes[j],
-                                            r->path[index]->maxRideTime - userRideTimeWithDeliveryAtJ));
+      float slackTime = waitingTimeSum + std::max(0.0f, std::min(r->path[j]->departureTime - r->serviceBeginningTimes[j],
+                                                  r->path[index]->maxRideTime - userRideTimeWithDeliveryAtJ));
 
       if (j == index || slackTime < forwardTimeSlack)
         forwardTimeSlack = slackTime;
