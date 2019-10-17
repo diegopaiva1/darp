@@ -7,9 +7,6 @@
 #ifndef GRASP_H_INCLUDED
 #define GRASP_H_INCLUDED
 
-#define MAX_INT   std::numeric_limits<int>::max()
-#define MAX_FLOAT std::numeric_limits<float>::max()
-
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
@@ -67,20 +64,20 @@ public:
       });
 
       for (Route *route : currSolution.routes) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
+        // it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
 
-        Request *request = requests[index];
+        // Request *request = requests[index];
 
         route->path.push_back(instance->getOriginDepot());
         route->path.push_back(instance->getDestinationDepot());
-        route->path.insert(route->path.begin() + 1, request->pickup);
-        route->path.insert(route->path.begin() + 2, request->delivery);
+        // route->path.insert(route->path.begin() + 1, request->pickup);
+        // route->path.insert(route->path.begin() + 2, request->delivery);
 
-        requests.erase(requests.begin() + index);
+        // requests.erase(requests.begin() + index);
       }
 
       while (!requests.empty()) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
+        index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
         Request *request = requests[index];
         performCheapestFeasibleInsertion(request, currSolution);
         requests.erase(requests.begin() + index);
@@ -92,12 +89,12 @@ public:
                              currSolution.timeWindowViolation  * penaltyParams[1] +
                              currSolution.maxRideTimeViolation * penaltyParams[2];
 
-      adjustPenaltyParams(currSolution, penaltyParams, delta);
+      // adjustPenaltyParams(currSolution, penaltyParams, delta);
 
      /* Everytime a new incumbent solution is found, we randomly choose a new delta. According to
       * (Parragh et. al, 2010) this works as a diversification mecanism and avoids cycling
       */
-      delta = Prng::generateFloatInRange(0.05, 0.10);
+      // delta = Prng::generateFloatInRange(0.05, 0.10);
 
       if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
           (currSolution.routes.size() == best.routes.size() && currSolution.isFeasible() && currSolution.cost < best.cost))
@@ -119,12 +116,14 @@ public:
         printf("\ns* = %.2f e a[%d] = %.2f", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex]);
       }
 
-      if (it == iterations) {
-        printf("\n\nAlphas:\n");
-        for (int p = 0; p < probabilities.size(); p++)
-          printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
-      }
+      // if (it == iterations) {
+      //   printf("\n\nAlphas:\n");
+      //   for (int p = 0; p < probabilities.size(); p++)
+      //     printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
+      // }
     }
+
+    std::cout << best.cost << '\n';
 
     return best;
   }
