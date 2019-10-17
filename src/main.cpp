@@ -4,71 +4,49 @@
  * @date    24/09/2019
  */
 
+#include <ilcplex/ilocplex.h>
 #include <iostream>
-
-#include "data-structures/Singleton.hpp"
-#include "algorithms/Grasp.hpp"
-
-#define MIN_ARGS_AMOUNT 1
-
-bool isFeasible(Solution s)
-{
-  for (Route *r : s.routes) {
-    for (int i = 0; i < r->path.size(); i++) {
-      if (r->serviceBeginningTimes[i] > r->path[i]->departureTime) {
-        printf("Time window violation at point %d in route %d\n", i, r->vehicle->id);
-        return false;
-      }
-
-      if (r->path[i]->isPickup() && r->ridingTimes[i] > r->path[i]->maxRideTime) {
-        printf("Riding time violation at point %d in route %d\n", i, r->vehicle->id);
-        return false;
-      }
-
-      if (r->load[i] > r->vehicle->capacity) {
-        printf("Vehicle load violation at point %d in route %d\n", i, r->vehicle->id);
-        return false;
-      }
-
-      if (r->batteryLevels[i] < 0) {
-        printf("Battery level violation at point %d in route %d\n", i, r->vehicle->id);
-        return false;
-      }
-
-      if (r->path[i]->isStation() && r->load[i] != 0) {
-        printf("Load violation at station %d in route %d\n", i, r->vehicle->id);
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
 
 int main(int argc, char *argv[])
 {
-  int argsGiven = argc - 1;
+  try {
+    // Initialize the environment
+    IloEnv env;
+    IloModel model(env);
+    IloCplex cplex(model);
 
-  if (argsGiven < MIN_ARGS_AMOUNT) {
-    printf("Error: expected at least %d argument(s) - %d given\n", MIN_ARGS_AMOUNT, argsGiven);
-    return EXIT_FAILURE;
+    // Decision variables
+    IloNumVar x11(env), x12(env), x13(env), x21(env), x22(env), x23(env);
+
+    // Objective Function
+    IloObjective obj = IloMinimize(env, 4 * x11 + 2 * x12 + 5 * x13 + 11 * x21 + 7 * x22 + 4 * x23);
+    model.add(obj);
+
+    // Constraints
+    model.add(x11 + x12 + x13 <=  800);
+    model.add(x21 + x22 + x23 <= 1000);
+    model.add(x11 + x21       ==  500);
+    model.add(x12 + x22       ==  400);
+    model.add(x13 + x23       ==  900);
+
+    cplex.extract(model);
+    cplex.solve();
+
+    std::cout << "Objective function: " << cplex.getObjValue() << '\n';
+    std::cout << "x11:" << cplex.getValue(x11) << '\n';
+    std::cout << "x12:" << cplex.getValue(x12) << '\n';
+    std::cout << "x13:" << cplex.getValue(x13) << '\n';
+    std::cout << "x21:" << cplex.getValue(x21) << '\n';
+    std::cout << "x22:" << cplex.getValue(x22) << '\n';
+    std::cout << "x23:" << cplex.getValue(x23) << '\n';
+
+    cplex.end();
+    model.end();
+    env.end();
   }
-
-  Singleton *instance = Singleton::getInstance();
-  instance->init(argv[1]);
-
-  Solution solution = Grasp::solve(1000, 100, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
-
-  for (Route *route : solution.routes) {
-    route->printPath();
-    route->printSchedule();
-    printf("\n");
+  catch(IloException& e) {
+    std::cerr << "IloException: " << e << '\n';
   }
-
-  if (isFeasible(solution))
-    printf("Viável - Custo = %.2f\n", solution.cost);
-  else
-    printf("Inviável - Custo = %.2f\n", solution.cost);
 
   return 0;
 }
