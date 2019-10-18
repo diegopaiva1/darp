@@ -51,6 +51,15 @@ public:
     return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0;
   }
 
+  int hasRequest(Request *req)
+  {
+    for (Node *n : path)
+      if (n == req->pickup)
+        return 1;
+
+    return 0;
+  }
+
   void printPath()
   {
     printf("Rota %d: ", vehicle->id);
