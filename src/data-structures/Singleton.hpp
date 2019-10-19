@@ -1,6 +1,6 @@
 /**
  * @file    Singleton.hpp
- * @author  Diego Paiva e Silva
+ * @author  Diego Paiva
  * @date    25/09/2019
  */
 
@@ -28,6 +28,7 @@ public:
   std::vector<Vehicle *> vehicles;
   std::vector<Request *> requests;
   std::vector<std::vector<float>> travelTimes;
+  std::vector<std::vector<float>> nearestStations;
 
   static Singleton* getInstance()
   {
@@ -118,8 +119,32 @@ public:
         }
       }
 
-    // Add all the requests
-    for (int i = 1; i <= requestsAmount; i++) {
+      // Below code initializes the nearest stations matrix
+      nearestStations.resize(nodesAmount);
+
+      for (int i = 0; i < nodesAmount; i++) {
+        nearestStations[i].resize(nodesAmount);
+        Node *n1 = getNode(i);
+
+        for (int j = 0; j < nodesAmount; j++) {
+          int nearestStationId;
+          Node *n2 = getNode(j);
+
+          float nearestStationDistance = std::numeric_limits<float>::max();
+
+          for (int k = nodesAmount - stations; k < nodesAmount; k++) {
+            if (travelTimes[i][k] + travelTimes[i][k] < nearestStationDistance) {
+              nearestStationDistance = travelTimes[i][k] + travelTimes[i][k];
+              nearestStationId = k;
+            }
+          }
+
+          nearestStations[i][j] = nearestStationId;
+        }
+      }
+
+      // Add all the requests
+      for (int i = 1; i <= requestsAmount; i++) {
         Request *request = new Request(getNode(i), getNode(i + requestsAmount));
         Node *pickup   = request->pickup;
         Node *delivery = request->delivery;
@@ -175,25 +200,6 @@ public:
   float getTravelTime(Node *n1, Node *n2)
   {
     return travelTimes[n1->id][n2->id];
-  }
-
-  Node* getNearestStation(Node *ref)
-  {
-    Node *nearestStation;
-    float minDistance = std::numeric_limits<float>::max();
-
-    for (Node *node : nodes) {
-      if (node->isStation()) {
-        float distance = getTravelTime(node, ref);
-
-        if (distance < minDistance) {
-          nearestStation = node;
-          minDistance = distance;
-        }
-      }
-    }
-
-    return nearestStation;
   }
 };
 

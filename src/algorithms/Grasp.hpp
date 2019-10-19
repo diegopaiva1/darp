@@ -20,9 +20,10 @@ class Grasp
 {
 public:
  /**
-  * Use GRASP metaheuristic to solve the instance
+  * @brief Use GRASP metaheuristic to solve the instance
   *
   * @param  iterations the total number of iterations
+  * @param  iterationBlocks frequency of iterations on which probabilities are updated
   * @param  alphas GRASP's vector of random factors
   * @return a solution (instanceof Solution)
   */
@@ -31,9 +32,9 @@ public:
     Solution best;
 
     int n = alphas.size();
+    std::vector<int>    counter (n, 0);
     std::vector<double> probabilities (10, 1.0/n);
     std::vector<double> costs (n, 0.0);
-    std::vector<int>    counter (n, 0);
     std::vector<double> q (n, 0.0);
 
     // In the beginning of the search, all penalty parameters are initialized with 1.0
@@ -67,7 +68,7 @@ public:
       });
 
       for (Route *route : currSolution.routes) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
+        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
 
         Request *request = requests[index];
 
@@ -80,7 +81,7 @@ public:
       }
 
       while (!requests.empty()) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size()));
+        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
         Request *request = requests[index];
         performCheapestFeasibleInsertion(request, currSolution);
         requests.erase(requests.begin() + index);
@@ -100,7 +101,7 @@ public:
       delta = Prng::generateFloatInRange(0.05, 0.10);
 
       if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
-          (currSolution.routes.size() == best.routes.size() && currSolution.isFeasible() && currSolution.cost < best.cost))
+          (currSolution.routes.size() == best.routes.size() /* && currSolution.isFeasible()*/ && currSolution.cost < best.cost))
         best = currSolution;
 
       if (it != 1) {
@@ -129,11 +130,10 @@ public:
     return best;
   }
 
-private:
+// private:
   static int chooseAlphaIndex(std::vector<double> probabilities)
   {
     double rand = Prng::generateFloatInRange(0, 1);
-
     double sum = 0.0;
 
     for (int i = 0; i < probabilities.size(); i++) {
@@ -164,9 +164,9 @@ private:
   }
 
  /**
-  * Adjust the penalty parameters according to the solution computed violations. Whenever a violation is found,
-  * it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
-  * factor.
+  * @brief Adjust the penalty parameters according to the solution computed violations. Whenever a violation is found,
+  *        it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
+  *        factor.
   *
   * @param s is a solution
   * @param penaltyParams is the vector containing the value of each penalty parameter
@@ -182,10 +182,10 @@ private:
   }
 
  /**
-  * The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
-  * which evaluates a given route in terms of cost and feasibility. This procedure compute the routes violations,
-  * optimizes route duration and complies with ride time constraint.
-  * Note that this procedure as implemented has a lot of side effects.
+  * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
+  *        which evaluates a given route in terms of cost and feasibility. This procedure compute the routes
+  *        violations, optimizes route duration and complies with ride time constraint.
+  *        Note that this procedure as implemented has a lot of side effects.
   *
   * @param  r is the route to be evaluated
   * @return r's total cost
@@ -233,8 +233,10 @@ private:
           goto STEP8;
 
         computeWaitingTime(r, i);
-        computeDepartureTime(r, i);
+        computeChargingTime(r, i);
         computeBatteryLevel(r, i);
+
+        computeDepartureTime(r, i);
       }
 
     STEP3:
@@ -312,14 +314,15 @@ private:
       }
 
     STEP8:
-      r->cost                 = 0.0;
-      r->loadViolation        = 0;
-      r->timeWindowViolation  = 0.0;
-      r->maxRideTimeViolation = 0.0;
+      r->cost                  = 0.0;
+      r->loadViolation         = 0;
+      r->timeWindowViolation   = 0.0;
+      r->maxRideTimeViolation  = 0.0;
+      r->batteryLevelViolation = false;
 
       for (int i = 0; i < r->path.size(); i++) {
-        if (i > 0)
-          r->cost += 0.75 * instance->getTravelTime(r->path[i], r->path[i - 1]);
+        if (i < r->path.size() - 1)
+          r->cost += 0.75 * instance->getTravelTime(r->path[i], r->path[i + 1]);
 
         if (r->path[i]->isPickup()) {
           int d = getDeliveryIndexOf(r, i);
@@ -330,16 +333,19 @@ private:
           r->maxRideTimeViolation += std::max(0.0f, r->ridingTimes[i] - r->path[i]->maxRideTime);
         }
 
-        r->loadViolation       += std::max(0, r->load[i] - r->vehicle->capacity);
+        r->loadViolation += std::max(0, r->load[i] - r->vehicle->capacity);
         r->timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - r->path[i]->departureTime);
+
+        if (r->batteryLevels[i] < 0)
+          r->batteryLevelViolation = true;
       }
 
       return r->cost;
   }
 
  /**
-  * The forward time slack at index i in route r is the maximum amount of time that the departure from i
-  * can be delayed without violating time constraints for the later nodes
+  * @brief The forward time slack at index i in route r is the maximum amount of time that the departure
+  *        from i can be delayed without violating time constraints for the later nodes
   *
   * @param  index is the index of the node in the route
   * @param  r is the route itself
@@ -376,17 +382,23 @@ private:
   }
 
  /**
-  * Performs the cheapest feasible insertion of a given request in a given solution
+  * @brief Performs the cheapest feasible insertion of a given request in a given solution
   *
   * @param request is the request to be inserted
   * @param solution is the solution where the request will be inserted
   */
   static void performCheapestFeasibleInsertion(Request *&request, Solution &solution)
   {
-    float bestCost        =  MAX_FLOAT;
-    int routeId           = -MAX_INT;
-    int bestPickupIndex   = -MAX_INT;
-    int bestDeliveryIndex = -MAX_INT;
+    // Let's build a struct for storing the informations of each possible insertion
+    struct Insertion {
+      float cost;
+      int routeId;
+      int pickupIndex;
+      int deliveryIndex;
+    };
+
+    // Initialize everything with +infinity, so we can tell what will be the best insertion later on
+    struct Insertion best = {MAX_FLOAT, MAX_INT, MAX_INT, MAX_INT};
 
     for (int i = 0; i < solution.routes.size(); i++) {
       Route *r = solution.routes[i];
@@ -399,11 +411,11 @@ private:
 
           r->cost = performEightStepEvaluationScheme(r);
 
-          if (r->isFeasible() && r->cost < bestCost) {
-            bestCost = r->cost;
-            routeId = i;
-            bestPickupIndex = p;
-            bestDeliveryIndex = d;
+          if (r->isFeasible() && r->cost < best.cost) {
+            best.cost = r->cost;
+            best.routeId = i;
+            best.pickupIndex = p;
+            best.deliveryIndex = d;
           }
 
           r->path.erase(r->path.begin() + d);
@@ -413,10 +425,8 @@ private:
       }
     }
 
-   /* In this case the request could not be feasibly inserted,
-    * so we open a new route (thus solution will be unfeasible)
-    */
-    if (routeId == -MAX_INT && bestPickupIndex == -MAX_INT && bestDeliveryIndex == -MAX_INT) {
+    // Request could not be feasibly inserted, so we open a new route (thus solution will be infeasible)
+    if (best.routeId == MAX_INT) {
       Route *route = new Route(new Vehicle(solution.routes.size() + 1));
       route->path.push_back(instance->getOriginDepot());
       route->path.push_back(request->pickup);
@@ -425,9 +435,9 @@ private:
       solution.routes.push_back(route);
     }
     else {
-      Route *best = solution.routes.at(routeId);
-      best->path.insert(best->path.begin() + bestPickupIndex,   request->pickup);
-      best->path.insert(best->path.begin() + bestDeliveryIndex, request->delivery);
+      Route *route = solution.routes.at(best.routeId);
+      route->path.insert(route->path.begin() + best.pickupIndex,   request->pickup);
+      route->path.insert(route->path.begin() + best.deliveryIndex, request->delivery);
     }
   }
 
@@ -467,9 +477,8 @@ private:
   {
     if (i == r->path.size() - 1)
       r->departureTimes[i] = 0;
-    // else if (r->path[i]->isStation())
-    //   r->departureTimes[i] = r->serviceBeginningTimes[i] + (r->batteryLevels[i] - r->batteryLevels[i - 1])/
-    //   r->path[i]->rechargingRate;
+    else if (r->path[i]->isStation())
+      r->departureTimes[i] = r->serviceBeginningTimes[i] + 3;
     else
       r->departureTimes[i] = r->serviceBeginningTimes[i] + r->path[i]->serviceTime;
   }
@@ -482,8 +491,7 @@ private:
   static void computeChargingTime(Route *&r, int i)
   {
     if (r->path[i]->isStation())
-      r->chargingTimes[i] = r->serviceBeginningTimes[i] - r->serviceBeginningTimes[i - 1] -
-                            instance->getTravelTime(r->path[i - 1], r->path[i]);
+      r->chargingTimes[i] = computeForwardTimeSlack(i + 1, r);
     else
       r->chargingTimes[i] = 0.0;
   }
@@ -495,7 +503,7 @@ private:
       r->batteryLevels[i] = r->vehicle->initialBatteryLevel;
     else
       r->batteryLevels[i] = r->batteryLevels[i - 1] -
-                            r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
+                            0.250 * instance->getTravelTime(r->path[i - 1], r->path[i]);
   }
 
   // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota

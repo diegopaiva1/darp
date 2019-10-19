@@ -63,6 +63,52 @@ int main(int argc, char *argv[])
     route->printPath();
     route->printSchedule();
     printf("\n");
+
+    // for (int i = 0; i < route->path.size(); i++) {
+    //   if (route->batteryLevels[i] < 0) {
+    //     struct Stop {
+    //       int   position;
+    //       int   stationId;
+    //       float maxRechargingTime;
+    //       float batteryLevel;
+    //       float distance;
+    //     };
+
+    //     std::vector<Stop> stops;
+
+    //     for (int s = i - 1; s >= 0; s--) {
+    //       if (route->load[s] == 0) {
+    //         int nearestStationId = Singleton::getInstance()->nearestStations[s + 1][s + 2];
+    //         float maxRechargingTime = route->path[s + 1]->departureTime - route->serviceBeginningTimes[s + 1];
+    //         float distance = 0.0;
+
+    //         for (int k = s + 1; route->load[k] != 0 ; k++)
+    //           distance += Singleton::getInstance()->getTravelTime(route->path[k], route->path[k + 1]);
+
+    //         stops.push_back({
+    //           s+1, nearestStationId, maxRechargingTime,
+    //           route->batteryLevels[s + 1] - route->vehicle->dischargingRate * Singleton::getInstance()->travelTimes[nearestStationId][s+2], distance}
+    //         );
+    //       }
+    //     }
+
+    //     int chosenPosition;
+    //     float newBatteryLevel;
+    //     for (struct Stop p : stops) {
+    //       if (p.batteryLevel > 0) {
+    //         chosenPosition = p.position;
+    //         newBatteryLevel = p.batteryLevel + Singleton::getInstance()->getNode(p.stationId)->rechargingRate * p.maxRechargingTime;
+    //         break;
+    //       }
+    //     }
+
+    //     printf("Posições possíveis da rota para abastecer o ponto %d:\n", i);
+    //     for (struct Stop p : stops)
+    //       printf("%d: tmax = %f, dist = %f, stationId = %d, z = %f\n", p.position, p.maxRechargingTime, p.distance, p.stationId, p.batteryLevel);
+    //     printf("\n");
+    //     printf("posição escolhida = %d e novo nivel da bateria = %f\n", chosenPosition, newBatteryLevel);
+    //   }
+    // }
   }
 
   if (isFeasible(solution))
