@@ -29,6 +29,7 @@ public:
   int loadViolation;
   float maxRideTimeViolation;
   float timeWindowViolation;
+  bool batteryLevelViolation;
   float cost;
 
 
@@ -48,7 +49,7 @@ public:
   // A solution is feasible only and if only there are no constraints violations
   bool isFeasible()
   {
-    return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0;
+    return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0 /* && !batteryLevelViolation */;
   }
 
   int hasRequest(Request *req)
@@ -78,7 +79,7 @@ public:
       printf("R[%02d] = %.4g\t",  i,  ridingTimes[i]);
       printf("Z[%02d] = %.4g\t",  i,  batteryLevels[i]);
       printf("E[%02d] = %.4g\t",  i,  chargingTimes[i]);
-      printf("Q[%02d] = %d",    i,  load[i]);
+      printf("Q[%02d] = %d",      i,  load[i]);
       printf("\n");
     }
   }

@@ -1,6 +1,6 @@
 /**
  * @file    Prng.hpp
- * @author  Diego Paiva e Silva
+ * @author  Diego Paiva
  * @date    13/02/2019
  *
  * 'Prng' é o acrônimo para 'Pseudo Random Number Generator'.

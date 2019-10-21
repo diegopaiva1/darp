@@ -1,6 +1,6 @@
 /**
  * @file   Timer.hpp
- * @author Diego Paiva e Silva
+ * @author Diego Paiva
  * @date   21/05/2019
  *
  * This class is a utility that allows the computation of elapsed time since it's instatiation.
@@ -20,13 +20,22 @@ class Timer
 private:
   Time::time_point beginning;
 public:
-  Timer() { beginning = Time::now(); }
+  Timer()
+  {
+    beginning = Time::now();
+  }
 
   ~Timer() { }
 
-  void reset() { beginning = Time::now(); }
+  void reset()
+  {
+    beginning = Time::now();
+  }
 
-	double elapsedInSeconds() const { return std::chrono::duration_cast<Seconds>(Time::now() - beginning).count(); }
+	double elapsedInSeconds() const
+  {
+    return std::chrono::duration_cast<Seconds>(Time::now() - beginning).count();
+  }
 };
 
 #endif // TIMER_H_INCLUDED
