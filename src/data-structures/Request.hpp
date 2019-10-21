@@ -1,6 +1,6 @@
 /**
  * @file   Request.hpp
- * @author Diego Paiva e Silva
+ * @author Diego Paiva
  * @date   13/11/2018
  *
  * Estrutura de dados que mantém as requisições (pickups e deliveries de cada usuário).

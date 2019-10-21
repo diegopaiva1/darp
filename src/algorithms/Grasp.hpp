@@ -7,30 +7,26 @@
 #ifndef GRASP_H_INCLUDED
 #define GRASP_H_INCLUDED
 
-#define MAX_INT   std::numeric_limits<int>::max()
-#define MAX_FLOAT std::numeric_limits<float>::max()
-
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
-
-Singleton *instance = Singleton::getInstance();
 
 class Grasp
 {
 public:
  /**
-  * @brief Use GRASP metaheuristic to solve the instance
+  * @brief Solve the instance.
   *
-  * @param  iterations the total number of iterations
-  * @param  iterationBlocks frequency of iterations on which probabilities are updated
-  * @param  alphas GRASP's vector of random factors
-  * @return a solution (instanceof Solution)
+  * @param iterations Total number of iterations.
+  * @param iterationBlocks Frequency of iterations on which probabilities are updated.
+  * @param alphas GRASP's vector of random factors.
+  * @return A solution.
   */
   static Solution solve(int iterations = 1000, int iterationBlocks = 100, std::vector<float> alphas = {0.10, 0.20})
   {
     Solution best;
 
+    // GRASP components
     int n = alphas.size();
     std::vector<int>    counter (n, 0);
     std::vector<double> probabilities (10, 1.0/n);
@@ -63,25 +59,21 @@ public:
       for (Vehicle *v : instance->vehicles)
         currSolution.routes.push_back(new Route(v));
 
-      std::sort(requests.begin(), requests.end(), [](Request *&r1, Request *&r2) {
-        return r1->getTimeWindowMedian() < r2->getTimeWindowMedian();
-      });
+      // std::sort(requests.begin(), requests.end(), [](Request *&r1, Request *&r2) {
+      //   return r1->getTimeWindowMedian() < r2->getTimeWindowMedian();
+      // });
 
       for (Route *route : currSolution.routes) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
-
-        Request *request = requests[index];
-
         route->path.push_back(instance->getOriginDepot());
         route->path.push_back(instance->getDestinationDepot());
-        route->path.insert(route->path.begin() + 1, request->pickup);
-        route->path.insert(route->path.begin() + 2, request->delivery);
-
-        requests.erase(requests.begin() + index);
       }
 
       while (!requests.empty()) {
-        it == 1 ? index = 0 : index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
+        if (it == 1)
+          index = 0;
+        else
+          index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
+
         Request *request = requests[index];
         performCheapestFeasibleInsertion(request, currSolution);
         requests.erase(requests.begin() + index);
@@ -130,7 +122,7 @@ public:
     return best;
   }
 
-// private:
+private:
   static int chooseAlphaIndex(std::vector<double> probabilities)
   {
     double rand = Prng::generateFloatInRange(0, 1);
@@ -149,18 +141,7 @@ public:
   static void updateProbabilities(std::vector<double> &probabilities, std::vector<double> q)
   {
     for (int i = 0; i < probabilities.size(); i++)
-      probabilities[i] = q[i]/sum(q);
-  }
-
-  template<typename T>
-  static T sum(std::vector<T> v)
-  {
-    T sum = 0;
-
-    for (T el : v)
-      sum += el;
-
-    return sum;
+      probabilities[i] = q[i]/std::accumulate(q.begin(), q.end(), 0.0);
   }
 
  /**
@@ -168,9 +149,9 @@ public:
   *        it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
   *        factor.
   *
-  * @param s is a solution
-  * @param penaltyParams is the vector containing the value of each penalty parameter
-  * @param delta is a random value
+  * @param s A solution.
+  * @param penaltyParams Vector containing the value of each penalty parameter.
+  * @param delta Random value.
   */
   static void adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta)
   {
@@ -187,8 +168,8 @@ public:
   *        violations, optimizes route duration and complies with ride time constraint.
   *        Note that this procedure as implemented has a lot of side effects.
   *
-  * @param  r is the route to be evaluated
-  * @return r's total cost
+  * @param  r Route to be evaluated.
+  * @return Route's total cost.
   */
   static float performEightStepEvaluationScheme(Route *&r)
   {
@@ -235,6 +216,10 @@ public:
         computeWaitingTime(r, i);
         computeChargingTime(r, i);
         computeBatteryLevel(r, i);
+
+        // // Violated battery level, that's an irreparable violation
+        // if (r->batteryLevels[i] < 0.0)
+        //   goto STEP8;
 
         computeDepartureTime(r, i);
       }
@@ -345,11 +330,11 @@ public:
 
  /**
   * @brief The forward time slack at index i in route r is the maximum amount of time that the departure
-  *        from i can be delayed without violating time constraints for the later nodes
+  *        from i can be delayed without violating time constraints for the later nodes.
   *
-  * @param  index is the index of the node in the route
-  * @param  r is the route itself
-  * @return the forward time slack at index i in route r
+  * @param  index Index of the node in the route.
+  * @param  r Route.
+  * @return The forward time slack at index i in route r.
   */
   static float computeForwardTimeSlack(int index, Route *r)
   {
@@ -382,14 +367,14 @@ public:
   }
 
  /**
-  * @brief Performs the cheapest feasible insertion of a given request in a given solution
+  * @brief Performs the cheapest feasible insertion of a given request in a given solution.
   *
-  * @param request is the request to be inserted
-  * @param solution is the solution where the request will be inserted
+  * @param request Request to be inserted.
+  * @param solution Solution where the request will be inserted.
   */
   static void performCheapestFeasibleInsertion(Request *&request, Solution &solution)
   {
-    // Let's build a struct for storing the informations of each possible insertion
+    // Let us build a struct for storing the info of the best insertion
     struct Insertion {
       float cost;
       int routeId;
@@ -427,7 +412,13 @@ public:
 
     // Request could not be feasibly inserted, so we open a new route (thus solution will be infeasible)
     if (best.routeId == MAX_INT) {
-      Route *route = new Route(new Vehicle(solution.routes.size() + 1));
+      Vehicle *v = new Vehicle(solution.routes.size() + 1);
+      v->batteryCapacity = solution.routes.at(0)->vehicle->batteryCapacity;
+      v->capacity = solution.routes.at(0)->vehicle->capacity;
+      v->dischargingRate = solution.routes.at(0)->vehicle->dischargingRate;
+      v->initialBatteryLevel = solution.routes.at(0)->vehicle->initialBatteryLevel;
+      v->minFinalBatteryRatioLevel = solution.routes.at(0)->vehicle->minFinalBatteryRatioLevel;
+      Route *route = new Route(v);
       route->path.push_back(instance->getOriginDepot());
       route->path.push_back(request->pickup);
       route->path.push_back(request->delivery);
@@ -499,7 +490,7 @@ public:
   // TODO: recarga parcial...
   static void computeBatteryLevel(Route *&r, int i)
   {
-    if (i == 0)
+    if (r->path[i]->isStation() || r->path[i]->isDepot())
       r->batteryLevels[i] = r->vehicle->initialBatteryLevel;
     else
       r->batteryLevels[i] = r->batteryLevels[i - 1] -

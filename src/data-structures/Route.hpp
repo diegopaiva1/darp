@@ -49,7 +49,7 @@ public:
   // A solution is feasible only and if only there are no constraints violations
   bool isFeasible()
   {
-    return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0 /*&& !batteryLevelViolation*/;
+    return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0 /* && !batteryLevelViolation */;
   }
 
   void printPath()
