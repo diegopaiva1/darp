@@ -450,11 +450,11 @@ private:
   // TODO: recarga parcial...
   static void computeBatteryLevel(Route *&r, int i)
   {
-    if (r->path[i]->isStation() || r->path[i]->isDepot())
+    if (i == 0)
       r->batteryLevels[i] = r->vehicle->initialBatteryLevel;
     else
       r->batteryLevels[i] = r->batteryLevels[i - 1] -
-                            0.250 * instance->getTravelTime(r->path[i - 1], r->path[i]);
+                            r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
   }
 
   // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota

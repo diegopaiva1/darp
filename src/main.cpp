@@ -6,6 +6,7 @@
 
 #include <ilcplex/ilocplex.h>
 #include <iostream>
+#include <iomanip>
 
 #define MIN_ARGS_AMOUNT 1
 #define MAX_INT   std::numeric_limits<int>::max()
@@ -18,6 +19,9 @@ Singleton *instance = Singleton::getInstance();
 
 #include "algorithms/Grasp.hpp"
 #include "utils/Timer.hpp"
+
+void storeResults(std::string fileName, Solution s, double elapsed, int totalRoutes, float originalCost);
+bool isEmpty(std::fstream& file);
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +41,7 @@ int main(int argc, char *argv[])
   // Start counting
   Timer timer;
 
-  for (int i = 0; i < 30000; i++) {
+  for (int i = 0; i < 20000; i++) {
     Solution s = Grasp::solve(1, 1, {1.0});
 
     if (s.isFeasible()) {
@@ -88,16 +92,54 @@ int main(int argc, char *argv[])
     cplex.extract(model);
     cplex.solve();
 
+    double elapsed = timer.elapsedInSeconds();
+
     std::cout << "Objective function: " << cplex.getObjValue() << '\n';
-    std::cout << "Total elapsed time: " << timer.elapsedInSeconds() << "s" << '\n';
+    std::cout << "Total elapsed time: " << elapsed << "s" << '\n';
+
+    Solution solutionFound;
+
+    for (int i = 0; i < totalRoutes; i++)
+    {
+      if (cplex.getValue(selected[i]) == 1) {
+        solutionFound.routes.push_back(routes[i]);
+        solutionFound.cost += routes[i]->cost;
+      }
+    }
 
     cplex.end();
     model.end();
     env.end();
+
+    for (Route *r : solutionFound.routes) {
+      r->printPath();
+      r->printSchedule();
+      printf("\n");
+    }
+
+    // If second argument was given we store the results in the output file
+    if (argv[2])
+      storeResults(argv[2], solutionFound, elapsed, totalRoutes, best.cost);
   }
   catch(IloException& e) {
     std::cerr << "IloException: " << e << '\n';
   }
 
   return EXIT_SUCCESS;
+}
+
+void storeResults(std::string fileName, Solution s, double elapsed, int totalRoutes, float originalCost)
+{
+  std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
+
+  if (isEmpty(file))
+    file << "Rotas geradas;Heurística;CPLEX;CPU (s)\n";
+
+  file << totalRoutes << ";" << std::fixed << std::setprecision(2)  << originalCost << ";" << s.cost << ";" << elapsed << "\n";
+}
+
+bool isEmpty(std::fstream& file)
+{
+  file.seekg(0, std::ios::end); // Coloque o ponteiro de leitura no início do arquivo
+  return file.tellg() == 0;
 }
