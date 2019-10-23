@@ -17,7 +17,8 @@ set (SOURCES src/main.cpp
              src/data-structures/Solution.cpp
              src/data-structures/Vehicle.cpp
              src/utils/Prng.cpp
-             src/utils/Timer.cpp)
+             src/utils/Timer.cpp
+             src/utils/Plotter.cpp)
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall -O3")

@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "algorithms/Grasp.hpp"
+#include "utils/Plotter.hpp"
 
 #define MIN_ARGS_AMOUNT 1
 
@@ -34,6 +35,8 @@ int main(int argc, char *argv[])
     printf("Viável - Custo = %.2f\n", solution.cost);
   else
     printf("Inviável - Custo = %.2f\n", solution.cost);
+
+  Plotter::plotSolution(solution);
 
   return EXIT_SUCCESS;
 }
