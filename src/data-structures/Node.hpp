@@ -1,11 +1,11 @@
 /**
  * @file    Node.hpp
- * @author  Diego Paiva e Silva
+ * @author  Diego Paiva
  * @date    22/09/2019
  */
 
-#ifndef NODE_H_INCLUDED
-#define NODE_H_INCLUDED
+#ifndef NODE_HPP_INCLUDED
+#define NODE_HPP_INCLUDED
 
 enum class Type {DEPOT, PICKUP, DELIVERY, STATION};
 
@@ -23,39 +23,21 @@ public:
   float rechargingRate;
   Type type;
 
-  Node() { }
+  Node();
 
-  Node(int id)
-  {
-    this->id = id;
-  }
+  Node(int id);
 
-  ~Node() {};
+  ~Node();
 
-  float getTimeWindowMedian()
-  {
-    return (arrivalTime + departureTime)/2;
-  }
+  float getTimeWindowMedian();
 
-  bool isPickup()
-  {
-    return this->type == Type::PICKUP;
-  }
+  bool isPickup();
 
-  bool isDelivery()
-  {
-    return this->type == Type::DELIVERY;
-  }
+  bool isDelivery();
 
-  bool isDepot()
-  {
-    return this->type == Type::DEPOT;
-  }
+  bool isDepot();
 
-  bool isStation()
-  {
-    return this->type == Type::STATION;
-  }
+  bool isStation();
 };
 
-#endif // NODE_H_INCLUDED
+#endif // NODE_HPP_INCLUDED

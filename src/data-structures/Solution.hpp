@@ -4,8 +4,8 @@
  * @date   26/09/2019
  */
 
-#ifndef SOLUTION_H_INCLUDED
-#define SOLUTION_H_INCLUDED
+#ifndef SOLUTION_HPP_INCLUDED
+#define SOLUTION_HPP_INCLUDED
 
 #include "Route.hpp"
 
@@ -18,20 +18,11 @@ public:
   float timeWindowViolation;
   float maxRideTimeViolation;
 
-  Solution()
-  {
-    cost                 = 0.0;
-    loadViolation        = 0;
-    timeWindowViolation  = 0.0;
-    maxRideTimeViolation = 0.0;
-  }
+  Solution();
 
-  ~Solution() { }
+  ~Solution();
 
-  bool isFeasible()
-  {
-    return loadViolation == 0 && timeWindowViolation == 0 && maxRideTimeViolation == 0;
-  }
+  bool isFeasible();
 };
 
-#endif // SOLUTION_H_INCLUDED
+#endif // SOLUTION_HPP_INCLUDED

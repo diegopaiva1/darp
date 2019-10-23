@@ -6,16 +6,9 @@
 
 #include <iostream>
 
-#define MIN_ARGS_AMOUNT 1
-#define MAX_INT   std::numeric_limits<int>::max()
-#define MAX_FLOAT std::numeric_limits<float>::max()
-
-#include "data-structures/Singleton.hpp"
-
-// Instance will be avaliable to everyone
-Singleton *instance = Singleton::getInstance();
-
 #include "algorithms/Grasp.hpp"
+
+#define MIN_ARGS_AMOUNT 1
 
 int main(int argc, char *argv[])
 {
@@ -26,6 +19,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
   Solution solution = Grasp::solve(1000, 100, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});

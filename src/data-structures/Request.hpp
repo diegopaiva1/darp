@@ -2,12 +2,10 @@
  * @file   Request.hpp
  * @author Diego Paiva
  * @date   13/11/2018
- *
- * Estrutura de dados que mantém as requisições (pickups e deliveries de cada usuário).
  */
 
-#ifndef REQUEST_H_INCLUDED
-#define REQUEST_H_INCLUDED
+#ifndef REQUEST_HPP_INCLUDED
+#define REQUEST_HPP_INCLUDED
 
 #include "Node.hpp"
 
@@ -17,34 +15,17 @@ public:
   Node *pickup;
   Node *delivery;
 
-  Request(Node *pickup, Node *delivery)
-  {
-    this->pickup = pickup;
-    this->delivery = delivery;
-  };
+  Request(Node *pickup, Node *delivery);
 
-  ~Request() {}
+  ~Request();
 
-  float getTimeWindowMedian()
-  {
-    return getCriticalNode()->getTimeWindowMedian();
-  }
+  float getTimeWindowMedian();
 
-  Node* getCriticalNode()
-  {
-    return this->isInbound() ? pickup : delivery;
-  }
+  Node* getCriticalNode();
 
-  bool isInbound()
-  {
-    return !isOutbound();
-  }
+  bool isInbound();
 
-  // TODO: Melhorar a lógica que determina se a requisição é outbound
-  bool isOutbound()
-  {
-    return delivery->arrivalTime + delivery->departureTime != 1440;
-  }
+  bool isOutbound();
 };
 
-#endif // REQUEST_H_INCLUDED
+#endif // REQUEST_HPP_INCLUDED

@@ -1,5 +1,11 @@
-#ifndef VEHICLE_H_INCLUDED
-#define VEHICLE_H_INCLUDED
+/**
+ * @file   Vehicle.hpp
+ * @author Diego Paiva
+ * @date   26/09/2019
+ */
+
+#ifndef VEHICLE_HPP_INCLUDED
+#define VEHICLE_HPP_INCLUDED
 
 class Vehicle
 {
@@ -11,14 +17,11 @@ public:
   float batteryCapacity;
   float minFinalBatteryRatioLevel;
 
-  Vehicle() {}
+  Vehicle();
 
-  Vehicle(int id)
-  {
-    this->id = id;
-  }
+  Vehicle(int id);
 
-  ~Vehicle() {}
+  ~Vehicle();
 };
 
-#endif // VEHICLE_H_INCLUDED
+#endif // VEHICLE_HPP_INCLUDED
