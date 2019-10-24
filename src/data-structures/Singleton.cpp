@@ -26,7 +26,6 @@ void Singleton::init(std::string instanceFileName)
   int vehiclesAmount;
   int originDepots;
   int destinationDepots;
-  int stations;
   float planningHorizon;
 
   if (!file.is_open()) {
@@ -34,12 +33,14 @@ void Singleton::init(std::string instanceFileName)
     exit(1);
   }
   else {
+    name = instanceFileName;
+
     // Read the header of the file
     file >> vehiclesAmount;
     file >> requestsAmount;
     file >> originDepots;
     file >> destinationDepots;
-    file >> stations;
+    file >> stationsAmount;
     file >> planningHorizon;
 
     // Add a vehicle for each line that defines a vehicle
@@ -54,7 +55,7 @@ void Singleton::init(std::string instanceFileName)
     }
 
     // This is always the number of nodes for dataset A
-    int nodesAmount = (2 * requestsAmount) + originDepots + destinationDepots + stations;
+    int nodesAmount = (2 * requestsAmount) + originDepots + destinationDepots + stationsAmount;
 
     // Build all instance nodes
     for (int i = 1; i <= nodesAmount; i++) {
@@ -113,7 +114,7 @@ void Singleton::init(std::string instanceFileName)
 
         float nearestStationDistance = std::numeric_limits<float>::max();
 
-        for (int k = nodesAmount - stations; k < nodesAmount; k++) {
+        for (int k = nodesAmount - stationsAmount; k < nodesAmount; k++) {
           if (travelTimes[i][k] + travelTimes[i][k] < nearestStationDistance) {
             nearestStationDistance = travelTimes[i][k] + travelTimes[i][k];
             nearestStationId = k;

@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "algorithms/Grasp.hpp"
-#include "utils/Plotter.hpp"
+#include "gnuplot/Gnuplot.hpp"
 
 #define MIN_ARGS_AMOUNT 1
 
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   else
     printf("Inviável - Custo = %.2f\n", solution.cost);
 
-  Plotter::plotSolution(solution);
+  Gnuplot::plotSolution(solution);
 
   return EXIT_SUCCESS;
 }

@@ -25,7 +25,9 @@ private:
   Singleton(); // Private constructor to prevent external instancing
 
 public:
+  std::string name;
   int requestsAmount;
+  int stationsAmount;
   std::vector<Node *> nodes;
   std::vector<Vehicle *> vehicles;
   std::vector<Request *> requests;
