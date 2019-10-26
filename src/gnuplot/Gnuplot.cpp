@@ -6,35 +6,40 @@
 
 #include "Gnuplot.hpp"
 
+Singleton *i = Singleton::getInstance();
+
 void Gnuplot::plotSolution(Solution s)
 {
-  // Temp file where each node id and coordinates will be written
-  std::ofstream points("../tmp/gnuplot/points.dat");
+  // File where solution info will be stored
+  std::ofstream plotData("../tmp/gnuplot/solution.dat");
 
-  points << Singleton::getInstance()->name << '\n';
+  plotData << i->name << ' ' << s.cost << ' ' << s.routes.size() << ' ' <<  i->requestsAmount << ' '
+           << i->stationsAmount << "\n\n\n";
 
-  for (Node* node : Singleton::getInstance()->nodes)
-    points << node->id << " " << node->latitude << " " << node->longitude << '\n';
+  for (Node* node : i->nodes)
+    plotData << node->id << " " << node->latitude << " " << node->longitude << '\n';
 
-  // Temp file where each node id and coordinates will be written
-  std::ofstream routes("../tmp/gnuplot/routes.dat");
-
-  routes << "# " << Singleton::getInstance()->name << '\n';
-  routes << s.routes.size() << '\n';
+  plotData << "\n\n";
 
   for (Route *route : s.routes) {
-    for (Node *node : route->path)
-      routes << node->id << " ";
+    for (int i = 0; i < route->path.size() - 1; i++) {
+      float x1 = route->path[i]->latitude;
+      float y1 = route->path[i]->longitude;
+      float x2 = route->path[i + 1]->latitude - x1;
+      float y2 = route->path[i + 1]->longitude - y1;
 
-    routes << '\n';
+      plotData << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << '\n';
+    }
+
+    plotData << "\n\n";
   }
 
   std::ifstream gnuplotCommandsFile("../src/gnuplot/solution.gp");
 
- /* Abre uma interface para enviar comandos como se estivesse digitando na linha de comando do gnuplot.
-  * A flag -persistent mantem o plot aberto mesmo depois de o programa encerrar
+ /* Opens an interface that one can use to send commands as if they were typing into the gnuplot
+  * command line. One may add "-persistent" to keep the plot open after the program terminates.
   */
-  FILE *gnuplotPipe = popen("gnuplot -persistent", "w");
+  FILE *gnuplotPipe = popen("gnuplot", "w");
 
   std::string currLine;
 

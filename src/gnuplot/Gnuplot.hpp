@@ -2,9 +2,6 @@
  * @file    Gnuplot.hpp
  * @author  Diego Paiva
  * @date    23/10/2019
- *
- * A classe Gnuplot utiliza a interface de linha de comando provida pelo Gnuplot® para realizar
- * a plotagem de uma instância do DARP (objeto da classe 'Instance') e da solução para uma instância.
  */
 
 #ifndef GNUPLOT_HPP_INCLUDED
@@ -19,6 +16,11 @@
 class Gnuplot
 {
 public:
+ /**
+   * @brief Plot a solution.
+   *
+   * @param s A solution to be ploted.
+   */
   static void plotSolution(Solution s);
 };
 

@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+#include "data-structures/Singleton.hpp"
 #include "algorithms/Grasp.hpp"
 #include "gnuplot/Gnuplot.hpp"
 
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
   Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
-  Solution solution = Grasp::solve(1000, 100, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
+  Solution solution = Grasp::solve(5000, 200, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
 
   for (Route *route : solution.routes) {
     route->printPath();
