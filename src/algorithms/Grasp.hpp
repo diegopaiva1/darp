@@ -7,6 +7,8 @@
 #ifndef GRASP_HPP_INCLUDED
 #define GRASP_HPP_INCLUDED
 
+#include <algorithm>
+
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"

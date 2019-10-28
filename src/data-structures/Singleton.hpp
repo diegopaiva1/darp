@@ -32,7 +32,7 @@ public:
   std::vector<Vehicle *> vehicles;
   std::vector<Request *> requests;
   std::vector<std::vector<float>> travelTimes;
-  std::vector<std::vector<float>> nearestStations;
+  std::vector<std::vector<int>>   nearestStations;
 
   static Singleton* getInstance();
 

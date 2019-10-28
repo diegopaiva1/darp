@@ -101,22 +101,21 @@ void Singleton::init(std::string instanceFileName)
       }
     }
 
+    // TODO: Revisar se isto está correto
     // Below code initializes the nearest stations matrix
     nearestStations.resize(nodesAmount);
 
     for (int i = 0; i < nodesAmount; i++) {
       nearestStations[i].resize(nodesAmount);
-      Node *n1 = getNode(i);
 
       for (int j = 0; j < nodesAmount; j++) {
         int nearestStationId;
-        Node *n2 = getNode(j);
 
         float nearestStationDistance = std::numeric_limits<float>::max();
 
         for (int k = nodesAmount - stationsAmount; k < nodesAmount; k++) {
-          if (travelTimes[i][k] + travelTimes[i][k] < nearestStationDistance) {
-            nearestStationDistance = travelTimes[i][k] + travelTimes[i][k];
+          if (travelTimes[i][k] + travelTimes[j][k] < nearestStationDistance) {
+            nearestStationDistance = travelTimes[i][k] + travelTimes[j][k];
             nearestStationId = k;
           }
         }
