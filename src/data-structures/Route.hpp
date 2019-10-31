@@ -29,6 +29,7 @@ public:
   int loadViolation;
   float maxRideTimeViolation;
   float timeWindowViolation;
+  float finalBatteryViolation;
   bool batteryLevelViolation;
   float cost;
 

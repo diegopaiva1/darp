@@ -17,6 +17,8 @@ public:
   int loadViolation;
   float timeWindowViolation;
   float maxRideTimeViolation;
+  bool  batteryLevelViolation;
+  float finalBatteryViolation;
 
   Solution();
 

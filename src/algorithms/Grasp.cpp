@@ -20,7 +20,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
   std::vector<double> q (n, 0.0);
 
   // In the beginning of the search, all penalty parameters are initialized with 1.0
-  std::vector<float> penaltyParams = {1.0, 1.0, 1.0};
+  std::vector<float> penaltyParams = {1.0, 1.0, 1.0, 1.0, 1.0};
 
   // Random value that helps adjusting the penalty parameters dinamically
   float delta = Prng::generateFloatInRange(0.05, 0.10);
@@ -61,11 +61,20 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       requests.erase(requests.begin() + index);
     }
 
-    for (Route *r : currSolution.routes)
+    for (Route *r : currSolution.routes) {
       currSolution.cost += performEightStepEvaluationScheme(r) +
-                            currSolution.loadViolation        * penaltyParams[0] +
-                            currSolution.timeWindowViolation  * penaltyParams[1] +
-                            currSolution.maxRideTimeViolation * penaltyParams[2];
+                           r->loadViolation         * penaltyParams[0] +
+                           r->timeWindowViolation   * penaltyParams[1] +
+                           r->maxRideTimeViolation  * penaltyParams[2] +
+                           r->batteryLevelViolation * penaltyParams[3];
+                          //  r->finalBatteryViolation * penaltyParams[4];
+
+      currSolution.loadViolation         += r->loadViolation;
+      currSolution.maxRideTimeViolation  += r->maxRideTimeViolation;
+      currSolution.timeWindowViolation   += r->timeWindowViolation;
+      currSolution.batteryLevelViolation += r->batteryLevelViolation;
+      // currSolution.finalBatteryViolation += r->finalBatteryViolation;
+    }
 
     adjustPenaltyParams(currSolution, penaltyParams, delta);
 
@@ -101,6 +110,16 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
     }
   }
 
+  // for (Route *r : best.routes) {
+  //   for (int i = 0; i < r->path.size(); i++) {
+  //     if (r->batteryLevels[i] < 0) {
+  //       Node *station = instance->getNode(instance->nearestStations[r->path[i - 1]->id][r->path[i]->id]);
+  //       r->path.insert(r->path.begin() + i, station);
+  //       r->cost = performEightStepEvaluationScheme(r);
+  //     }
+  //   }
+  // }
+
   return best;
 }
 
@@ -129,9 +148,11 @@ void Grasp::adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, f
 {
   float factor = 1 + delta;
 
-  s.loadViolation        == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
-  s.timeWindowViolation  == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
-  s.maxRideTimeViolation == 0 ? penaltyParams[2] /= factor : penaltyParams[2] *= factor;
+  s.loadViolation         == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
+  s.timeWindowViolation   == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
+  s.maxRideTimeViolation  == 0 ? penaltyParams[2] /= factor : penaltyParams[2] *= factor;
+  s.batteryLevelViolation == 0 ? penaltyParams[3] /= factor : penaltyParams[3] *= factor;
+  // s.finalBatteryViolation == 0 ? penaltyParams[4] /= factor : penaltyParams[4] *= factor;
 }
 
 float Grasp::performEightStepEvaluationScheme(Route *&r)
@@ -203,6 +224,7 @@ float Grasp::performEightStepEvaluationScheme(Route *&r)
       computeArrivalTime(r, i);
       computeServiceBeginningTime(r, i);
       computeWaitingTime(r, i);
+      computeChargingTime(r, i);
       computeDepartureTime(r, i);
     }
 
@@ -241,6 +263,7 @@ float Grasp::performEightStepEvaluationScheme(Route *&r)
             computeArrivalTime(r, j);
             computeServiceBeginningTime(r, j);
             computeWaitingTime(r, j);
+            computeChargingTime(r, i);
             computeDepartureTime(r, j);
           }
 
@@ -266,6 +289,7 @@ float Grasp::performEightStepEvaluationScheme(Route *&r)
     r->loadViolation         = 0;
     r->timeWindowViolation   = 0.0;
     r->maxRideTimeViolation  = 0.0;
+    r->finalBatteryViolation = 0.0;
     r->batteryLevelViolation = false;
 
     for (int i = 0; i < r->path.size(); i++) {
@@ -282,9 +306,11 @@ float Grasp::performEightStepEvaluationScheme(Route *&r)
       r->loadViolation += std::max(0, r->load[i] - r->vehicle->capacity);
       r->timeWindowViolation += std::max(0.0f, r->serviceBeginningTimes[i] - r->path[i]->departureTime);
 
-      if (r->batteryLevels[i] < 0)
+      if (r->batteryLevels[i] < 0 || r->batteryLevels[i] > r->vehicle->batteryCapacity)
         r->batteryLevelViolation = true;
     }
+
+    r->finalBatteryViolation = std::max(0.0f, r->vehicle->batteryCapacity * r->vehicle->minFinalBatteryRatioLevel - r->batteryLevels[r->path.size() - 1]);
 
     return r->cost;
 }
@@ -340,7 +366,7 @@ void Grasp::performCheapestFeasibleInsertion(Request *&request, Solution &soluti
   struct Insertion best = {nullptr, MAX_FLOAT};
 
   for (Route *r : solution.routes) {
-    printf("\nPossibilidades de inserção do usuário %d na rota %d:\n\n", request->pickup->id, r->vehicle->id);
+    // printf("\nPossibilidades de inserção do usuário %d na rota %d:\n\n", request->pickup->id, r->vehicle->id);
 
     for (int p = 1; p < r->path.size(); p++) {
       r->path.insert(r->path.begin() + p, request->pickup);
@@ -350,47 +376,56 @@ void Grasp::performCheapestFeasibleInsertion(Request *&request, Solution &soluti
 
         r->cost = performEightStepEvaluationScheme(r);
 
-        r->printPath();
-        printf(" (%.2f) (%d) ", r->cost, r->isFeasible());
+        // r->printPath();
+        // printf(" (%.2f) (%d)", r->cost, r->isFeasible());
+        // printf("\t[loadViolation = %d, timeWindowViolation = %6.2f, rideTimeViolation = %6.2f, batteryViolation = %d]\n",
+        //         r->loadViolation, r->timeWindowViolation, r->maxRideTimeViolation, r->batteryLevelViolation);
 
-        // for (int b = 0; b < r->path.size(); b++) {
-        //   if (r->batteryLevels[b] < 0) {
-        //     printf("\n\t=> Battery level violation at node %d", r->path[b]->id);
-
-        //     std::vector<Stop> stops;
-
-        //     for (int s = 0; s <= b; s++) {
-        //       if (r->load[s] == 0 && s != r->path.size() - 1) {
-        //         Stop stop;
-        //         stop.position = s + 1;
-        //         stop.station = instance->getNode(instance->nearestStations[b - 1][b]);
-        //         stop.maxRechargingTime = computeForwardTimeSlack(stop.position, r);
-        //         stop.minRechargingTime = 0.0;
-        //         for (int v = stop.position; r->load[v] != 0; v++)
-        //           stop.minRechargingTime += instance->getTravelTime(r->path[v], r->path[v + 1]);
-        //         stops.push_back(stop);
-        //       }
-        //     }
-
-        //     printf("\n\t\t=> Locais possíveis de recarga:\n");
-        //     for (struct Stop s : stops) {
-        //       printf("\t\t\tPos %d - Min Recharging time = %.2f, Max recharging time = %.2f\n", s.position, s.minRechargingTime, s.maxRechargingTime);
-        //       r->path.insert(r->path.begin() + s.position, s.station);
-        //       r->cost = performEightStepEvaluationScheme(r);
-        //       printf("\t\t\t\t\t");
-        //       r->printPath();
-        //       printf("\n");
-        //       r->printSchedule();
-        //       printf("\n");
-        //       r->path.erase(r->path.begin() + s.position);
-        //     }
-        //   }
+        // if (r->batteryLevelViolation) {
+        //   r->printSchedule();
+        //   printf("\n");
         // }
+
+        for (int b = 0; b < r->path.size(); b++) {
+          if (r->batteryLevels[b] < 0) {
+            // printf("\n\t=> Battery level violation at node %d", r->path[b]->id);
+
+            std::vector<Stop> stops;
+
+            for (int s = 0; s <= b; s++) {
+              if (r->load[s] == 0 && s != r->path.size() - 1) {
+                Stop stop;
+                stop.position = s + 1;
+                stop.station = instance->getNode(instance->nearestStations[r->path[b - 1]->id][r->path[b]->id]);
+                stops.push_back(stop);
+              }
+            }
+
+            // printf("\n\t\t=> Locais possíveis de recarga:\n");
+            for (struct Stop &s : stops) {
+              printf("\t\t\tPos %d\n", s.position);
+              r->path.insert(r->path.begin() + s.position, s.station);
+              r->cost = performEightStepEvaluationScheme(r);
+
+              if (r->isFeasible() && r->cost < best.cost) {
+                std::vector<Stop> bestStops;
+                bestStops.push_back(s);
+                best = {r, r->cost, p, d, bestStops};
+              }
+
+              // printf("\t\t\t\t\t");
+              r->printPath();
+              // printf(" (%.2f) (%d)", r->cost, r->isFeasible());
+              // printf("\t[loadViolation = %d, timeWindowViolation = %6.2f, rideTimeViolation = %6.2f, batteryViolation = %d]\n",
+              //         r->loadViolation, r->timeWindowViolation, r->maxRideTimeViolation, r->batteryLevelViolation);
+              // printf("\n");
+              r->path.erase(r->path.begin() + s.position);
+            }
+          }
+        }
 
         if (r->isFeasible() && r->cost < best.cost)
           best = {r, r->cost, p, d};
-
-        printf("\n");
 
         r->path.erase(r->path.begin() + d);
       }
@@ -417,6 +452,9 @@ void Grasp::performCheapestFeasibleInsertion(Request *&request, Solution &soluti
   else {
     best.route->path.insert(best.route->path.begin() + best.pickupIndex,   request->pickup);
     best.route->path.insert(best.route->path.begin() + best.deliveryIndex, request->delivery);
+
+    for (struct Stop &s : best.stops)
+      best.route->path.insert(best.route->path.begin() + s.position, s.station);
   }
 }
 
@@ -467,29 +505,19 @@ void Grasp::computeRidingTime(Route *&r, int i)
 
 void Grasp::computeChargingTime(Route *&r, int i)
 {
-  if (!r->path[i]->isStation()) {
+  if (!r->path[i]->isStation())
     r->chargingTimes[i] = 0.0;
-  }
-  else {
-    float minTime = 0.0;
-
-    for (int j = i; j < r->path.size() - 1; j++)
-      minTime += instance->getTravelTime(r->path[j], r->path[j + 1]);
-
-    r->chargingTimes[i] = std::min(minTime, computeForwardTimeSlack(i + 1, r));
-  }
+  else
+    r->chargingTimes[i] = computeForwardTimeSlack(i + 1, r);
 }
 
 void Grasp::computeBatteryLevel(Route *&r, int i)
 {
   if (i == 0)
     r->batteryLevels[i] = r->vehicle->initialBatteryLevel;
-  else if (r->path[i - 1]->isStation())
-    r->batteryLevels[i] = r->batteryLevels[i - 1] + r->path[i - 1]->rechargingRate * r->chargingTimes[i - 1] -
-                          0.280 * instance->getTravelTime(r->path[i - 1], r->path[i]);
   else
-    r->batteryLevels[i] = r->batteryLevels[i - 1] -
-                          0.280 * instance->getTravelTime(r->path[i - 1], r->path[i]);
+    r->batteryLevels[i] = r->batteryLevels[i - 1] + r->path[i - 1]->rechargingRate * r->chargingTimes[i - 1] -
+                          r->vehicle->dischargingRate * instance->getTravelTime(r->path[i - 1], r->path[i]);
 }
 
 // Retorna o índice 'i' de desembarque (delivery) de um nó 'j' de embarque (pickup) da rota

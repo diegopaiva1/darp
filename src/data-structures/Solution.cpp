@@ -8,10 +8,12 @@
 
 Solution::Solution()
 {
-  cost                 = 0.0;
-  loadViolation        = 0;
-  timeWindowViolation  = 0.0;
-  maxRideTimeViolation = 0.0;
+  cost                  = 0.0;
+  loadViolation         = 0;
+  timeWindowViolation   = 0.0;
+  maxRideTimeViolation  = 0.0;
+  batteryLevelViolation = false;
+  finalBatteryViolation = 0.0;
 }
 
 Solution::~Solution()
@@ -21,5 +23,6 @@ Solution::~Solution()
 
 bool Solution::isFeasible()
 {
-  return loadViolation == 0 && timeWindowViolation == 0 && maxRideTimeViolation == 0;
+  return loadViolation == 0 && timeWindowViolation == 0 && maxRideTimeViolation == 0 /* && finalBatteryViolation == 0 */ &&
+         !batteryLevelViolation;
 }
