@@ -22,10 +22,10 @@ public:
  /**
   * @brief Solve the instance.
   *
-  * @param iterations Total number of iterations.
+  * @param iterations      Total number of iterations.
   * @param iterationBlocks Frequency of iterations on which probabilities are updated.
-  * @param alphas GRASP's vector of random factors.
-  * @return A solution.
+  * @param alphas          GRASP's vector of random factors.
+  * @return                A solution.
   */
   static Solution solve(int iterations, int iterationBlocks, std::vector<float> alphas);
 
@@ -39,9 +39,9 @@ private:
   *        it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
   *        factor.
   *
-  * @param s A solution.
+  * @param s             A solution.
   * @param penaltyParams Vector containing the value of each penalty parameter.
-  * @param delta Random value.
+  * @param delta         Random value.
   */
   static void adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta);
 
@@ -49,10 +49,10 @@ private:
   * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
   *        which evaluates a given route in terms of cost and feasibility. This procedure compute the routes
   *        violations, optimizes route duration and complies with ride time constraint.
-  *        Note that this procedure as implemented has a lot of side effects.
+  *        Note that this procedure updates all vectors of route 'r'.
   *
-  * @param  r Route to be evaluated.
-  * @return Route's total cost.
+  * @param r Route to be evaluated.
+  * @return  Route's total cost.
   */
   static float performEightStepEvaluationScheme(Route *&r);
 
@@ -60,35 +60,83 @@ private:
   * @brief The forward time slack at index i in route r is the maximum amount of time that the departure
   *        from i can be delayed without violating time constraints for the later nodes.
   *
-  * @param  index Index of the node in the route.
-  * @param  r Route.
-  * @return The forward time slack at index i in route r.
+  * @param i Index of the node in the route.
+  * @param r Route.
+  * @return  The forward time slack at index i in route r.
   */
-  static float computeForwardTimeSlack(int index, Route *r);
+  static float computeForwardTimeSlack(int i, Route *r);
 
  /**
   * @brief Performs the cheapest feasible insertion of a given request in a given solution.
   *
-  * @param request Request to be inserted.
+  * @param request  Request to be inserted.
   * @param solution Solution where the request will be inserted.
   */
   static void performCheapestFeasibleInsertion(Request *&request, Solution &solution);
 
-  static void computeLoad(Route *&r, int i);
+ /**
+  * @brief Compute the load (number of ocuppied seats) at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeLoad(int i, Route *&r);
 
-  static void computeArrivalTime(Route *&r, int i);
+ /**
+  * @brief Compute vehicle's arrival time at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeArrivalTime(int i, Route *&r);
 
-  static void computeServiceBeginningTime(Route *&r, int i);
+ /**
+  * @brief Compute the time which the vehicle begins its service at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeServiceBeginningTime(int i, Route *&r);
 
-  static void computeWaitingTime(Route *&r, int i);
+ /**
+  * @brief Compute the time which the vehicle waits before beginning its service at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeWaitingTime(int i, Route *&r);
 
-  static void computeDepartureTime(Route *&r, int i);
+ /**
+  * @brief Compute vehicle's departure time at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeDepartureTime(int i, Route *&r);
 
-  static void computeRidingTime(Route *&r, int i);
+ /**
+  * @brief Compute the riding time of user at index in in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeRidingTime(int i, Route *&r);
 
-  static void computeChargingTime(Route *&r, int i);
+ /**
+  * @brief Compute vehicle's charging time at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeChargingTime(int i, Route *&r);
 
-  static void computeBatteryLevel(Route *&r, int i);
+ /**
+  * @brief Compute vehicle's battery level at index i in route r.
+  *
+  * @param i Index.
+  * @param r Route.
+  */
+  static void computeBatteryLevel(int i, Route *&r);
 
   static int getDeliveryIndexOf(Route *&r, int j);
 

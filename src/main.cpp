@@ -9,6 +9,7 @@
 #include "data-structures/Singleton.hpp"
 #include "algorithms/Grasp.hpp"
 #include "gnuplot/Gnuplot.hpp"
+#include "utils/Timer.hpp"
 
 #define MIN_ARGS_AMOUNT 1
 
@@ -24,7 +25,9 @@ int main(int argc, char *argv[])
   Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
-  Solution solution = Grasp::solve(10000, 1000, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
+  Timer timer;
+  Solution solution = Grasp::solve(1000, 100, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
+  double elapsed = timer.elapsedInSeconds();
 
   for (Route *route : solution.routes) {
     route->printPath();
@@ -34,10 +37,10 @@ int main(int argc, char *argv[])
   }
 
   if (solution.isFeasible())
-    printf("Viável - Custo = %.2f\n", solution.cost);
+    printf("Viável\nCusto = %.2f\nt = %.2fs\n", solution.cost, elapsed);
   else
-    printf("Inviável - Custo = %.2f [load = %d, timeWindow = %.2f, maxRideTime = %.2f]\n",
-            solution.cost, solution.loadViolation, solution.timeWindowViolation, solution.maxRideTimeViolation);
+    printf("Inviável\nCusto = %.2f [load = %d, timeWindow = %.2f, maxRideTime = %.2f]\nt = %.2fs\n",
+            solution.cost, solution.loadViolation, solution.timeWindowViolation, solution.maxRideTimeViolation, elapsed);
 
   Gnuplot::plotSolution(solution);
 
