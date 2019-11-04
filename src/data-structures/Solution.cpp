@@ -23,6 +23,6 @@ Solution::~Solution()
 
 bool Solution::isFeasible()
 {
-  return loadViolation == 0 && timeWindowViolation == 0 && maxRideTimeViolation == 0 /* && finalBatteryViolation == 0 */ &&
-         !batteryLevelViolation;
+  return loadViolation == 0 && timeWindowViolation == 0 &&
+         maxRideTimeViolation == 0 && finalBatteryViolation == 0 && !batteryLevelViolation;
 }
