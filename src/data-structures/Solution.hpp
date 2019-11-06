@@ -4,8 +4,8 @@
  * @date   26/09/2019
  */
 
-#ifndef SOLUTION_H_INCLUDED
-#define SOLUTION_H_INCLUDED
+#ifndef SOLUTION_HPP_INCLUDED
+#define SOLUTION_HPP_INCLUDED
 
 #define MAX_INT   std::numeric_limits<int>::max()
 #define MAX_FLOAT std::numeric_limits<float>::max()
@@ -20,24 +20,14 @@ public:
   int loadViolation;
   float timeWindowViolation;
   float maxRideTimeViolation;
+  bool  batteryLevelViolation;
+  float finalBatteryViolation;
 
-  Solution()
-  {
-    cost                 = 0.0;
-    loadViolation        = 0;
-    timeWindowViolation  = 0.0;
-    maxRideTimeViolation = 0.0;
-  }
+  Solution();
 
-  ~Solution() { }
+  ~Solution();
 
-  bool isFeasible()
-  {
-    return loadViolation        == 0 &&
-           timeWindowViolation  == 0 &&
-           maxRideTimeViolation == 0 &&
-           routes.size() <= Singleton::getInstance()->vehicles.size();
-  }
+  bool isFeasible();
 };
 
-#endif // SOLUTION_H_INCLUDED
+#endif // SOLUTION_HPP_INCLUDED

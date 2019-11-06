@@ -20,22 +20,13 @@ class Timer
 private:
   Time::time_point beginning;
 public:
-  Timer()
-  {
-    beginning = Time::now();
-  }
+  Timer();
 
-  ~Timer() { }
+  ~Timer();
 
-  void reset()
-  {
-    beginning = Time::now();
-  }
+  void reset();
 
-	double elapsedInSeconds() const
-  {
-    return std::chrono::duration_cast<Seconds>(Time::now() - beginning).count();
-  }
+	double elapsedInSeconds() const;
 };
 
 #endif // TIMER_H_INCLUDED

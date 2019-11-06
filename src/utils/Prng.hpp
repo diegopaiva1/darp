@@ -8,8 +8,8 @@
  * dentro de um intervalo especificado.
  */
 
-#ifndef PRNG_H_INCLUDED
-#define PRNG_H_INCLUDED
+#ifndef PRNG_HPP_INCLUDED
+#define PRNG_HPP_INCLUDED
 
 #include <random>
 
@@ -17,22 +17,10 @@ class Prng
 {
 public:
   // Intervalo [min, max] é fechado em 'min' e 'max'
-  static int generateIntegerInRange(int min, int max)
-  {
-    std::random_device seeder;
-    std::mt19937 engine(seeder());
-    std::uniform_int_distribution<int> generate(min, max);
-    return (int) generate(engine);
-  }
+  static int generateIntegerInRange(int min, int max);
 
   // Intervalo [min, max) é fechado em 'min' e aberto em 'max'
-  static float generateFloatInRange(float min, float max)
-  {
-    std::random_device seeder;
-    std::mt19937 engine(seeder());
-    std::uniform_real_distribution<float> generate(min, max);
-    return (float) generate(engine);
-  }
+  static float generateFloatInRange(float min, float max);
 };
 
-#endif // PRNG_H_INCLUDED
+#endif // PRNG_HPP_INCLUDED

@@ -8,20 +8,15 @@
 #include <iostream>
 #include <iomanip>
 
-#define MIN_ARGS_AMOUNT 1
-#define MAX_INT   std::numeric_limits<int>::max()
-#define MAX_FLOAT std::numeric_limits<float>::max()
-
 #include "data-structures/Singleton.hpp"
-
-// Instance will be avaliable to everyone
-Singleton *instance = Singleton::getInstance();
-
 #include "algorithms/Grasp.hpp"
+#include "gnuplot/Gnuplot.hpp"
 #include "utils/Timer.hpp"
 
 void storeResults(std::string fileName, Solution s, double elapsed, int totalRoutes, float originalCost);
 bool isEmpty(std::fstream& file);
+
+#define MIN_ARGS_AMOUNT 1
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +27,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
+  Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
   Solution best;
@@ -112,7 +108,9 @@ int main(int argc, char *argv[])
     env.end();
 
     for (Route *r : solutionFound.routes) {
+      printf("\n");
       r->printPath();
+      printf("\n");
       r->printSchedule();
       printf("\n");
     }
