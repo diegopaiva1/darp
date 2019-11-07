@@ -146,7 +146,7 @@ private:
 
   static Route createRoute(Solution &s);
 
-  static Solution localSearch(Solution &s);
+  static Solution localSearch(Solution s);
 };
 
 #endif // GRASP_HPP_INCLUDED

@@ -84,6 +84,8 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       requests.erase(requests.begin() + index);
     }
 
+    currSolution = localSearch(currSolution);
+
     for (Route &r : currSolution.routes) {
       currSolution.cost += performEightStepEvaluationScheme(r) +
                            r.loadViolation         * penaltyParams[0] +
@@ -134,6 +136,51 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
   }
 
   return best;
+}
+
+Solution Grasp::localSearch(Solution s)
+{
+  bool improved;
+
+  // Swap zero one
+  do {
+    improved = false;
+
+    for (int i = 0; i < s.routes.size(); i++) {
+      Route r1 = s.routes[i];
+
+      for (int n = 0; n < r1.path.size(); n++) {
+        if (r1.path[n]->isPickup()) {
+          Request req = instance->getRequest(r1.path[n]);
+
+          r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.pickup),   r1.path.end());
+          r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.delivery), r1.path.end());
+          r1.cost = performEightStepEvaluationScheme(r1);
+
+          for (int j = 0; j < s.routes.size(); j++) {
+            Route r2 = s.routes[j];
+
+            if (j != i) {
+              r2 = performCheapestFeasibleInsertion(req, r2);
+
+              if (r1.isFeasible() && r2.isFeasible() && r1.cost + r2.cost < s.routes[i].cost + s.routes[j].cost) {
+                improved = true;
+                s.routes[i] = r1;
+                s.routes[j] = r2;
+              }
+            }
+
+            r2 = s.routes[j];
+          }
+        }
+
+        r1 = s.routes[i];
+      }
+    }
+  }
+  while (improved);
+
+  return s;
 }
 
 Route Grasp::createRoute(Solution &s)
