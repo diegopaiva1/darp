@@ -8,6 +8,21 @@
 
 Singleton *instance = Singleton::getInstance();
 
+// Let us build a struct for storing intermediate stops info
+struct Stop {
+  Node *station;
+  int position;
+};
+
+// Also a struct for storing the info of the best insertion
+struct Insertion {
+  Route *route;
+  float cost;
+  int pickupIndex;
+  int deliveryIndex;
+  std::vector<Stop> stops;
+};
+
 Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vector<float> alphas = {0.10, 0.20})
 {
   Solution best;
@@ -33,7 +48,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
 
     if (it != 1) {
       alphaIndex = chooseAlphaIndex(probabilities);
-      counter[alphaIndex] += 1;
+      counter[alphaIndex]++;
     }
 
     if (it % iterationBlocks == 0)
@@ -57,16 +72,45 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
         index = Prng::generateIntegerInRange(0, (int) (alphas[alphaIndex] * requests.size() - 1));
 
       Request *request = requests[index];
-      performCheapestFeasibleInsertion(request, currSolution);
+      Insertion bestInsertion;
+
+      for (int i = 0; i < currSolution.routes.size(); i++) {
+        Insertion insertion = performCheapestFeasibleInsertion(request, currSolution.routes[i]);
+
+        if (i == 0 || insertion.cost < bestInsertion.cost)
+          bestInsertion = insertion;
+      }
+
+      // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
+      if (bestInsertion.cost == MAX_FLOAT) {
+        Route *newest = createRoute(currSolution);
+
+        newest->path.push_back(instance->getOriginDepot());
+        newest->path.push_back(request->pickup);
+        newest->path.push_back(request->delivery);
+        newest->path.push_back(instance->getDestinationDepot());
+
+        currSolution.routes.push_back(newest);
+      }
+      else {
+        bestInsertion.route->path.insert(bestInsertion.route->path.begin() + bestInsertion.pickupIndex,   request->pickup);
+        bestInsertion.route->path.insert(bestInsertion.route->path.begin() + bestInsertion.deliveryIndex, request->delivery);
+
+        for (Stop &s : bestInsertion.stops)
+          bestInsertion.route->path.insert(bestInsertion.route->path.begin() + s.position, s.station);
+      }
+
       requests.erase(requests.begin() + index);
     }
+
+    currSolution = localSearch(currSolution);
 
     for (Route *r : currSolution.routes) {
       currSolution.cost += performEightStepEvaluationScheme(r) +
                            r->loadViolation         * penaltyParams[0] +
                            r->timeWindowViolation   * penaltyParams[1] +
                            r->maxRideTimeViolation  * penaltyParams[2] +
-                           r->batteryLevelViolation * penaltyParams[3];
+                           r->batteryLevelViolation * penaltyParams[3] +
                            r->finalBatteryViolation * penaltyParams[4];
 
       currSolution.loadViolation         += r->loadViolation;
@@ -111,6 +155,62 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
   }
 
   return best;
+}
+
+Solution Grasp::localSearch(Solution &s)
+{
+  Solution best = s;
+  bool improved;
+
+  do {
+    improved = false;
+
+    for (int k = 0; k < s.routes.size(); k++) {
+      Route *r = s.routes.at(k);
+
+      for (int i = 0; i < r->path.size(); i++) {
+        if (r->path[i]->isPickup()) {
+          Solution neighboor = s;
+          int pid = i;
+          int did = getDeliveryIndexOf(r, pid);
+          Node *pickup   = r->path[i];
+          Node *delivery = instance->getNode(pickup->id + instance->requestsAmount);
+          Request *req   = instance->getRequest(pickup);
+
+          r->path.erase(std::remove(r->path.begin(), r->path.end(), pickup),   r->path.end());
+          r->path.erase(std::remove(r->path.begin(), r->path.end(), delivery), r->path.end());
+
+          Insertion insertion = performCheapestFeasibleInsertion(req, r);
+
+          if (insertion.cost < best.cost) {
+            r->path.insert(r->path.begin() + insertion.pickupIndex,   pickup);
+            r->path.insert(r->path.begin() + insertion.deliveryIndex, delivery);
+            r->cost = insertion.cost;
+            improved = true;
+          }
+          else {
+            r->path.insert(r->path.begin() + pid, pickup);
+            r->path.insert(r->path.begin() + did, delivery);
+          }
+        }
+      }
+    }
+  }
+  while(improved);
+}
+
+Route* Grasp::createRoute(Solution &s)
+{
+  Vehicle *newest = new Vehicle(s.routes.size() + 1);
+  Vehicle *v = s.routes.at(0)->vehicle;
+
+  newest->batteryCapacity           = v->batteryCapacity;
+  newest->capacity                  = v->capacity;
+  newest->dischargingRate           = v->dischargingRate;
+  newest->initialBatteryLevel       = v->initialBatteryLevel;
+  newest->minFinalBatteryRatioLevel = v->minFinalBatteryRatioLevel;
+
+  return new Route(newest);
 }
 
 int Grasp::chooseAlphaIndex(std::vector<double> probabilities)
@@ -335,95 +435,56 @@ float Grasp::computeForwardTimeSlack(int index, Route *r)
   return forwardTimeSlack;
 }
 
-void Grasp::performCheapestFeasibleInsertion(Request *&request, Solution &solution)
+Insertion Grasp::performCheapestFeasibleInsertion(Request *&request, Route *&r)
 {
-  // Let us build a struct for storing intermediate stops info
-  struct Stop {
-    Node *station;
-    int position;
-  };
+  // Best insertion starts with infinity cost, we will update it during the search
+  Insertion best = {r, MAX_FLOAT};
 
-  // Also a struct for storing the info of the best insertion
-  struct Insertion {
-    Route *route;
-    float cost;
-    int pickupIndex;
-    int deliveryIndex;
-    std::vector<Stop> stops;
-  };
+  for (int p = 1; p < r->path.size(); p++) {
+    r->path.insert(r->path.begin() + p, request->pickup);
 
-  // Best insertion starts with infinity cost in a null route, we will update it during the search
-  struct Insertion best = {nullptr, MAX_FLOAT};
+    for (int d = p + 1; d < r->path.size(); d++) {
+      r->path.insert(r->path.begin() + d, request->delivery);
+      r->cost = performEightStepEvaluationScheme(r);
 
-  for (Route *r : solution.routes) {
-    for (int p = 1; p < r->path.size(); p++) {
-      r->path.insert(r->path.begin() + p, request->pickup);
+      // for (int b = 0; b < r->path.size(); b++) {
+      //   if (r->batteryLevels[b] < 0 || (b == r->path.size() - 1 && r->batteryLevels[b] < r->vehicle->batteryCapacity * r->vehicle->minFinalBatteryRatioLevel)) {
+      //     std::vector<Stop> stops;
 
-      for (int d = p + 1; d < r->path.size(); d++) {
-        r->path.insert(r->path.begin() + d, request->delivery);
+      //     for (int s = 0; s < b; s++) {
+      //       if (r->load[s] == 0 && s != r->path.size() - 1) {
+      //         Stop stop;
+      //         stop.position = s + 1;
+      //         stop.station = instance->getNode(instance->nearestStations[r->path[s]->id][r->path[s + 1]->id]);
+      //         stops.push_back(stop);
+      //       }
+      //     }
 
-        r->cost = performEightStepEvaluationScheme(r);
+      //     for (Stop &s : stops) {
+      //       r->path.insert(r->path.begin() + s.position, s.station);
+      //       r->cost = performEightStepEvaluationScheme(r);
 
-        for (int b = 0; b < r->path.size(); b++) {
-          if (r->batteryLevels[b] < 0 || (b == r->path.size() - 1 && r->batteryLevels[b] < r->vehicle->batteryCapacity * r->vehicle->minFinalBatteryRatioLevel)) {
-            std::vector<Stop> stops;
+      //       if (r->isFeasible() && r->cost < best.cost) {
+      //         std::vector<Stop> bestStops;
+      //         bestStops.push_back(s);
+      //         best = {r, r->cost, p, d, bestStops};
+      //       }
 
-            for (int s = 0; s < b; s++) {
-              if (r->load[s] == 0 && s != r->path.size() - 1) {
-                Stop stop;
-                stop.position = s + 1;
-                stop.station = instance->getNode(instance->nearestStations[r->path[s]->id][r->path[s + 1]->id]);
-                stops.push_back(stop);
-              }
-            }
+      //       r->path.erase(r->path.begin() + s.position);
+      //     }
+      //   }
+      // }
 
-            for (struct Stop &s : stops) {
-              r->path.insert(r->path.begin() + s.position, s.station);
-              r->cost = performEightStepEvaluationScheme(r);
+      if (r->isFeasible() && r->cost < best.cost)
+        best = {r, r->cost, p, d};
 
-              if (r->isFeasible() && r->cost < best.cost) {
-                std::vector<Stop> bestStops;
-                bestStops.push_back(s);
-                best = {r, r->cost, p, d, bestStops};
-              }
-
-              r->path.erase(r->path.begin() + s.position);
-            }
-          }
-        }
-
-        if (r->isFeasible() && r->cost < best.cost)
-          best = {r, r->cost, p, d};
-
-        r->path.erase(r->path.begin() + d);
-      }
-
-      r->path.erase(r->path.begin() + p);
+      r->path.erase(r->path.begin() + d);
     }
+
+    r->path.erase(r->path.begin() + p);
   }
 
-  // Request could not be feasibly inserted, so we open a new route (thus solution will be infeasible)
-  if (best.route == nullptr) {
-    Vehicle *v = new Vehicle(solution.routes.size() + 1);
-    v->batteryCapacity = solution.routes.at(0)->vehicle->batteryCapacity;
-    v->capacity = solution.routes.at(0)->vehicle->capacity;
-    v->dischargingRate = solution.routes.at(0)->vehicle->dischargingRate;
-    v->initialBatteryLevel = solution.routes.at(0)->vehicle->initialBatteryLevel;
-    v->minFinalBatteryRatioLevel = solution.routes.at(0)->vehicle->minFinalBatteryRatioLevel;
-    Route *route = new Route(v);
-    route->path.push_back(instance->getOriginDepot());
-    route->path.push_back(request->pickup);
-    route->path.push_back(request->delivery);
-    route->path.push_back(instance->getDestinationDepot());
-    solution.routes.push_back(route);
-  }
-  else {
-    best.route->path.insert(best.route->path.begin() + best.pickupIndex,   request->pickup);
-    best.route->path.insert(best.route->path.begin() + best.deliveryIndex, request->delivery);
-
-    for (struct Stop &s : best.stops)
-      best.route->path.insert(best.route->path.begin() + s.position, s.station);
-  }
+  return best;
 }
 
 void Grasp::computeLoad(int i, Route *&r)

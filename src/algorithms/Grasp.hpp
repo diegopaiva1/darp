@@ -19,6 +19,12 @@
 class Grasp
 {
 public:
+  // Let us build a struct for storing intermediate stops info
+  typedef struct Stop Stop;
+
+  // Also a struct for storing the info of the best insertion
+  typedef struct Insertion Insertion;
+
  /**
   * @brief Solve the instance.
   *
@@ -72,7 +78,7 @@ private:
   * @param request  Request to be inserted.
   * @param solution Solution where the request will be inserted.
   */
-  static void performCheapestFeasibleInsertion(Request *&request, Solution &solution);
+  static Insertion performCheapestFeasibleInsertion(Request *&request, Route *&r);
 
  /**
   * @brief Compute the load (number of ocuppied seats) at index i in route r.
@@ -141,6 +147,10 @@ private:
   static int getDeliveryIndexOf(Route *&r, int j);
 
   static int getPickupIndexOf(Route *&r, int j);
+
+  static Route* createRoute(Solution &s);
+
+  static Solution localSearch(Solution &s);
 };
 
 #endif // GRASP_HPP_INCLUDED
