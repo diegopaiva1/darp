@@ -118,6 +118,8 @@ int main(int argc, char *argv[])
     // If second argument was given we store the results in the output file
     if (argv[2])
       storeResults(argv[2], solutionFound, elapsed, totalRoutes, best.cost);
+
+    Gnuplot::plotSolution(solutionFound);
   }
   catch(IloException& e) {
     std::cerr << "IloException: " << e << '\n';
