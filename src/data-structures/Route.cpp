@@ -6,7 +6,7 @@
 
 #include "Route.hpp"
 
-Route::Route(Vehicle *vehicle)
+Route::Route(Vehicle vehicle)
 {
   cost = 0.0;
   this->vehicle = vehicle;
@@ -31,7 +31,7 @@ bool Route::isFeasible()
 
 void Route::printPath()
 {
-  printf("Rota %d: ", vehicle->id);
+  printf("Rota %d: ", vehicle.id);
   for (Node *node : path)
     printf("%d ", node->id);
 }

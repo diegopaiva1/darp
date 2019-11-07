@@ -16,7 +16,7 @@
 class Route
 {
 public:
-  Vehicle *vehicle;
+  Vehicle vehicle;
   std::vector<Node *> path;
   std::vector<int> load;
   std::vector<float> arrivalTimes;
@@ -33,17 +33,28 @@ public:
   bool batteryLevelViolation;
   float cost;
 
-  Route(Vehicle *vehicle);
+  Route(Vehicle vehicle);
 
   Route();
 
   ~Route();
 
-  // A solution is feasible only and if only there are no constraints violations
+ /**
+  * @brief Checks if current solution is feasible (no constraints violations).
+  *
+  * @return True if it is feasible, false otherwise.
+  */
   bool isFeasible();
 
+ /**
+  * @brief Print the nodes sequentially.
+  */
   void printPath();
 
+ /**
+  * @brief Print arrival times, service beginning times, departure times, waiting times,
+  *        riding times, load, battery levels and charging times for every index in this route's path.
+  */
   void printSchedule();
 };
 

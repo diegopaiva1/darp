@@ -26,13 +26,13 @@ int main(int argc, char *argv[])
   instance->init(argv[1]);
 
   Timer timer;
-  Solution solution = Grasp::solve(1000, 100, {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50});
+  Solution solution = Grasp::solve(1000, 100, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
   double elapsed = timer.elapsedInSeconds();
 
-  for (Route *route : solution.routes) {
-    route->printPath();
+  for (Route route : solution.routes) {
+    route.printPath();
     printf("\n");
-    route->printSchedule();
+    route.printSchedule();
     printf("\n");
   }
 

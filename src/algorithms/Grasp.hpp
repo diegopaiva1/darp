@@ -19,12 +19,6 @@
 class Grasp
 {
 public:
-  // Let us build a struct for storing intermediate stops info
-  typedef struct Stop Stop;
-
-  // Also a struct for storing the info of the best insertion
-  typedef struct Insertion Insertion;
-
  /**
   * @brief Solve the instance.
   *
@@ -60,7 +54,7 @@ private:
   * @param r Route to be evaluated.
   * @return  Route's total cost.
   */
-  static float performEightStepEvaluationScheme(Route *&r);
+  static float performEightStepEvaluationScheme(Route &r);
 
  /**
   * @brief The forward time slack at index i in route r is the maximum amount of time that the departure
@@ -70,15 +64,17 @@ private:
   * @param r Route.
   * @return  The forward time slack at index i in route r.
   */
-  static float computeForwardTimeSlack(int i, Route *r);
+  static float computeForwardTimeSlack(int i, Route r);
 
  /**
-  * @brief Performs the cheapest feasible insertion of a given request in a given solution.
+  * @brief Performs the cheapest feasible insertion of a given request in a given route.
+  *        If the returned route has MAX_FLOAT cost, then it's infeasible.
   *
   * @param request  Request to be inserted.
-  * @param solution Solution where the request will be inserted.
+  * @param route    Route where the request will be inserted.
+  * @return         The cheapest feasible route containing the request.
   */
-  static Insertion performCheapestFeasibleInsertion(Request *&request, Route *&r);
+  static Route performCheapestFeasibleInsertion(Request req, Route r);
 
  /**
   * @brief Compute the load (number of ocuppied seats) at index i in route r.
@@ -86,7 +82,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeLoad(int i, Route *&r);
+  static void computeLoad(int i, Route &r);
 
  /**
   * @brief Compute vehicle's arrival time at index i in route r.
@@ -94,7 +90,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeArrivalTime(int i, Route *&r);
+  static void computeArrivalTime(int i, Route &r);
 
  /**
   * @brief Compute the time which the vehicle begins its service at index i in route r.
@@ -102,7 +98,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeServiceBeginningTime(int i, Route *&r);
+  static void computeServiceBeginningTime(int i, Route &r);
 
  /**
   * @brief Compute the time which the vehicle waits before beginning its service at index i in route r.
@@ -110,7 +106,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeWaitingTime(int i, Route *&r);
+  static void computeWaitingTime(int i, Route &r);
 
  /**
   * @brief Compute vehicle's departure time at index i in route r.
@@ -118,7 +114,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeDepartureTime(int i, Route *&r);
+  static void computeDepartureTime(int i, Route &r);
 
  /**
   * @brief Compute the riding time of user at index in in route r.
@@ -126,7 +122,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeRidingTime(int i, Route *&r);
+  static void computeRidingTime(int i, Route &r);
 
  /**
   * @brief Compute vehicle's charging time at index i in route r.
@@ -134,7 +130,7 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeChargingTime(int i, Route *&r);
+  static void computeChargingTime(int i, Route &r);
 
  /**
   * @brief Compute vehicle's battery level at index i in route r.
@@ -142,13 +138,13 @@ private:
   * @param i Index.
   * @param r Route.
   */
-  static void computeBatteryLevel(int i, Route *&r);
+  static void computeBatteryLevel(int i, Route &r);
 
-  static int getDeliveryIndexOf(Route *&r, int j);
+  static int getDeliveryIndexOf(Route &r, int j);
 
-  static int getPickupIndexOf(Route *&r, int j);
+  static int getPickupIndexOf(Route &r, int j);
 
-  static Route* createRoute(Solution &s);
+  static Route createRoute(Solution &s);
 
   static Solution localSearch(Solution &s);
 };

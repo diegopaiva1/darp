@@ -21,12 +21,12 @@ void Gnuplot::plotSolution(Solution s)
 
   plotData << "\n\n";
 
-  for (Route *route : s.routes) {
-    for (int i = 0; i < route->path.size() - 1; i++) {
-      float x1 = route->path[i]->latitude;
-      float y1 = route->path[i]->longitude;
-      float x2 = route->path[i + 1]->latitude - x1;
-      float y2 = route->path[i + 1]->longitude - y1;
+  for (Route route : s.routes) {
+    for (int i = 0; i < route.path.size() - 1; i++) {
+      float x1 = route.path[i]->latitude;
+      float y1 = route.path[i]->longitude;
+      float x2 = route.path[i + 1]->latitude - x1;
+      float y2 = route.path[i + 1]->longitude - y1;
 
       plotData << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << '\n';
     }
