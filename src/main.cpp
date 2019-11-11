@@ -34,6 +34,19 @@ int main(int argc, char *argv[])
     printf("\n");
     route.printSchedule();
     printf("\n");
+
+    for (int i = 0; i < route.path.size(); i++) {
+      if (route.serviceBeginningTimes[i] > route.path[i]->departureTime)
+        printf("\nViolated time window at point %d in route %d", i, route.vehicle.id);
+      else if (route.load[i] > route.vehicle.capacity)
+        printf("\nViolated load at point %d in route %d", i, route.vehicle.id);
+      else if (route.ridingTimes[i] > route.path[i]->maxRideTime)
+        printf("\nViolated ride time at point %d in route %d", i, route.vehicle.id);
+      else if (route.batteryLevels[i] < 0.0 || route.batteryLevels[i] > route.vehicle.batteryCapacity)
+        printf("\nViolated battery levels at point %d in route %d", i, route.vehicle.id);
+      else if (route.batteryLevels[route.path.size() - 1] < route.vehicle.batteryCapacity * route.vehicle.minFinalBatteryRatioLevel)
+        printf("\nViolated final battery level at point %d in route %d", i, route.vehicle.id);
+    }
   }
 
   if (solution.isFeasible())

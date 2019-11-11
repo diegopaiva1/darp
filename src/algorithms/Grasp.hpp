@@ -46,27 +46,6 @@ private:
   static void adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta);
 
  /**
-  * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
-  *        which evaluates a given route in terms of cost and feasibility. This procedure compute the routes
-  *        violations, optimizes route duration and complies with ride time constraint.
-  *        Note that this procedure updates all vectors of route 'r'.
-  *
-  * @param r Route to be evaluated.
-  * @return  Route's total cost.
-  */
-  static float performEightStepEvaluationScheme(Route &r);
-
- /**
-  * @brief The forward time slack at index i in route r is the maximum amount of time that the departure
-  *        from i can be delayed without violating time constraints for the later nodes.
-  *
-  * @param i Index of the node in the route.
-  * @param r Route.
-  * @return  The forward time slack at index i in route r.
-  */
-  static float computeForwardTimeSlack(int i, Route r);
-
- /**
   * @brief Performs the cheapest feasible insertion of a given request in a given route.
   *        If the returned route has MAX_FLOAT cost, then it's infeasible.
   *
@@ -76,77 +55,15 @@ private:
   */
   static Route performCheapestFeasibleInsertion(Request req, Route r);
 
- /**
-  * @brief Compute the load (number of ocuppied seats) at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeLoad(int i, Route &r);
-
- /**
-  * @brief Compute vehicle's arrival time at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeArrivalTime(int i, Route &r);
-
- /**
-  * @brief Compute the time which the vehicle begins its service at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeServiceBeginningTime(int i, Route &r);
-
- /**
-  * @brief Compute the time which the vehicle waits before beginning its service at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeWaitingTime(int i, Route &r);
-
- /**
-  * @brief Compute vehicle's departure time at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeDepartureTime(int i, Route &r);
-
- /**
-  * @brief Compute the riding time of user at index in in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeRidingTime(int i, Route &r);
-
- /**
-  * @brief Compute vehicle's charging time at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeChargingTime(int i, Route &r);
-
- /**
-  * @brief Compute vehicle's battery level at index i in route r.
-  *
-  * @param i Index.
-  * @param r Route.
-  */
-  static void computeBatteryLevel(int i, Route &r);
-
-  static int getDeliveryIndexOf(Route &r, int j);
-
-  static int getPickupIndexOf(Route &r, int j);
-
   static Route createRoute(Solution &s);
 
-  static Solution localSearch(Solution s);
+  static Solution localSearch(Solution s, std::vector<float> penaltyParams);
+
+  static Solution relocate(Solution s, std::vector<float> penaltyParams);
+
+  static Solution swapZeroOne(Solution s, std::vector<float> penaltyParams);
+
+  static Solution _2opt(Solution s, std::vector<float> penaltyParams);
 };
 
 #endif // GRASP_HPP_INCLUDED

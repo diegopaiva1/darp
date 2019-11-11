@@ -25,6 +25,8 @@ public:
   ~Solution();
 
   bool isFeasible();
+
+  void computeCost(std::vector<float> penaltyParams);
 };
 
 #endif // SOLUTION_HPP_INCLUDED
