@@ -63,6 +63,8 @@ private:
 
   static Solution swapZeroOne(Solution s, std::vector<float> penaltyParams);
 
+  static Solution eliminate(Solution s, std::vector<float> penaltyParams);
+
   static Solution _2opt(Solution s, std::vector<float> penaltyParams);
 };
 
