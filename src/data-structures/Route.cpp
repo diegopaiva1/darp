@@ -195,7 +195,7 @@ void Route::performEightStepEvaluationScheme()
         cost += 0.75 * inst->getTravelTime(path[i], path[i + 1]);
 
       if (path[i]->isPickup()) {
-        float rideTimeExcess = ridingTimes[i] - inst->getTravelTime(path[i], path[getDeliveryIndexOf(i)]);
+        float rideTimeExcess = ridingTimes[i] - inst->getTravelTime(inst->getRequest(path[i]).pickup, inst->getRequest(path[i]).delivery);
         cost += 0.25 * rideTimeExcess;
         maxRideTimeViolation += std::max(0.0f, ridingTimes[i] - path[i]->maxRideTime);
       }

@@ -66,6 +66,8 @@ private:
   static Solution eliminate(Solution s, std::vector<float> penaltyParams);
 
   static Solution _2opt(Solution s, std::vector<float> penaltyParams);
+
+  static Solution _3opt(Solution s, std::vector<float> penaltyParams);
 };
 
 #endif // GRASP_HPP_INCLUDED

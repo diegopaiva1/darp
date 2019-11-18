@@ -112,7 +112,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       costs[alphaIndex] += currSolution.cost + param1 * currSolution.routes.size();
       q[alphaIndex] = (best.cost + param2 * best.routes.size())/(costs[alphaIndex]/counter[alphaIndex]);
 
-      printf("\ns* = %.2f e a[%d] = %.2f", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex]);
+      printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
     }
 
     if (it == iterations) {
@@ -127,201 +127,195 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
 
 Solution Grasp::localSearch(Solution s, std::vector<float> penaltyParams)
 {
-  std::vector<int> neighborhoods = {2, 2};
+  std::vector<int> neighborhoods = {1, 2, 3};
 
   while (!neighborhoods.empty()) {
     Solution neighbor;
-    int index = Prng::generateIntegerInRange(0, neighborhoods.size() - 1);
 
-    switch (neighborhoods.at(index)) {
+    int k = Prng::generateIntegerInRange(0, neighborhoods.size() - 1);
+
+    switch (neighborhoods.at(k)) {
       case 1:
         neighbor = relocate(s, penaltyParams);
         break;
       case 2:
-        neighbor = eliminate(s, penaltyParams);
+        neighbor = _3opt(s, penaltyParams);
         break;
       case 3:
-        neighbor = _2opt(s, penaltyParams);
+        neighbor = swapZeroOne(s, penaltyParams);
         break;
     }
 
     if (neighbor.cost < s.cost) {
       s = neighbor;
-      neighborhoods = {2, 2};
+      neighborhoods = {1, 2, 3};
     }
     else {
-      neighborhoods.erase(neighborhoods.begin() + index);
+      neighborhoods.erase(neighborhoods.begin() + k);
     }
   }
 
   return s;
+
+  // bool improved;
+
+  // do {
+  //   improved = false;
+
+  //   Solution curr1 = swapZeroOne(s, penaltyParams);
+  //   Solution curr2 = relocate(s, penaltyParams);
+  //   Solution curr3 = _3opt(s, penaltyParams);
+  //   float minCost = std::min({curr1.cost, curr2.cost, curr3.cost});
+
+  //   if (minCost < s.cost) {
+  //     improved = true;
+
+  //     if (minCost == curr1.cost)
+  //       s = curr1;
+  //     else if (minCost == curr2.cost)
+  //       s = curr2;
+  //     else
+  //       s = curr3;
+  //   }
+  // }
+  // while (improved);
+
+  // return s;
 }
 
-Solution Grasp::eliminate(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
 {
-  Solution original = s;
-  Route random = s.routes.at(0);
-  int c = 0;
+  Solution best = s;
 
-  for (Node *p : random.path)
-    if (p->isPickup())
-      c++;
+  for (int k = 0; k < s.routes.size(); k++) {
+    if (s.routes[k].path.size() >= 3) {
+      for (int i = 0; i < s.routes[k].path.size() - 3; i++) {
+        for (int j = i + 1; j < s.routes[k].path.size() - 2; j++) {
+          for (int n = j + 1; n < s.routes[k].path.size() - 1; n++) {
+            Route r = s.routes[k];
 
-  int insertedUsers = 0;
+            float d0 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
+                      instance->getTravelTime(r.path[j], r.path[j + 1]) +
+                      instance->getTravelTime(r.path[n], r.path[n + 1]);
 
-  for (Node *p : random.path) {
-    if (p->isPickup()) {
-      Request req = instance->getRequest(p);
-      bool inserted = false;
-      Route at;
+            float d1 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
+                      instance->getTravelTime(r.path[j], r.path[n]) +
+                      instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
-      for (int k = 0; k < s.routes.size(); k++) {
-        if (s.routes[k].vehicle.id != random.vehicle.id) {
-          Route r = performCheapestFeasibleInsertion(req, s.routes[k]);
+            float d2 = instance->getTravelTime(r.path[i], r.path[j]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                      instance->getTravelTime(r.path[n], r.path[n + 1]);
 
-          if (r.cost != MAX_FLOAT) {
-            inserted = true;
-            at = r;
+            float d3 = instance->getTravelTime(r.path[i], r.path[j]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[n]) +
+                      instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
+
+            float d4 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[n]) +
+                      instance->getTravelTime(r.path[j], r.path[n + 1]);
+
+            float d5 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                      instance->getTravelTime(r.path[j], r.path[n]);
+
+            float d6 = instance->getTravelTime(r.path[i], r.path[n]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                      instance->getTravelTime(r.path[j], r.path[n + 1]);
+
+            float d7 = instance->getTravelTime(r.path[i], r.path[n]) +
+                      instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                      instance->getTravelTime(r.path[j], r.path[j + 1]);
+
+            if (d1 < d0) {
+              std::swap(r.path[j + 1], r.path[n]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d2 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d3 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j]);
+              std::swap(r.path[j + 1], r.path[n]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d4 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j + 1]);
+              std::swap(r.path[j + 1], r.path[j]);
+              std::swap(r.path[j + 1], r.path[n]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d5 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j + 1]);
+              std::swap(r.path[j + 1], r.path[j]);
+              std::swap(r.path[j + 1], r.path[n]);
+              std::swap(r.path[j + 1], r.path[n + 1]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d6 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j]);
+              std::swap(r.path[i + 1], r.path[n]);
+              r.performEightStepEvaluationScheme();
+            }
+            else if (d7 < d0 || !r.isFeasible()) {
+              r = s.routes[k];
+              std::swap(r.path[i + 1], r.path[j]);
+              std::swap(r.path[i + 1], r.path[n]);
+              std::swap(r.path[j + 1], r.path[n + 1]);
+              r.performEightStepEvaluationScheme();
+            }
+
+            bool valid = true;
+
+            for (int m = 0; m < r.path.size(); m++)
+              if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
+                valid = false;
+
+            if (valid && r.isFeasible() && r.cost < best.routes[k].cost) {
+              best.routes[k] = r;
+            }
           }
         }
       }
-
-      if (inserted) {
-        insertedUsers++;
-        s.routes.at(at.vehicle.id - 1) = at;
-      }
     }
   }
 
-  if (insertedUsers == c) {
-    std::cout << "\nLess vehicles" << '\n';
-    s.routes.erase(s.routes.begin());
-  }
-  else {
-    s = original;
-  }
+  best.computeCost(penaltyParams);
 
-  s.computeCost(penaltyParams);
-
-  return s;
+  return best;
 }
 
 Solution Grasp::_2opt(Solution s, std::vector<float> penaltyParams)
 {
+  Solution best = s;
+
   for (int k = 0; k < s.routes.size(); k++) {
+    for (int i = 1; i < s.routes[k].path.size() - 2; i++) {
+      for (int j = i + 1; j < s.routes[k].path.size() - 1; j++) {
+        Route r = s.routes[k];
+        std::reverse(r.path.begin() + i, r.path.begin() + j + 1);
+        r.performEightStepEvaluationScheme();
 
-    start:
-    for (int a = 1; a < s.routes[k].path.size() - 3; a++) {
-      for (int b = a + 2; b < s.routes[k].path.size() - 2; b++) {
-        for (int c = b + 2; c < s.routes[k].path.size() - 1; c++) {
-          Route r = s.routes[k];
+        bool valid = true;
 
-          Node *A = r.path[a - 1];
-          Node *B = r.path[a];
-          Node *C = r.path[b - 1];
-          Node *D = r.path[b];
-          Node *E = r.path[c - 1];
-          Node *F = r.path[c % s.routes[k].path.size()];
+        for (int m = 0; m < r.path.size(); m++) {
+          if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
+            valid = false;
+        }
 
-          float d0 = instance->getTravelTime(A,B) + instance->getTravelTime(C,D) + instance->getTravelTime(E,F);
-          float d1 = instance->getTravelTime(A,C) + instance->getTravelTime(B,D) + instance->getTravelTime(E,F);
-          float d2 = instance->getTravelTime(A,B) + instance->getTravelTime(C,E) + instance->getTravelTime(D,F);
-          float d3 = instance->getTravelTime(A,D) + instance->getTravelTime(E,B) + instance->getTravelTime(C,F);
-          float d4 = instance->getTravelTime(F,B) + instance->getTravelTime(C,D) + instance->getTravelTime(E,A);
-
-          if (d1 < d0) {
-            std::reverse(r.path.begin() + a, r.path.begin() + b + 1);
-            r.performEightStepEvaluationScheme();
-          }
-          else if (d2 < d0) {
-            std::reverse(r.path.begin() + b, r.path.begin() + c + 1);
-            r.performEightStepEvaluationScheme();
-          }
-          else if (d4 < d0) {
-            std::reverse(r.path.begin() + a, r.path.begin() + c + 1);
-            r.performEightStepEvaluationScheme();
-          }
-          else if (d3 < d0) {
-            std::vector<Node *> temp;
-
-            for (int rs = b; rs <= c; rs++)
-              temp.push_back(r.path[rs]);
-
-            for (int rs = a; rs <= b; rs++)
-              temp.push_back(r.path[rs]);
-
-            for (int rs = a; rs <= c; rs++)
-              r.path[rs] = temp[rs - a];
-
-            r.performEightStepEvaluationScheme();
-          }
-
-          bool valid = true;
-
-          for (int m = 0; m < r.path.size(); m++) {
-            if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
-              valid = false;
-          }
-
-          if (valid && r.isFeasible() && r.cost < s.routes[k].cost) {
-            s.routes[k] = r;
-            goto start;
-          }
+        if (valid && r.isFeasible() && r.cost < best.routes[k].cost) {
+          best.routes[k] = r;
         }
       }
     }
   }
 
-  // for (int k = 0; k < s.routes.size(); k++) {
-  //   start:
-  //   for (int i = 1; i < s.routes[k].path.size() - 2; i++) {
-  //     for (int j = i + 1; j < s.routes[k].path.size() - 1; j++) {
-  //       Route r = s.routes[k];
-  //       std::reverse(r.path.begin() + i, r.path.begin() + j + 1);
-  //       r.performEightStepEvaluationScheme();
-
-        // bool valid = true;
-
-        // for (int m = 0; m < r.path.size(); m++) {
-        //   if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
-        //     valid = false;
-        // }
-
-  //       if (valid && r.isFeasible() && r.cost < s.routes[k].cost) {
-  //         s.routes[k] = r;
-  //         goto start;
-  //       }
-  //     }
-  //   }
-  // }
-
-  s.computeCost(penaltyParams);
-  // for (int k = 0; k < s.routes.size(); k++) {
-  //   Route r = s.routes[k];
-
-  //   for (int i = 1; i < r.path.size() - 2; i++) {
-  //     for (int j = i + 1; j < r.path.size() - 1; j++) {
-  //       std::reverse(r.path.begin() + i, r.path.begin() + j + 1);
-  //       r.performEightStepEvaluationScheme();
-
-  //       bool valid = true;
-
-  //       for (int m = 0; m < r.path.size(); m++) {
-  //         if (r.path[m]->isPickup())
-  //           if (r.getDeliveryIndexOf(m) < m)
-  //             valid = false;
-  //       }
-
-  //       if (valid && r.isFeasible() && r.cost < best.routes[k].cost) {
-  //         best.routes[k] = r;
-  //         best.computeCost(penaltyParams);
-  //       }
-  //       else {
-  //         r = best.routes[k];
-  //       }
-  //     }
-  //   }
-  // }
+  best.computeCost(penaltyParams);
 
   return s;
 }

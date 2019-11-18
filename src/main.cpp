@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
   instance->init(argv[1]);
 
   Timer timer;
-  Solution solution = Grasp::solve(10000, 1000, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Solution solution = Grasp::solve(1000, 100, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
   double elapsed = timer.elapsedInSeconds();
 
   for (Route route : solution.routes) {
