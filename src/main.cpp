@@ -32,19 +32,20 @@ int main(int argc, char *argv[])
 
   Solution best;
   std::vector<Solution> solutions;
-  std::vector<Route *> routes;
+  std::vector<Route> routes;
 
   // Start counting
   Timer timer;
 
-  for (int i = 0; i < 20000; i++) {
+  for (int i = 0; i < 200000; i++) {
+    std::cout << i << '\n';
     Solution s = Grasp::solve(1, 1, {1.0});
 
     if (s.isFeasible()) {
       if (solutions.size() == 0 || s.cost < best.cost)
         best = s;
 
-      for (Route *r : s.routes)
+      for (Route &r : s.routes)
         routes.push_back(r);
 
       solutions.push_back(s);
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
     IloExpr expr(env);
 
     for (int i = 0; i < totalRoutes; i++)
-      expr += routes[i]->cost * selected[i];
+      expr += routes[i].cost * selected[i];
 
     IloObjective obj = IloMinimize(env, expr);
     model.add(obj);
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
       IloExpr expr(env);
 
       for (int i = 0; i < totalRoutes; i++)
-        expr += routes[i]->hasRequest(instance->requests[j]) * selected[i];
+        expr += routes[i].hasRequest(instance->requests[j]) * selected[i];
 
       model.add(expr == 1);
       expr.end();
@@ -95,11 +96,10 @@ int main(int argc, char *argv[])
 
     Solution solutionFound;
 
-    for (int i = 0; i < totalRoutes; i++)
-    {
+    for (int i = 0; i < totalRoutes; i++) {
       if (cplex.getValue(selected[i]) == 1) {
         solutionFound.routes.push_back(routes[i]);
-        solutionFound.cost += routes[i]->cost;
+        solutionFound.cost += routes[i].cost;
       }
     }
 
@@ -107,11 +107,11 @@ int main(int argc, char *argv[])
     model.end();
     env.end();
 
-    for (Route *r : solutionFound.routes) {
+    for (Route &r : solutionFound.routes) {
       printf("\n");
-      r->printPath();
+      r.printPath();
       printf("\n");
-      r->printSchedule();
+      r.printSchedule();
       printf("\n");
     }
 

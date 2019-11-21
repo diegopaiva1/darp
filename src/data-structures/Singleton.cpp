@@ -45,12 +45,12 @@ void Singleton::init(std::string instanceFileName)
 
     // Add a vehicle for each line that defines a vehicle
     for (int i = 1; i <= vehiclesAmount; i++) {
-      Vehicle *vehicle = new Vehicle(i);
-      file >> vehicle->capacity;
-      file >> vehicle->batteryCapacity;
-      file >> vehicle->initialBatteryLevel;
-      file >> vehicle->minFinalBatteryRatioLevel;
-      file >> vehicle->dischargingRate;
+      Vehicle vehicle(i);
+      file >> vehicle.capacity;
+      file >> vehicle.batteryCapacity;
+      file >> vehicle.initialBatteryLevel;
+      file >> vehicle.minFinalBatteryRatioLevel;
+      file >> vehicle.dischargingRate;
       vehicles.push_back(vehicle);
     }
 
@@ -126,12 +126,12 @@ void Singleton::init(std::string instanceFileName)
 
     // Add all the requests
     for (int i = 1; i <= requestsAmount; i++) {
-      Request *request = new Request(getNode(i), getNode(i + requestsAmount));
-      Node *pickup   = request->pickup;
-      Node *delivery = request->delivery;
+      Request request(getNode(i), getNode(i + requestsAmount));
+      Node *pickup   = request.pickup;
+      Node *delivery = request.delivery;
 
       // Tigthen time windows
-      if (request->isInbound()) {
+      if (request.isInbound()) {
         delivery->arrivalTime = std::max(
           0.0f, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
         );
@@ -163,7 +163,7 @@ Node* Singleton::getNode(int id)
     throw "Unknown node for this instance";
 }
 
-Request* Singleton::getRequest(Node *pickup)
+Request Singleton::getRequest(Node *pickup)
 {
   return requests.at(pickup->id - 1);
 }

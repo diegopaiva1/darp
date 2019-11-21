@@ -15,7 +15,7 @@
 class Solution
 {
 public:
-  std::vector<Route *> routes;
+  std::vector<Route> routes;
   float cost;
   int loadViolation;
   float timeWindowViolation;
@@ -28,6 +28,8 @@ public:
   ~Solution();
 
   bool isFeasible();
+
+  void computeCost(std::vector<float> penaltyParams);
 };
 
 #endif // SOLUTION_HPP_INCLUDED

@@ -29,14 +29,39 @@ public:
 
   ~Node();
 
+ /**
+  * @brief Get the time window's median of this node.
+  *
+  * @return This node's time window median.
+  */
   float getTimeWindowMedian();
 
+ /**
+  * @brief Checks if this node is a pickup node.
+  *
+  * @return True if it is a pickup node, false otherwise.
+  */
   bool isPickup();
 
+ /**
+  * @brief Checks if this node is a delivery node.
+  *
+  * @return True if it is a delivery node, false otherwise.
+  */
   bool isDelivery();
 
+ /**
+  * @brief Checks if this node is a depot node.
+  *
+  * @return True if it is a depot node, false otherwise.
+  */
   bool isDepot();
 
+ /**
+  * @brief Checks if this node is a station node.
+  *
+  * @return True if it's a station node, false otherwhise.
+  */
   bool isStation();
 };
 
