@@ -70,13 +70,11 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
       if (bestRoute.cost == MAX_FLOAT) {
         Route newest = createRoute(currSolution);
-
         newest.path.push_back(instance->getOriginDepot());
         newest.path.push_back(request.pickup);
         newest.path.push_back(request.delivery);
         newest.path.push_back(instance->getDestinationDepot());
         newest.performEightStepEvaluationScheme();
-
         currSolution.routes.push_back(newest);
       }
       else {
@@ -112,14 +110,14 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       costs[alphaIndex] += currSolution.cost + param1 * currSolution.routes.size();
       q[alphaIndex] = (best.cost + param2 * best.routes.size())/(costs[alphaIndex]/counter[alphaIndex]);
 
-      printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
+      // printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
     }
 
-    if (it == iterations) {
-      printf("\n\nAlphas:\n");
-      for (int p = 0; p < probabilities.size(); p++)
-        printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
-    }
+    // if (it == iterations) {
+    //   printf("\n\nAlphas:\n");
+    //   for (int p = 0; p < probabilities.size(); p++)
+    //     printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
+    // }
   }
 
   return best;

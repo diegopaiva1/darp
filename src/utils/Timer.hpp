@@ -13,7 +13,9 @@
 #include <chrono>
 
 typedef std::chrono::high_resolution_clock Time;
-typedef std::chrono::duration<double, std::ratio<1>> Seconds;
+typedef std::chrono::duration<double, std::ratio<1>>    Seconds;
+typedef std::chrono::duration<double, std::ratio<60>>   Minutes;
+typedef std::chrono::duration<double, std::ratio<3600>> Hours;
 
 class Timer
 {
@@ -27,6 +29,10 @@ public:
   void reset();
 
 	double elapsedInSeconds() const;
+
+  double elapsedInMinutes() const;
+
+  double elapsedInHours() const;
 };
 
 #endif // TIMER_H_INCLUDED

@@ -28,3 +28,13 @@ double Timer::elapsedInSeconds() const
 {
   return std::chrono::duration_cast<Seconds>(Time::now() - beginning).count();
 }
+
+double Timer::elapsedInMinutes() const
+{
+  return std::chrono::duration_cast<Minutes>(Time::now() - beginning).count();
+}
+
+double Timer::elapsedInHours() const
+{
+  return std::chrono::duration_cast<Hours>(Time::now() - beginning).count();
+}
