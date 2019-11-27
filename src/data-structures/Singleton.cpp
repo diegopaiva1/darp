@@ -111,7 +111,7 @@ void Singleton::init(std::string instanceFileName)
       for (int j = 0; j < nodesAmount; j++) {
         int nearestStationId;
 
-        float nearestStationDistance = std::numeric_limits<float>::max();
+        float nearestStationDistance = MAXFLOAT;
 
         for (int k = nodesAmount - stationsAmount; k < nodesAmount; k++) {
           if (travelTimes[i][k] + travelTimes[j][k] < nearestStationDistance) {

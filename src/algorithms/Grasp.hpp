@@ -13,9 +13,6 @@
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
 
-#define MAX_INT   std::numeric_limits<int>::max()
-#define MAX_FLOAT std::numeric_limits<float>::max()
-
 class Grasp
 {
 public:

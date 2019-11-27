@@ -68,7 +68,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       }
 
       // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
-      if (bestRoute.cost == MAX_FLOAT) {
+      if (bestRoute.cost == MAXFLOAT) {
         Route newest = createRoute(currSolution);
         newest.path.push_back(instance->getOriginDepot());
         newest.path.push_back(request.pickup);
@@ -110,14 +110,15 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
       costs[alphaIndex] += currSolution.cost + param1 * currSolution.routes.size();
       q[alphaIndex] = (best.cost + param2 * best.routes.size())/(costs[alphaIndex]/counter[alphaIndex]);
 
-      // printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
+      printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
     }
 
-    // if (it == iterations) {
-    //   printf("\n\nAlphas:\n");
-    //   for (int p = 0; p < probabilities.size(); p++)
-    //     printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
-    // }
+    if (it == iterations) {
+      printf("\n\nAlphas:\n");
+
+      for (int p = 0; p < probabilities.size(); p++)
+        printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
+    }
   }
 
   return best;
@@ -193,36 +194,36 @@ Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
             Route r = s.routes[k];
 
             float d0 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
-                      instance->getTravelTime(r.path[j], r.path[j + 1]) +
-                      instance->getTravelTime(r.path[n], r.path[n + 1]);
+                       instance->getTravelTime(r.path[j], r.path[j + 1]) +
+                       instance->getTravelTime(r.path[n], r.path[n + 1]);
 
             float d1 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
-                      instance->getTravelTime(r.path[j], r.path[n]) +
-                      instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
+                       instance->getTravelTime(r.path[j], r.path[n]) +
+                       instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
             float d2 = instance->getTravelTime(r.path[i], r.path[j]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                      instance->getTravelTime(r.path[n], r.path[n + 1]);
+                       instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                       instance->getTravelTime(r.path[n], r.path[n + 1]);
 
             float d3 = instance->getTravelTime(r.path[i], r.path[j]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[n]) +
-                      instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
+                       instance->getTravelTime(r.path[i + 1], r.path[n]) +
+                       instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
             float d4 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[n]) +
-                      instance->getTravelTime(r.path[j], r.path[n + 1]);
+                       instance->getTravelTime(r.path[i + 1], r.path[n]) +
+                       instance->getTravelTime(r.path[j], r.path[n + 1]);
 
             float d5 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                      instance->getTravelTime(r.path[j], r.path[n]);
+                       instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                       instance->getTravelTime(r.path[j], r.path[n]);
 
             float d6 = instance->getTravelTime(r.path[i], r.path[n]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                      instance->getTravelTime(r.path[j], r.path[n + 1]);
+                       instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                       instance->getTravelTime(r.path[j], r.path[n + 1]);
 
             float d7 = instance->getTravelTime(r.path[i], r.path[n]) +
-                      instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                      instance->getTravelTime(r.path[j], r.path[j + 1]);
+                       instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                       instance->getTravelTime(r.path[j], r.path[j + 1]);
 
             if (d1 < d0) {
               std::swap(r.path[j + 1], r.path[n]);
@@ -336,7 +337,7 @@ Solution Grasp::swapZeroOne(Solution s, std::vector<float> penaltyParams)
           if (k1 != k2) {
             Route r2 = performCheapestFeasibleInsertion(req, s.routes[k2]);
 
-            if (r1.isFeasible() && r2.cost != MAX_FLOAT && r1.cost + r2.cost < best.routes[k1].cost + best.routes[k2].cost) {
+            if (r1.isFeasible() && r2.cost != MAXFLOAT && r1.cost + r2.cost < best.routes[k1].cost + best.routes[k2].cost) {
               best = s;
               best.routes[k1] = r1;
               best.routes[k2] = r2;
@@ -367,7 +368,7 @@ Solution Grasp::relocate(Solution s, std::vector<float> penaltyParams)
 
         r = performCheapestFeasibleInsertion(req, r);
 
-        if (r.cost != MAX_FLOAT && r.cost < best.routes[k].cost) {
+        if (r.cost != MAXFLOAT && r.cost < best.routes[k].cost) {
           best.routes[k] = r;
         }
       }
@@ -429,7 +430,7 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
 {
   // Best insertion starts with infinity cost, we will update it during the search
   Route best = r;
-  best.cost = MAX_FLOAT;
+  best.cost = MAXFLOAT;
 
   for (int p = 1; p < r.path.size(); p++) {
     r.path.insert(r.path.begin() + p, req.pickup);

@@ -30,15 +30,17 @@ int main(int argc, char *argv[])
   instance->init(argv[1]);
 
   Timer timer;
-  Solution solution = Grasp::solve(1000, 50, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Solution solution = Grasp::solve(100, 10, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
   double elapsed = timer.elapsedInMinutes();
 
-  for (auto k = solution.routes.begin(); k != solution.routes.end(); ) {
+  for (auto k = solution.routes.begin(); k != solution.routes.end(); )
     if (k->path.size() <= 2)
       k = solution.routes.erase(k);
     else
       k++;
-  }
+
+  float tt  = 0.0;
+  float ert = 0.0;
 
   for (Route route : solution.routes) {
     route.printPath();
@@ -47,6 +49,15 @@ int main(int argc, char *argv[])
     printf("\n");
 
     for (int i = 0; i < route.path.size(); i++) {
+      if (i < route.path.size() - 1)
+        tt += instance->getTravelTime(route.path[i], route.path[i + 1]);
+
+      if (route.path[i]->isPickup()) {
+        printf("\n (%d, %d) travel time = %.2f, ideal travel time = %.2f\n", route.path[i]->id, route.path[i]->id + instance->requestsAmount, route.ridingTimes[i], instance->getTravelTime(instance->getRequest(route.path[i]).pickup, instance->getRequest(route.path[i]).delivery));
+        float rideTimeExcess = route.ridingTimes[i] - instance->getTravelTime(instance->getRequest(route.path[i]).pickup, instance->getRequest(route.path[i]).delivery);
+        ert += rideTimeExcess;
+      }
+
       if (route.serviceBeginningTimes[i] > route.path[i]->departureTime)
         printf("\nViolated time window at point %d in route %d", i, route.vehicle.id);
       else if (route.load[i] > route.vehicle.capacity)
@@ -59,6 +70,9 @@ int main(int argc, char *argv[])
         printf("\nViolated final battery level at point %d in route %d", i, route.vehicle.id);
     }
   }
+
+  printf("\ntt  = %.2f", tt);
+  printf("\nert = %.2f\n", ert);
 
   if (solution.isFeasible())
     printf("Viável\nCusto = %.2f\nt = %.2fmin\n", solution.cost, elapsed);
