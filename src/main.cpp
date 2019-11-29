@@ -39,12 +39,19 @@ int main(int argc, char *argv[])
     else
       k++;
 
+  float tt = 0.0;
+
   for (Route route : solution.routes) {
+    for (int i = 0; i < route.path.size() - 1; i++)
+      tt += instance->getTravelTime(route.path[i], route.path[i + 1]);
+
     route.printPath();
     printf("\n");
     route.printSchedule();
     printf("\n");
   }
+
+  std::cout << "tt = " << tt << '\n';
 
   if (solution.isFeasible())
     printf("Viável\nCusto = %.2f\nt = %.2fmin\n", solution.cost, elapsed);

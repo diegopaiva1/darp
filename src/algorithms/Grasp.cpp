@@ -441,36 +441,39 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
 
       std::vector<Route> possibilities = {r};
 
-      if (r.batteryLevelViolation) {
-        for (int i = 0; i < r.path.size(); i++) {
-          if (r.batteryLevels[i] < 0) {
-            for (int j = 0; j < i; j++) {
-              if (r.load[j] == 0) {
-                Node *station = instance->getNode(instance->nearestStations[r.path[j]->id][r.path[j + 1]->id]);
-                std::vector<Route> aux;
-                aux.push_back(r);
+      if (r.batteryLevelViolation || r.finalBatteryViolation) {
+        for (int i = 0; i < r.path.size() - 1; i++) {
+          if (r.load[i] == 0) {
+            std::vector<Route> aux;
 
-                for (Route poss : possibilities) {
-                  poss.path.insert(poss.path.begin() + j + 1, station);
-                  poss.performEightStepEvaluationScheme();
+            for (Route poss : possibilities) {
+              aux.push_back(poss);
+              Node *station = instance->getNode(instance->nearestStations[r.path[i]->id][r.path[i + 1]->id]);
+              float batteryBefore = r.batteryLevels[i] - r.vehicle.dischargingRate * instance->getTravelTime(r.path[i], station);
+              float batteryAfter = batteryBefore + station->rechargingRate * r.computeForwardTimeSlack(i + 1) - r.vehicle.dischargingRate * instance->getTravelTime(station, r.path[i + 1]);
 
-                  if (poss.isFeasible())
-                    aux.push_back(poss);
-                }
+              if (batteryBefore > 0 && batteryAfter > 0) {
+                poss.path.insert(poss.path.begin() + i + 1, station);
+                poss.performEightStepEvaluationScheme();
 
-                // auto bestPossibility = std::min_element(aux.begin(), aux.end(), [] (Route r1, Route r2) {
-                //   return r1.cost < r2.cost;
-                // });
-
-                // for (auto it = aux.begin(); it != aux.end(); )
-                //   if (it != bestPossibility)
-                //     it = aux.erase(it);
-                //   else
-                //     it++;
-
-                possibilities = aux;
+                if (poss.isFeasible())
+                  aux.push_back(poss);
               }
             }
+
+            auto dominating = aux.begin();
+
+            for (auto it = aux.begin(); it != aux.end(); ) {
+              if (it->cost > dominating->cost) {
+                it = aux.erase(it);
+              }
+              else {
+                dominating = it;
+                it++;
+              }
+            }
+
+            possibilities = aux;
           }
         }
       }
