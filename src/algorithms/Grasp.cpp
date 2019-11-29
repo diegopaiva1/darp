@@ -439,36 +439,45 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
       r.path.insert(r.path.begin() + d, req.delivery);
       r.performEightStepEvaluationScheme();
 
-      // for (int b = 0; b < r.path.size(); b++) {
-      //   if (r.batteryLevels[b] < 0 || (b == r.path.size() - 1 && r.batteryLevels[b] < r.vehicle.batteryCapacity * r.vehicle.minFinalBatteryRatioLevel)) {
-      //     std::vector<Stop> stops;
+      std::vector<Route> possibilities = {r};
 
-      //     for (int s = 0; s < b; s++) {
-      //       if (r.load[s] == 0 && s != r.path.size() - 1) {
-      //         Stop stop;
-      //         stop.position = s + 1;
-      //         stop.station = instance->getNode(instance->nearestStations[r.path[s]->id][r.path[s + 1]->id]);
-      //         stops.push_back(stop);
-      //       }
-      //     }
+      if (r.batteryLevelViolation) {
+        for (int i = 0; i < r.path.size(); i++) {
+          if (r.batteryLevels[i] < 0) {
+            for (int j = 0; j < i; j++) {
+              if (r.load[j] == 0) {
+                Node *station = instance->getNode(instance->nearestStations[r.path[j]->id][r.path[j + 1]->id]);
+                std::vector<Route> aux;
+                aux.push_back(r);
 
-      //     for (Stop &s : stops) {
-      //       r.path.insert(r.path.begin() + s.position, s.station);
-      //       r.cost = performEightStepEvaluationScheme(r);
+                for (Route poss : possibilities) {
+                  poss.path.insert(poss.path.begin() + j + 1, station);
+                  poss.performEightStepEvaluationScheme();
 
-      //       if (r.isFeasible() && r.cost < best.cost) {
-      //         std::vector<Stop> bestStops;
-      //         bestStops.push_back(s);
-      //         best = {r, r.cost, p, d, bestStops};
-      //       }
+                  if (poss.isFeasible())
+                    aux.push_back(poss);
+                }
 
-      //       r.path.erase(r.path.begin() + s.position);
-      //     }
-      //   }
-      // }
+                // auto bestPossibility = std::min_element(aux.begin(), aux.end(), [] (Route r1, Route r2) {
+                //   return r1.cost < r2.cost;
+                // });
 
-      if (r.isFeasible() && r.cost < best.cost)
-        best = r;
+                // for (auto it = aux.begin(); it != aux.end(); )
+                //   if (it != bestPossibility)
+                //     it = aux.erase(it);
+                //   else
+                //     it++;
+
+                possibilities = aux;
+              }
+            }
+          }
+        }
+      }
+
+      for (Route poss : possibilities)
+        if (poss.isFeasible() && poss.cost < best.cost)
+          best = poss;
 
       r.path.erase(r.path.begin() + d);
     }

@@ -26,8 +26,11 @@ Route::~Route()
 
 bool Route::isFeasible()
 {
-  return loadViolation == 0 && maxRideTimeViolation == 0 && timeWindowViolation == 0 &&
-         finalBatteryViolation == 0 && !batteryLevelViolation;
+  return loadViolation         == 0 &&
+         maxRideTimeViolation  == 0 &&
+         timeWindowViolation   == 0 &&
+         finalBatteryViolation == 0 &&
+         !batteryLevelViolation;
 }
 
 void Route::printPath()
