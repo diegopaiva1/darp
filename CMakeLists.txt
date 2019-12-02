@@ -21,6 +21,6 @@ set (SOURCES src/main.cpp
              src/gnuplot/Gnuplot.cpp)
 
 # Set compiler options
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall -O3")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++1z -Wall -O3")
 
 add_executable (e-adarp ${SOURCES})
