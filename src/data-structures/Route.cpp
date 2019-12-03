@@ -100,7 +100,7 @@ void Route::performEightStepEvaluationScheme()
       computeBatteryLevel(i);
 
       // Violated battery level, that's an irreparable violation
-      if (batteryLevels[i] < 0.0)
+      if (batteryLevels[i] < 0.0 || batteryLevels[i] > vehicle.batteryCapacity)
         goto STEP8;
 
       computeDepartureTime(i);
@@ -127,9 +127,10 @@ void Route::performEightStepEvaluationScheme()
     }
 
   STEP6:
-    for (int i = 1; i < path.size() - 1; i++)
+    for (int i = 1; i < path.size() - 1; i++) {
       if (path[i]->isPickup())
         computeRidingTime(i);
+    }
 
   STEP7:
     for (int j = 1; j < path.size() - 1; j++) {
@@ -157,9 +158,10 @@ void Route::performEightStepEvaluationScheme()
           }
 
         STEP7d:
-          for (int i = j + 1; i < path.size() - 1; i++)
+          for (int i = j + 1; i < path.size() - 1; i++) {
             if (path[i]->isDelivery())
               computeRidingTime(getPickupIndexOf(i));
+          }
       }
     }
 
@@ -204,9 +206,10 @@ float Route::computeForwardTimeSlack(int i)
     float userRideTimeWithDeliveryAtJ = 0.0;
     bool jMinusNIsVisitedBeforeIndex  = false;
 
-    for (int p = 0; p < i; p++)
+    for (int p = 0; p < i; p++) {
       if (path[p]->id == j - inst->requestsAmount)
         jMinusNIsVisitedBeforeIndex = true;
+    }
 
     if (path[j]->isDelivery() && jMinusNIsVisitedBeforeIndex)
       userRideTimeWithDeliveryAtJ = ridingTimes[getPickupIndexOf(j)];
