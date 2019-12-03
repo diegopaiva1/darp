@@ -1,6 +1,8 @@
 # Deletes any user-defined variables and functions and restores default settings
 reset session
 
+set key font ",16"
+
 # Produce PNG output. The 'enhanced' keyword adds support for additional text formatting
 set term pngcairo size 1920, 1080 enhanced font "Verdana, 12"
 
@@ -26,4 +28,4 @@ set title sprintf("%s - Cost = %.2f", INSTANCE_NAME, COST);
 set colorsequence classic
 
 # Single line plot command
-plot SOLUTION_FILE i 1 every ::0::1 u 2:3:(0.10) w circles linecolor rgb "black" lw 2 fill solid border lc rgb "black" title sprintf("Depot"), SOLUTION_FILE i 1 every ::1::(REQUESTS + 1) u 2:3:(0.10) w circles linecolor rgb "blue" lw 2 fill solid border lc rgb "blue" title sprintf("Pickup"), SOLUTION_FILE i 1 every ::(REQUESTS + 1)::(REQUESTS * 2 + 1) u 2:3:(0.10) w circles linecolor rgb "red" lw 2 fill solid border lc rgb "red" title sprintf("Delivery"), SOLUTION_FILE i 1 every ::(REQUESTS * 2 + 1)::(REQUESTS * 2 + STATIONS + 1) u 2:3:(0.10) w circles linecolor rgb "green" lw 2 fill solid border lc rgb "green" title sprintf("Station"), SOLUTION_FILE i 1 u 2:3:1 w labels font "2,0" offset char 1.0,1.0 notitle, for [r = 1 : ROUTES] SOLUTION_FILE i (r + 1) u 1:2:3:4 w vectors lw 1.5 lt r title sprintf("Route %g", r),
+plot SOLUTION_FILE i 1 every ::0::0 u 2:3 w points ls 5 ps 3 lc rgb "orange" title sprintf("Depot"), SOLUTION_FILE i 1 every ::1::(REQUESTS) u 2:3 w points ls 7 ps 3.5 lc rgb "blue" title sprintf("Pickup"), SOLUTION_FILE i 1 every ::(REQUESTS + 1)::(REQUESTS * 2) u 2:3 w points ls 7 ps 3.5 lc rgb "red" title sprintf("Delivery"), SOLUTION_FILE i 1 every ::(REQUESTS * 2 + 1)::(REQUESTS * 2 + STATIONS + 1) u 2:3 w points ls 9 ps 4 lc rgb "black" title sprintf("Station"), SOLUTION_FILE i 1 u 2:3:1 w labels font "2,0" offset char 1.0,1.0 notitle, for [r = 1 : ROUTES] SOLUTION_FILE i (r + 1) u 1:2:3:4 w vectors lw 1.5 lt r title sprintf("Route %g", r),
