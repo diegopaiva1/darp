@@ -68,13 +68,18 @@ void Gnuplot::plotSchedule(Route r)
   std::map<int, int> colors;
 
   // Define the color for each point
-  for (int i = 0; i < r.path.size(); i++) {
-    if (r.path[i]->isPickup())
-      colors[r.path[i]->id] = i;
-    else if (r.path[i]->isDelivery())
+  for (int i = 0, color = 0; i < r.path.size(); i++) {
+    if (r.path[i]->isPickup()) {
+      colors[r.path[i]->id] = color;
+      color++;
+    }
+    else if (r.path[i]->isDelivery()) {
       colors[r.path[i]->id] = colors[r.path[i]->id - in->requestsAmount];
-    else
+    }
+    else {
       colors[r.path[i]->id] = 0;
+      color++;
+    }
   }
 
   dataFile << "# A_i, i, color" << '\n';
@@ -91,8 +96,17 @@ void Gnuplot::plotSchedule(Route r)
   dataFile << "\n\n";
 
   dataFile << "# D_i, i, color" << '\n';
-  for (int i = 0; i < r.departureTimes.size(); i++)
-    dataFile << r.departureTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+  for (int i = 0; i < r.departureTimes.size() - 1; i++)
+    dataFile << r.departureTimes[i]   << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+
+  dataFile << "\n\n";
+
+  dataFile << "# D_i,   i" << '\n';
+  dataFile << "# A_i+1, i" << '\n';
+  for (int i = 0; i < r.departureTimes.size() - 1; i++) {
+    dataFile << r.departureTimes[i]   << ' ' << i     << '\n';
+    dataFile << r.arrivalTimes[i + 1] << ' ' << i + 1 << '\n';
+  }
 
   dataFile << "\n\n";
 

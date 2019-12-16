@@ -18,7 +18,13 @@ set ylabel "Index"
 
 set yrange [0 : ARG3]
 
-# Do not show that weird heatmap box in the right of the screen
+# Color numbers we will work on
+set cbrange [0 : 10]
+
+# Our custom palette
+set palette defined (0 "black", 1 "magenta", 2 "green", 3 "blue", 4 "red", 5 "cyan", 6 "violet", 7 "gold", 8 "purple", 9 "grey", 10 "dark-green")
+
+# Do not show the big heatmap box in the right of the screen
 unset colorbox
 
 # Draw horizontal lines
@@ -26,10 +32,12 @@ do for [i = 0 : ARG3] {
     set arrow from graph 0,first i to graph 1,first i nohead lc rgb "black" front
 }
 
-plot ARG1 i 0 w p pt 7 ps 2 palette notitle, \
-     ARG1 i 0 u 1:2:(sprintf("A = %.4g", $1)) w labels offset char 0,1.5 notitle, \
-     ARG1 i 1 w p pt 7 ps 2 palette notitle, \
-     ARG1 i 1 u 1:2:(sprintf("B = %.4g", $1)) w labels offset char 0,1.5 notitle, \
-     ARG1 i 2 w p pt 7 ps 2 palette notitle, \
-     ARG1 i 2 w lines lc rgb "black" notitle, \
-     ARG1 i 3 pt 1 ps 2 lc rgb "black" notitle
+plot ARG1 i 0 u 1:2:3 w p pt 7 ps 2 palette notitle, \
+     ARG1 i 0 u 1:2:(sprintf("A")) w labels offset char 0,1.5 notitle, \
+     ARG1 i 1 u 1:2:3 w p pt 7 ps 2 palette notitle, \
+     ARG1 i 1 u 1:2:(sprintf("B")) w labels offset char 0,1.5 notitle, \
+     ARG1 i 2 u 1:2:3 w p pt 7 ps 2 palette notitle, \
+     ARG1 i 2 u 1:2:(sprintf("D")) w labels offset char 0,1.5 notitle, \
+     ARG1 i 3 w lines lw 2 lc rgb "black" notitle, \
+     ARG1 i 4 pt 1 ps 2 lc rgb "black" notitle
+
