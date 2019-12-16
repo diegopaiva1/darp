@@ -6,43 +6,105 @@
 
 #include "Gnuplot.hpp"
 
-Singleton *i = Singleton::getInstance();
+#include <map>
+
+Singleton *in = Singleton::getInstance();
 
 void Gnuplot::plotSolution(Solution s)
 {
-  // File where solution info will be stored
-  std::ofstream plotData("../tmp/gnuplot/solution.dat");
+  // Clear our gnuplot's tmp folder before saving the resulting plots
+  system(("rm -f " + destinationFolder + "*").c_str());
 
-  plotData << i->name << ' ' << s.cost << ' ' << s.routes.size() << ' ' <<  i->requestsAmount << ' '
-           << i->stationsAmount << "\n\n\n";
+  plotGraph(s.routes, s.cost);
 
-  for (Node* node : i->nodes)
-    plotData << node->id << " " << node->latitude << " " << node->longitude << '\n';
+  for (Route r : s.routes)
+    plotSchedule(r);
+}
 
-  plotData << "\n\n";
+void Gnuplot::plotGraph(std::vector<Route> routes, float cost)
+{
+  // Data to be used in the plot
+  std::ofstream dataFile(destinationFolder +  "routes.dat");
 
-  for (Route route : s.routes) {
-    for (int i = 0; i < route.path.size() - 1; i++) {
-      float x1 = route.path[i]->latitude;
-      float y1 = route.path[i]->longitude;
-      float x2 = route.path[i + 1]->latitude - x1;
-      float y2 = route.path[i + 1]->longitude - y1;
+  // Header metadata
+  dataFile << "# Instance name, Solution cost, Number of routes, Number of requests, Number of stations" << "\n";
+  dataFile << in->name << ' ' << cost << ' ' << routes.size() << ' ' <<  in->requestsAmount << ' '
+           << in->stationsAmount << "\n";
 
-      plotData << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << '\n';
+  // Each datablock must be separated by two line breaks
+  dataFile << "\n\n";
+
+  dataFile << "# Id, Latitude, Longitude" << "\n";
+  for (Node *node : in->nodes)
+    dataFile << node->id << " " << node->latitude << " " << node->longitude << '\n';
+
+  dataFile << "\n\n";
+
+  for (Route r : routes) {
+    dataFile << "# x1, y1, x2 - x1, y2 - y1" << "\n";
+    for (int i = 0; i < r.path.size() - 1; i++) {
+      // We do these calculations because we're going to use gnoplot's 'with vector' directive
+      float x1 = r.path[i]->latitude;
+      float y1 = r.path[i]->longitude;
+      float x2 = r.path[i + 1]->latitude - x1;
+      float y2 = r.path[i + 1]->longitude - y1;
+
+      dataFile << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << '\n';
     }
 
-    plotData << "\n\n";
+    dataFile << "\n\n";
   }
 
-  std::ifstream gnuplotCommandsFile("../src/gnuplot/solution.gp");
+  // Call gnuplot
+  popen(("gnuplot " + graphScript).c_str(), "w");
+}
 
- /* Opens an interface that one can use to send commands as if they were typing into the gnuplot
-  * command line. One may add "-persistent" to keep the plot open after the program terminates.
-  */
-  FILE *gnuplotPipe = popen("gnuplot", "w");
+void Gnuplot::plotSchedule(Route r)
+{
+  // Data to be used in the plot
+  std::string fileName = "../tmp/gnuplot/schedule" + std::to_string(r.vehicle.id) + ".dat";
 
-  std::string currLine;
+  std::ofstream dataFile(fileName, std::ofstream::out | std::ofstream::trunc);
+  std::map<int, int> colors;
 
-  while (std::getline(gnuplotCommandsFile, currLine))
-    fprintf(gnuplotPipe, "%s \n", currLine.c_str());
+  // Define the color for each point
+  for (int i = 0; i < r.path.size(); i++) {
+    if (r.path[i]->isPickup())
+      colors[r.path[i]->id] = i;
+    else if (r.path[i]->isDelivery())
+      colors[r.path[i]->id] = colors[r.path[i]->id - in->requestsAmount];
+    else
+      colors[r.path[i]->id] = 0;
+  }
+
+  dataFile << "# A_i, i, color" << '\n';
+  for (int i = 0; i < r.arrivalTimes.size(); i++)
+    dataFile << r.arrivalTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+
+  // Remember that each datablock must be separed by two line breaks
+  dataFile << "\n\n";
+
+  dataFile << "# B_i, i, color" << '\n';
+  for (int i = 0; i < r.serviceBeginningTimes.size(); i++)
+    dataFile << r.serviceBeginningTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+
+  dataFile << "\n\n";
+
+  dataFile << "# D_i, i, color" << '\n';
+  for (int i = 0; i < r.departureTimes.size(); i++)
+    dataFile << r.departureTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+
+  dataFile << "\n\n";
+
+  dataFile << "# e_i, i" << '\n';
+  dataFile << "# l_i, i" << '\n';
+  for (int i = 0; i < r.path.size(); i++) {
+    dataFile << r.path[i]->arrivalTime   << ' ' << i << '\n';
+    dataFile << r.path[i]->departureTime << ' ' << i << '\n';
+  }
+
+  std::string output = destinationFolder + std::to_string(r.vehicle.id) + ".png";
+
+  // Call gnuplot. '-c' flag allows to send command line args to gnuplot
+  popen(("gnuplot -c " + scheduleScript + " " + fileName + " " + output + " " + std::to_string(r.path.size())).c_str(), "w");
 }

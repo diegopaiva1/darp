@@ -16,12 +16,32 @@
 class Gnuplot
 {
 public:
- /**
-   * @brief Plot a solution.
-   *
-   * @param s A solution to be ploted.
-   */
+/**
+  * @brief Plot a solution, which consists of a set of routes and a schedule for every route.
+  *
+  * @param s A solution to be ploted.
+  */
   static void plotSolution(Solution s);
+
+protected:
+  static inline const std::string graphScript       = "../src/gnuplot/graph.gp";
+  static inline const std::string scheduleScript    = "../src/gnuplot/schedule.gp";
+  static inline const std::string destinationFolder = "../tmp/gnuplot/";
+
+ /**
+  * @brief Plot the graph containing all nodes and the links between them.
+  *
+  * @param routes A set of routes.
+  * @param cost   Sum of all routes' cost.
+  */
+  static void plotGraph(std::vector<Route> routes, float cost);
+
+ /**
+  * @brief Plot the schedule of a given route.
+  *
+  * @param r A route.
+  */
+  static void plotSchedule(Route r);
 };
 
 #endif // GNUPLOT_HPP_INCLUDED
