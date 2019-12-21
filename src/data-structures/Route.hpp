@@ -19,11 +19,12 @@ public:
   Vehicle vehicle;
   std::vector<Node *> path;
   std::vector<int> load;
+  std::vector<float> rideTimeExcesses;
   std::vector<float> arrivalTimes;
   std::vector<float> serviceBeginningTimes;
   std::vector<float> departureTimes;
   std::vector<float> waitingTimes;
-  std::vector<float> ridingTimes;
+  std::vector<float> rideTimes;
   std::vector<float> batteryLevels;
   std::vector<float> chargingTimes;
   int loadViolation;
@@ -103,11 +104,11 @@ public:
   void computeDepartureTime(int i);
 
  /**
-  * @brief Compute the riding time of user at index in in path.
+  * @brief Compute the ride time of user at index i in path.
   *
   * @param i Index.
   */
-  void computeRidingTime(int i);
+  void computeRideTime(int i);
 
  /**
   * @brief Compute vehicle's charging time at index i in path.
@@ -122,6 +123,13 @@ public:
   * @param i Index.
   */
   void computeBatteryLevel(int i);
+
+ /**
+  * @brief Compute the ride time excess of user at index i in path.
+  *
+  * @param i Index.
+  */
+  void computeRideTimeExcess(int i);
 
   // TODO: Description
   int getDeliveryIndexOf(int i);
@@ -143,7 +151,7 @@ public:
 
  /**
   * @brief Print arrival times, service beginning times, departure times, waiting times,
-  *        riding times, load, battery levels and charging times for every index in this route's path.
+  *        ride times, load, battery levels and charging times for every index in this route's path.
   */
   void printSchedule();
 };

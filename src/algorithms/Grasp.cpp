@@ -130,7 +130,6 @@ Solution Grasp::localSearch(Solution s, std::vector<float> penaltyParams)
 
   while (!neighborhoods.empty()) {
     Solution neighbor;
-
     int k = Prng::generateIntegerInRange(0, neighborhoods.size() - 1);
 
     switch (neighborhoods.at(k)) {
@@ -439,48 +438,48 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
       r.path.insert(r.path.begin() + d, req.delivery);
       r.performEightStepEvaluationScheme();
 
-      std::vector<Route> possibilities = {r};
+      // std::vector<Route> possibilities = {r};
 
-      if (r.batteryLevelViolation || r.finalBatteryViolation) {
-        for (int i = 0; i < r.path.size() - 1; i++) {
-          if (r.load[i] == 0) {
-            std::vector<Route> aux;
+      // if (r.batteryLevelViolation || r.finalBatteryViolation) {
+      //   for (int i = 0; i < r.path.size() - 1; i++) {
+      //     if (r.load[i] == 0) {
+      //       std::vector<Route> aux;
 
-            for (Route poss : possibilities) {
-              aux.push_back(poss);
-              Node *station = instance->getNode(instance->nearestStations[r.path[i]->id][r.path[i + 1]->id]);
-              float batteryBefore = r.batteryLevels[i] - r.vehicle.dischargingRate * instance->getTravelTime(r.path[i], station);
-              float batteryAfter = batteryBefore + station->rechargingRate * r.computeForwardTimeSlack(i + 1) - r.vehicle.dischargingRate * instance->getTravelTime(station, r.path[i + 1]);
+      //       for (Route poss : possibilities) {
+      //         aux.push_back(poss);
+      //         Node *station = instance->getNode(instance->nearestStations[r.path[i]->id][r.path[i + 1]->id]);
+      //         float batteryBefore = r.batteryLevels[i] - r.vehicle.dischargingRate * instance->getTravelTime(r.path[i], station);
+      //         float batteryAfter = batteryBefore + station->rechargingRate * r.computeForwardTimeSlack(i + 1) - r.vehicle.dischargingRate * instance->getTravelTime(station, r.path[i + 1]);
 
-              if (batteryBefore > 0 && batteryAfter > 0) {
-                poss.path.insert(poss.path.begin() + i + 1, station);
-                poss.performEightStepEvaluationScheme();
+      //         if (batteryBefore > 0 && batteryAfter > 0) {
+      //           poss.path.insert(poss.path.begin() + i + 1, station);
+      //           poss.performEightStepEvaluationScheme();
 
-                if (poss.isFeasible())
-                  aux.push_back(poss);
-              }
-            }
+      //           if (poss.isFeasible())
+      //             aux.push_back(poss);
+      //         }
+      //       }
 
-            auto dominating = aux.begin();
+      //       auto dominating = aux.begin();
 
-            for (auto it = aux.begin(); it != aux.end(); ) {
-              if (it->cost > dominating->cost) {
-                it = aux.erase(it);
-              }
-              else {
-                dominating = it;
-                it++;
-              }
-            }
+      //       for (auto it = aux.begin(); it != aux.end(); ) {
+      //         if (it->cost > dominating->cost) {
+      //           it = aux.erase(it);
+      //         }
+      //         else {
+      //           dominating = it;
+      //           it++;
+      //         }
+      //       }
 
-            possibilities = aux;
-          }
-        }
-      }
+      //       possibilities = aux;
+      //     }
+      //   }
+      // }
 
-      for (Route poss : possibilities)
-        if (poss.isFeasible() && poss.cost < best.cost)
-          best = poss;
+      // for (Route poss : possibilities)
+        if (r.isFeasible() && r.cost < best.cost)
+          best = r;
 
       r.path.erase(r.path.begin() + d);
     }

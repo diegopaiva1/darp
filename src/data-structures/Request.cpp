@@ -24,16 +24,5 @@ float Request::getTimeWindowMedian()
 
 Node* Request::getCriticalNode()
 {
-  return this->isInbound() ? pickup : delivery;
-}
-
-bool Request::isInbound()
-{
-  return !isOutbound();
-}
-
-// TODO: Melhorar a lógica que determina se a requisição é outbound
-bool Request::isOutbound()
-{
-  return delivery->arrivalTime + delivery->departureTime != 1440;
+  return this->isInbound ? pickup : delivery;
 }

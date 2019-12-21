@@ -130,8 +130,13 @@ void Singleton::init(std::string instanceFileName)
       Node *pickup   = request.pickup;
       Node *delivery = request.delivery;
 
+      if (pickup->departureTime - pickup->arrivalTime == 15)
+        request.isInbound = true;
+      else
+        request.isInbound = false;
+
       // Tigthen time windows
-      if (request.isInbound()) {
+      if (request.isInbound) {
         delivery->arrivalTime = std::max(
           0.0f, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
         );

@@ -12,6 +12,7 @@
 class Request
 {
 public:
+  bool isInbound;
   Node *pickup;
   Node *delivery;
 
@@ -32,20 +33,6 @@ public:
   * @return The request's critical node.
   */
   Node* getCriticalNode();
-
- /**
-  * @brief Check if this request is a inbound request.
-  *
-  * @return True if it is a inbound request, false otherwise.
-  */
-  bool isInbound();
-
- /**
-  * @brief Check if this request is a outbound request.
-  *
-  * @return True if it is a outbound request, false otherwise.
-  */
-  bool isOutbound();
 };
 
 #endif // REQUEST_HPP_INCLUDED
