@@ -17,7 +17,7 @@ Request::~Request()
   // Empty destructor
 }
 
-float Request::getTimeWindowMedian()
+double Request::getTimeWindowMedian()
 {
   return getCriticalNode()->getTimeWindowMedian();
 }

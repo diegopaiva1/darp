@@ -20,7 +20,7 @@ public:
   static int generateIntegerInRange(int min, int max);
 
   // Intervalo [min, max) é fechado em 'min' e aberto em 'max'
-  static float generateFloatInRange(float min, float max);
+  static double generateDoubleInRange(double min, double max);
 };
 
 #endif // PRNG_HPP_INCLUDED

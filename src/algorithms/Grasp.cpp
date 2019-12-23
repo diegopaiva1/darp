@@ -4,12 +4,13 @@
  * @date   26/09/2019
  */
 
-#include "Grasp.hpp"
 #include <algorithm>
+
+#include "Grasp.hpp"
 
 Singleton *instance = Singleton::getInstance();
 
-Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vector<float> alphas = {0.1, 0.2, 0.3, 0.4, 0.5})
+Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vector<double> alphas = {0.1, 0.2, 0.3, 0.4, 0.5})
 {
   Solution best;
 
@@ -21,10 +22,10 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
   std::vector<double> q (n, 0.0);
 
   // In the beginning of the search, all penalty parameters are initialized with 1.0
-  std::vector<float> penaltyParams = {1.0, 1.0, 1.0, 1.0, 1.0};
+  std::vector<double> penaltyParams = {1.0, 1.0, 1.0, 1.0, 1.0};
 
   // Random value that helps adjusting the penalty parameters dinamically
-  float delta = Prng::generateFloatInRange(0.05, 0.10);
+  double delta = Prng::generateDoubleInRange(0.05, 0.10);
 
   for (int it = 1; it <= iterations; it++) {
     int index;
@@ -91,7 +92,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
    /* Everytime a new incumbent solution is found, we randomly choose a new delta. According to
     * (Parragh et. al, 2010) this works as a diversification mecanism and avoids cycling
     */
-    delta = Prng::generateFloatInRange(0.05, 0.10);
+    delta = Prng::generateDoubleInRange(0.05, 0.10);
 
     if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
         (currSolution.routes.size() == best.routes.size() && currSolution.cost < best.cost))
@@ -124,7 +125,7 @@ Solution Grasp::solve(int iterations = 1000, int iterationBlocks = 100, std::vec
   return best;
 }
 
-Solution Grasp::localSearch(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::localSearch(Solution s, std::vector<double> penaltyParams)
 {
   std::vector<int> neighborhoods = {1, 2, 3};
 
@@ -154,34 +155,9 @@ Solution Grasp::localSearch(Solution s, std::vector<float> penaltyParams)
   }
 
   return s;
-
-  // bool improved;
-
-  // do {
-  //   improved = false;
-
-  //   Solution curr1 = swapZeroOne(s, penaltyParams);
-  //   Solution curr2 = relocate(s, penaltyParams);
-  //   Solution curr3 = _3opt(s, penaltyParams);
-  //   float minCost = std::min({curr1.cost, curr2.cost, curr3.cost});
-
-  //   if (minCost < s.cost) {
-  //     improved = true;
-
-  //     if (minCost == curr1.cost)
-  //       s = curr1;
-  //     else if (minCost == curr2.cost)
-  //       s = curr2;
-  //     else
-  //       s = curr3;
-  //   }
-  // }
-  // while (improved);
-
-  // return s;
 }
 
-Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::_3opt(Solution s, std::vector<double> penaltyParams)
 {
   Solution best = s;
 
@@ -192,35 +168,35 @@ Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
           for (int n = j + 1; n < s.routes[k].path.size() - 1; n++) {
             Route r = s.routes[k];
 
-            float d0 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
+            double d0 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
                        instance->getTravelTime(r.path[j], r.path[j + 1]) +
                        instance->getTravelTime(r.path[n], r.path[n + 1]);
 
-            float d1 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
+            double d1 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
                        instance->getTravelTime(r.path[j], r.path[n]) +
                        instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
-            float d2 = instance->getTravelTime(r.path[i], r.path[j]) +
+            double d2 = instance->getTravelTime(r.path[i], r.path[j]) +
                        instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
                        instance->getTravelTime(r.path[n], r.path[n + 1]);
 
-            float d3 = instance->getTravelTime(r.path[i], r.path[j]) +
+            double d3 = instance->getTravelTime(r.path[i], r.path[j]) +
                        instance->getTravelTime(r.path[i + 1], r.path[n]) +
                        instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
-            float d4 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
+            double d4 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
                        instance->getTravelTime(r.path[i + 1], r.path[n]) +
                        instance->getTravelTime(r.path[j], r.path[n + 1]);
 
-            float d5 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
+            double d5 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
                        instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
                        instance->getTravelTime(r.path[j], r.path[n]);
 
-            float d6 = instance->getTravelTime(r.path[i], r.path[n]) +
+            double d6 = instance->getTravelTime(r.path[i], r.path[n]) +
                        instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
                        instance->getTravelTime(r.path[j], r.path[n + 1]);
 
-            float d7 = instance->getTravelTime(r.path[i], r.path[n]) +
+            double d7 = instance->getTravelTime(r.path[i], r.path[n]) +
                        instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
                        instance->getTravelTime(r.path[j], r.path[j + 1]);
 
@@ -270,8 +246,9 @@ Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
 
             bool valid = true;
 
+            r.performEightStepEvaluationScheme();
             for (int m = 0; m < r.path.size(); m++)
-              if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
+              if (r.path[m]->isPickup() && instance->getRequest(r.path[m]).delivery->index < m)
                 valid = false;
 
             if (valid && r.isFeasible() && r.cost < best.routes[k].cost) {
@@ -288,7 +265,7 @@ Solution Grasp::_3opt(Solution s, std::vector<float> penaltyParams)
   return best;
 }
 
-Solution Grasp::_2opt(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::_2opt(Solution s, std::vector<double> penaltyParams)
 {
   Solution best = s;
 
@@ -302,7 +279,7 @@ Solution Grasp::_2opt(Solution s, std::vector<float> penaltyParams)
         bool valid = true;
 
         for (int m = 0; m < r.path.size(); m++) {
-          if (r.path[m]->isPickup() && r.getDeliveryIndexOf(m) < m)
+          if (r.path[m]->isPickup() && instance->getRequest(r.path[m]).delivery->index < m)
             valid = false;
         }
 
@@ -318,7 +295,7 @@ Solution Grasp::_2opt(Solution s, std::vector<float> penaltyParams)
   return s;
 }
 
-Solution Grasp::swapZeroOne(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::swapZeroOne(Solution s, std::vector<double> penaltyParams)
 {
   Solution best = s;
 
@@ -352,7 +329,7 @@ Solution Grasp::swapZeroOne(Solution s, std::vector<float> penaltyParams)
   return best;
 }
 
-Solution Grasp::relocate(Solution s, std::vector<float> penaltyParams)
+Solution Grasp::relocate(Solution s, std::vector<double> penaltyParams)
 {
   Solution best = s;
 
@@ -395,7 +372,7 @@ Route Grasp::createRoute(Solution &s)
 
 int Grasp::chooseAlphaIndex(std::vector<double> probabilities)
 {
-  double rand = Prng::generateFloatInRange(0, 1);
+  double rand = Prng::generateDoubleInRange(0, 1);
   double sum = 0.0;
 
   for (int i = 0; i < probabilities.size(); i++) {
@@ -414,9 +391,9 @@ void Grasp::updateProbabilities(std::vector<double> &probabilities, std::vector<
     probabilities[i] = q[i]/std::accumulate(q.begin(), q.end(), 0.0);
 }
 
-void Grasp::adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta)
+void Grasp::adjustPenaltyParams(Solution s, std::vector<double> &penaltyParams, double delta)
 {
-  float factor = 1 + delta;
+  double factor = 1 + delta;
 
   s.loadViolation         == 0 ? penaltyParams[0] /= factor : penaltyParams[0] *= factor;
   s.timeWindowViolation   == 0 ? penaltyParams[1] /= factor : penaltyParams[1] *= factor;
@@ -448,8 +425,8 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
       //       for (Route poss : possibilities) {
       //         aux.push_back(poss);
       //         Node *station = instance->getNode(instance->nearestStations[r.path[i]->id][r.path[i + 1]->id]);
-      //         float batteryBefore = r.batteryLevels[i] - r.vehicle.dischargingRate * instance->getTravelTime(r.path[i], station);
-      //         float batteryAfter = batteryBefore + station->rechargingRate * r.computeForwardTimeSlack(i + 1) - r.vehicle.dischargingRate * instance->getTravelTime(station, r.path[i + 1]);
+      //         double batteryBefore = r.batteryLevels[i] - r.vehicle.dischargingRate * instance->getTravelTime(r.path[i], station);
+      //         double batteryAfter = batteryBefore + station->rechargingRate * r.computeForwardTimeSlack(i + 1) - r.vehicle.dischargingRate * instance->getTravelTime(station, r.path[i + 1]);
 
       //         if (batteryBefore > 0 && batteryAfter > 0) {
       //           poss.path.insert(poss.path.begin() + i + 1, station);

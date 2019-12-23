@@ -19,20 +19,20 @@ public:
   Vehicle vehicle;
   std::vector<Node *> path;
   std::vector<int> load;
-  std::vector<float> rideTimeExcesses;
-  std::vector<float> arrivalTimes;
-  std::vector<float> serviceBeginningTimes;
-  std::vector<float> departureTimes;
-  std::vector<float> waitingTimes;
-  std::vector<float> rideTimes;
-  std::vector<float> batteryLevels;
-  std::vector<float> chargingTimes;
+  std::vector<double> rideTimeExcesses;
+  std::vector<double> arrivalTimes;
+  std::vector<double> serviceBeginningTimes;
+  std::vector<double> departureTimes;
+  std::vector<double> waitingTimes;
+  std::vector<double> rideTimes;
+  std::vector<double> batteryLevels;
+  std::vector<double> chargingTimes;
+  double cost;
+  double maxRideTimeViolation;
+  double timeWindowViolation;
+  double finalBatteryViolation;
   int loadViolation;
-  float maxRideTimeViolation;
-  float timeWindowViolation;
-  float finalBatteryViolation;
   bool batteryLevelViolation;
-  float cost;
 
  /**
   * @brief Default constructor.
@@ -58,7 +58,7 @@ public:
   * @param i Index of the node in the route.
   * @return  The forward time slack at index i.
   */
-  float computeForwardTimeSlack(int i);
+  double computeForwardTimeSlack(int i);
 
  /**
   * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
@@ -130,12 +130,6 @@ public:
   * @param i Index.
   */
   void computeRideTimeExcess(int i);
-
-  // TODO: Description
-  int getDeliveryIndexOf(int i);
-
-  // TODO: Description
-  int getPickupIndexOf(int j);
 
  /**
   * @brief Checks if current solution is feasible (no constraints violations).

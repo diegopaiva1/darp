@@ -31,7 +31,7 @@ public:
   std::vector<Node *> nodes;
   std::vector<Vehicle> vehicles;
   std::vector<Request> requests;
-  std::vector<std::vector<float>> travelTimes;
+  std::vector<std::vector<double>> travelTimes;
   std::vector<std::vector<int>> nearestStations;
 
  /**
@@ -71,12 +71,12 @@ public:
   Node* getDestinationDepot();
 
  /**
-  * @brief Get the request associated with a pickup node.
+  * @brief Get the request associated with a node.
   *
   * @param  pickup The node.
-  * @return        The request associated to the pickup node.
+  * @return        The request associated to the node.
   */
-  Request getRequest(Node *pickup);
+  Request getRequest(Node *node);
 
  /**
   * @brief Get the travel time between two nodes.
@@ -85,7 +85,7 @@ public:
   * @param n2 Second node.
   * @return   Travel time between n1 and n2.
   */
-  float getTravelTime(Node *n1, Node *n2);
+  double getTravelTime(Node *n1, Node *n2);
 };
 
 #endif // SINGLETON_HPP_INCLUDED

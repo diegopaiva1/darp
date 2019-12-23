@@ -25,7 +25,7 @@ public:
   *
   * @return The request's critical node's time window median.
   */
-  float getTimeWindowMedian();
+  double getTimeWindowMedian();
 
  /**
   * @brief Get the critical node, which is the node that has the tight time window.

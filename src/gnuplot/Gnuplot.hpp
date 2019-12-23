@@ -34,7 +34,7 @@ protected:
   * @param routes A set of routes.
   * @param cost   Sum of all routes' cost.
   */
-  static void plotGraph(std::vector<Route> routes, float cost);
+  static void plotGraph(std::vector<Route> routes, double cost);
 
  /**
   * @brief Plot the schedule of a given route.

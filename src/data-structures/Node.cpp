@@ -21,7 +21,7 @@ Node::~Node()
   // Empty destructor
 }
 
-float Node::getTimeWindowMedian()
+double Node::getTimeWindowMedian()
 {
   return (arrivalTime + departureTime)/2;
 }

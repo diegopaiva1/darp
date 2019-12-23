@@ -14,10 +14,10 @@ int Prng::generateIntegerInRange(int min, int max)
   return (int) generate(engine);
 }
 
-float Prng::generateFloatInRange(float min, float max)
+double Prng::generateDoubleInRange(double min, double max)
 {
   std::random_device seeder;
   std::mt19937 engine(seeder());
-  std::uniform_real_distribution<float> generate(min, max);
-  return (float) generate(engine);
+  std::uniform_real_distribution<double> generate(min, max);
+  return generate(engine);
 }

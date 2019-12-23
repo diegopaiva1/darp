@@ -12,10 +12,10 @@ class Vehicle
 public:
   int id;
   int capacity;
-  float dischargingRate;
-  float initialBatteryLevel;
-  float batteryCapacity;
-  float minFinalBatteryRatioLevel;
+  double dischargingRate;
+  double initialBatteryLevel;
+  double batteryCapacity;
+  double minFinalBatteryRatioLevel;
 
   Vehicle();
 

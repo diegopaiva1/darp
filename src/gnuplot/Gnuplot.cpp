@@ -21,7 +21,7 @@ void Gnuplot::plotSolution(Solution s)
     plotSchedule(r);
 }
 
-void Gnuplot::plotGraph(std::vector<Route> routes, float cost)
+void Gnuplot::plotGraph(std::vector<Route> routes, double cost)
 {
   // Data to be used in the plot
   std::ofstream dataFile(destinationFolder +  "routes.dat");
@@ -44,10 +44,10 @@ void Gnuplot::plotGraph(std::vector<Route> routes, float cost)
     dataFile << "# x1, y1, x2 - x1, y2 - y1" << "\n";
     for (int i = 0; i < r.path.size() - 1; i++) {
       // We do these calculations because we're going to use gnoplot's 'with vector' directive
-      float x1 = r.path[i]->latitude;
-      float y1 = r.path[i]->longitude;
-      float x2 = r.path[i + 1]->latitude - x1;
-      float y2 = r.path[i + 1]->longitude - y1;
+      double x1 = r.path[i]->latitude;
+      double y1 = r.path[i]->longitude;
+      double x2 = r.path[i + 1]->latitude - x1;
+      double y2 = r.path[i + 1]->longitude - y1;
 
       dataFile << x1 << ' ' << y1 << ' ' << x2 << ' ' << y2 << '\n';
     }

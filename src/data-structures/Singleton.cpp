@@ -26,7 +26,7 @@ void Singleton::init(std::string instanceFileName)
   int vehiclesAmount;
   int originDepots;
   int destinationDepots;
-  float planningHorizon;
+  double planningHorizon;
 
   if (!file.is_open()) {
     printf("Failed to read file\n");
@@ -111,7 +111,7 @@ void Singleton::init(std::string instanceFileName)
       for (int j = 0; j < nodesAmount; j++) {
         int nearestStationId;
 
-        float nearestStationDistance = MAXFLOAT;
+        double nearestStationDistance = MAXFLOAT;
 
         for (int k = nodesAmount - stationsAmount; k < nodesAmount; k++) {
           if (travelTimes[i][k] + travelTimes[j][k] < nearestStationDistance) {
@@ -138,7 +138,7 @@ void Singleton::init(std::string instanceFileName)
       // Tigthen time windows
       if (request.isInbound) {
         delivery->arrivalTime = std::max(
-          0.0f, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
+          0.0, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
         );
 
         delivery->departureTime = std::min(
@@ -147,7 +147,7 @@ void Singleton::init(std::string instanceFileName)
       }
       else {
         pickup->arrivalTime = std::max(
-          0.0f, delivery->arrivalTime - pickup->maxRideTime - pickup->serviceTime
+          0.0, delivery->arrivalTime - pickup->maxRideTime - pickup->serviceTime
         );
 
         pickup->departureTime = std::min(
@@ -168,9 +168,12 @@ Node* Singleton::getNode(int id)
     throw "Unknown node for this instance";
 }
 
-Request Singleton::getRequest(Node *pickup)
+Request Singleton::getRequest(Node *node)
 {
-  return requests.at(pickup->id - 1);
+  if (node->isPickup())
+    return requests.at(node->id - 1);
+  else
+    return requests.at(node->id - requestsAmount - 1);
 }
 
 Node* Singleton::getOriginDepot()
@@ -183,7 +186,7 @@ Node* Singleton::getDestinationDepot()
   return nodes.at(2 * requestsAmount + 1);
 }
 
-float Singleton::getTravelTime(Node *n1, Node *n2)
+double Singleton::getTravelTime(Node *n1, Node *n2)
 {
   return travelTimes[n1->id][n2->id];
 }

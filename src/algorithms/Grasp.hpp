@@ -7,8 +7,6 @@
 #ifndef GRASP_HPP_INCLUDED
 #define GRASP_HPP_INCLUDED
 
-#include <algorithm>
-
 #include "../data-structures/Singleton.hpp"
 #include "../data-structures/Solution.hpp"
 #include "../utils/Prng.hpp"
@@ -24,7 +22,7 @@ public:
   * @param alphas          GRASP's vector of random factors.
   * @return                A solution.
   */
-  static Solution solve(int iterations, int iterationBlocks, std::vector<float> alphas);
+  static Solution solve(int iterations, int iterationBlocks, std::vector<double> alphas);
 
 private:
   static int chooseAlphaIndex(std::vector<double> probabilities);
@@ -40,7 +38,7 @@ private:
   * @param penaltyParams Vector containing the value of each penalty parameter.
   * @param delta         Random value.
   */
-  static void adjustPenaltyParams(Solution s, std::vector<float> &penaltyParams, float delta);
+  static void adjustPenaltyParams(Solution s, std::vector<double> &penaltyParams, double delta);
 
  /**
   * @brief Performs the cheapest feasible insertion of a given request in a given route.
@@ -54,17 +52,17 @@ private:
 
   static Route createRoute(Solution &s);
 
-  static Solution localSearch(Solution s, std::vector<float> penaltyParams);
+  static Solution localSearch(Solution s, std::vector<double> penaltyParams);
 
-  static Solution relocate(Solution s, std::vector<float> penaltyParams);
+  static Solution relocate(Solution s, std::vector<double> penaltyParams);
 
-  static Solution swapZeroOne(Solution s, std::vector<float> penaltyParams);
+  static Solution swapZeroOne(Solution s, std::vector<double> penaltyParams);
 
-  static Solution eliminate(Solution s, std::vector<float> penaltyParams);
+  static Solution eliminate(Solution s, std::vector<double> penaltyParams);
 
-  static Solution _2opt(Solution s, std::vector<float> penaltyParams);
+  static Solution _2opt(Solution s, std::vector<double> penaltyParams);
 
-  static Solution _3opt(Solution s, std::vector<float> penaltyParams);
+  static Solution _3opt(Solution s, std::vector<double> penaltyParams);
 };
 
 #endif // GRASP_HPP_INCLUDED

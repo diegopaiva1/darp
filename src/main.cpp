@@ -29,31 +29,8 @@ int main(int argc, char *argv[])
   Singleton *instance = Singleton::getInstance();
   instance->init(argv[1]);
 
-  // Route test = Route(instance->vehicles.at(0));
-
-  // test.path.push_back(instance->getNode(0));
-  // test.path.push_back(instance->getNode(10));
-  // test.path.push_back(instance->getNode(5));
-  // test.path.push_back(instance->getNode(26));
-  // test.path.push_back(instance->getNode(21));
-  // test.path.push_back(instance->getNode(14));
-  // test.path.push_back(instance->getNode(30));
-  // test.path.push_back(instance->getNode(15));
-  // test.path.push_back(instance->getNode(31));
-  // test.path.push_back(instance->getNode(7));
-  // test.path.push_back(instance->getNode(16));
-  // test.path.push_back(instance->getNode(23));
-  // test.path.push_back(instance->getNode(32));
-  // test.path.push_back(instance->getNode(33));
-
-  // test.performEightStepEvaluationScheme();
-  // printf("\n");
-  // test.printPath();
-  // printf("\n");
-  // test.printSchedule();
-
   Timer timer;
-  Solution solution = Grasp::solve(1000, 50, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Solution solution = Grasp::solve(1000, 10, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
   double elapsed = timer.elapsedInMinutes();
 
   for (auto k = solution.routes.begin(); k != solution.routes.end(); )
@@ -62,34 +39,19 @@ int main(int argc, char *argv[])
     else
       k++;
 
-  float tt  = 0.0;
-  float ert = 0.0;
+  double tt  = 0.0;
+  double ert = 0.0;
 
   for (Route route : solution.routes) {
-    route.printPath();
-    printf("\n");
+    printf("\nRoute %d:\n", route.vehicle.id);
     route.printSchedule();
-    printf("\n");
 
     for (int i = 0; i < route.path.size(); i++) {
-      printf("Node at %d time window = [%.2f, %.2f]\n", i, route.path[i]->arrivalTime, route.path[i]->departureTime);
-
       if (i < route.path.size() - 1)
         tt += instance->getTravelTime(route.path[i], route.path[i + 1]);
 
       if (route.path[i]->isPickup())
         ert += route.rideTimeExcesses[i];
-
-      if (route.serviceBeginningTimes[i] > route.path[i]->departureTime)
-        printf("\nViolated time window at point %d in route %d", i, route.vehicle.id);
-      else if (route.load[i] > route.vehicle.capacity)
-        printf("\nViolated load at point %d in route %d", i, route.vehicle.id);
-      else if (route.rideTimes[i] > route.path[i]->maxRideTime)
-        printf("\nViolated ride time at point %d in route %d", i, route.vehicle.id);
-      else if (route.batteryLevels[i] < 0.0 || route.batteryLevels[i] > route.vehicle.batteryCapacity)
-        printf("\nViolated battery levels at point %d in route %d", i, route.vehicle.id);
-      else if (route.batteryLevels[route.path.size() - 1] < route.vehicle.batteryCapacity * route.vehicle.minFinalBatteryRatioLevel)
-        printf("\nViolated final battery level at point %d in route %d", i, route.vehicle.id);
     }
   }
 

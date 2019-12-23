@@ -18,11 +18,15 @@ Solution::~Solution()
 
 bool Solution::isFeasible()
 {
-  return loadViolation == 0 && timeWindowViolation == 0 &&
-         maxRideTimeViolation == 0 && finalBatteryViolation == 0 && !batteryLevelViolation;
+  return loadViolation         == 0 &&
+         timeWindowViolation   == 0 &&
+         maxRideTimeViolation  == 0 &&
+         finalBatteryViolation == 0 &&
+         !batteryLevelViolation     &&
+         routes.size() <= Singleton::getInstance()->vehicles.size();
 }
 
-void Solution::computeCost(std::vector<float> penaltyParams)
+void Solution::computeCost(std::vector<double> penaltyParams)
 {
   cost                  = 0.0;
   loadViolation         = 0;

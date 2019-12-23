@@ -8,17 +8,18 @@
 #define SOLUTION_HPP_INCLUDED
 
 #include "Route.hpp"
+#include "Singleton.hpp"
 
 class Solution
 {
 public:
   std::vector<Route> routes;
-  float cost;
+  double cost;
+  double timeWindowViolation;
+  double maxRideTimeViolation;
+  double finalBatteryViolation;
+  bool batteryLevelViolation;
   int loadViolation;
-  float timeWindowViolation;
-  float maxRideTimeViolation;
-  bool  batteryLevelViolation;
-  float finalBatteryViolation;
 
   Solution();
 
@@ -26,7 +27,7 @@ public:
 
   bool isFeasible();
 
-  void computeCost(std::vector<float> penaltyParams);
+  void computeCost(std::vector<double> penaltyParams);
 };
 
 #endif // SOLUTION_HPP_INCLUDED

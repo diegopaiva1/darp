@@ -14,13 +14,14 @@ class Node
 public:
   int id;
   int load;
-  float latitude;
-  float longitude;
-  float serviceTime;
-  float maxRideTime;
-  float departureTime;
-  float arrivalTime;
-  float rechargingRate;
+  int index;
+  double latitude;
+  double longitude;
+  double serviceTime;
+  double maxRideTime;
+  double departureTime;
+  double arrivalTime;
+  double rechargingRate;
   Type type;
 
   Node();
@@ -34,7 +35,7 @@ public:
   *
   * @return This node's time window median.
   */
-  float getTimeWindowMedian();
+  double getTimeWindowMedian();
 
  /**
   * @brief Checks if this node is a pickup node.
