@@ -5,19 +5,36 @@
  */
 
 #include "Prng.hpp"
+#include <iostream>
 
-int Prng::generateIntegerInRange(int min, int max)
+std::tuple<int, int> Prng::generateInteger(int min, int max)
 {
+  // Use random_device to generate a seed for Mersenne twister engine
   std::random_device seeder;
-  std::mt19937 engine(seeder());
+  int seed = seeder();
+
+  // Use Mersenne twister engine to generate pseudo-random numbers
+  std::mt19937 engine(seed);
+
+  // "Filter" MT engine's output to generate pseudo-random integer values, uniformly distributedon the interval [min, max]
   std::uniform_int_distribution<int> generate(min, max);
-  return (int) generate(engine);
+
+  // Generate pseudo-random integer
+  return std::make_tuple(generate(engine), seed);
 }
 
-double Prng::generateDoubleInRange(double min, double max)
+std::tuple<double, int> Prng::generateDouble(double min, double max)
 {
+  // Use random_device to generate a seed for Mersenne twister engine
   std::random_device seeder;
-  std::mt19937 engine(seeder());
+  int seed = seeder();
+
+  // Use Mersenne twister engine to generate pseudo-random numbers
+  std::mt19937 engine(seed);
+
+  // "Filter" MT engine's output to generate pseudo-random double values, uniformly distributedon the interval [min, max)
   std::uniform_real_distribution<double> generate(min, max);
-  return generate(engine);
+
+  // Generate pseudo-random double
+  return std::make_tuple(generate(engine), seed);
 }
