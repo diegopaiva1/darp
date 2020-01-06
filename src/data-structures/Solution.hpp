@@ -20,6 +20,7 @@ public:
   double finalBatteryViolation;
   bool batteryLevelViolation;
   int loadViolation;
+  int orderViolation;
 
   Solution();
 
@@ -27,7 +28,7 @@ public:
 
   bool isFeasible();
 
-  void computeCost(std::vector<double> penaltyParams);
+  void computeCost();
 };
 
 #endif // SOLUTION_HPP_INCLUDED

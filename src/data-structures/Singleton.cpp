@@ -190,3 +190,8 @@ double Singleton::getTravelTime(Node *n1, Node *n2)
 {
   return travelTimes[n1->id][n2->id];
 }
+
+Node* Singleton::getNearestStation(Node *n1, Node *n2)
+{
+  return getNode(nearestStations[n1->id][n2->id]);
+}

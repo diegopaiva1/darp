@@ -17,28 +17,17 @@ public:
  /**
   * @brief Solve the instance.
   *
-  * @param iterations      Total number of iterations.
-  * @param iterationBlocks Frequency of iterations on which probabilities are updated.
-  * @param alphas          GRASP's vector of random factors.
-  * @return                A solution.
+  * @param iterations Total number of iterations.
+  * @param blocks     Frequency of iterations on which probabilities are updated.
+  * @param alphas     GRASP's vector of random factors.
+  * @return           A solution.
   */
-  static Solution solve(int iterations, int iterationBlocks, std::vector<double> alphas);
+  static Solution solve(int iterations, int blocks, std::vector<double> alphas);
 
 private:
   static int chooseAlphaIndex(std::vector<double> probabilities);
 
   static void updateProbabilities(std::vector<double> &probabilities, std::vector<double> q);
-
- /**
-  * @brief Adjust the penalty parameters according to the solution computed violations. Whenever a violation is found,
-  *        it's penalty parameter is increased by the factor of (1 + delta), otherwise it is decreased by the same
-  *        factor.
-  *
-  * @param s             A solution.
-  * @param penaltyParams Vector containing the value of each penalty parameter.
-  * @param delta         Random value.
-  */
-  static void adjustPenaltyParams(Solution s, std::vector<double> &penaltyParams, double delta);
 
  /**
   * @brief Performs the cheapest feasible insertion of a given request in a given route.
@@ -52,17 +41,17 @@ private:
 
   static Route createRoute(Solution &s);
 
-  static Solution localSearch(Solution s, std::vector<double> penaltyParams);
+  static Solution localSearch(Solution s);
 
-  static Solution relocate(Solution s, std::vector<double> penaltyParams);
+  static Solution relocate(Solution s);
 
-  static Solution swapZeroOne(Solution s, std::vector<double> penaltyParams);
+  static Solution swapZeroOne(Solution s);
 
-  static Solution eliminate(Solution s, std::vector<double> penaltyParams);
+  static Solution eliminate(Solution s);
 
-  static Solution _2opt(Solution s, std::vector<double> penaltyParams);
+  static Solution _2opt(Solution s);
 
-  static Solution _3opt(Solution s, std::vector<double> penaltyParams);
+  static Solution _3opt(Solution s);
 };
 
 #endif // GRASP_HPP_INCLUDED

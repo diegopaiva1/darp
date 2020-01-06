@@ -32,22 +32,23 @@ bool Route::isFeasible()
          maxRideTimeViolation  == 0 &&
          timeWindowViolation   == 0 &&
          finalBatteryViolation == 0 &&
+         orderViolation        == 0 &&
          !batteryLevelViolation;
 }
 
 void Route::printSchedule()
 {
   for (int i = 0; i < path.size(); i++) {
-    printf("%2d\t", path[i]->id);
-    printf("A[%02d] = %6.4g\t", i,  arrivalTimes[i]);
-    printf("B[%02d] = %6.4g\t", i,  serviceBeginningTimes[i]);
-    printf("W[%02d] = %.4g\t",  i,  waitingTimes[i]);
-    printf("D[%02d] = %6.4g\t", i,  departureTimes[i]);
-    printf("L[%02d] = %.4g\t",  i,  rideTimes[i]);
-    printf("Z[%02d] = %.4g\t",  i,  batteryLevels[i]);
-    printf("E[%02d] = %.4g\t",  i,  chargingTimes[i]);
-    printf("Q[%02d] = %d\t",    i,  load[i]);
-    printf("R[%02d] = %.4g",    i,  rideTimeExcesses[i]);
+    printf("[%d] %2d\t", i, path[i]->id);
+    printf("A = %6.4g\t", arrivalTimes[i]);
+    printf("B = %6.4g\t", serviceBeginningTimes[i]);
+    printf("W = %6.4g\t", waitingTimes[i]);
+    printf("D = %6.4g\t", departureTimes[i]);
+    printf("L = %6.4g\t", rideTimes[i]);
+    printf("Z = %6.4g\t", batteryLevels[i]);
+    printf("E = %6.4g\t", chargingTimes[i]);
+    printf("Q = %6d\t",   load[i]);
+    printf("R = %6.4g",   rideTimeExcesses[i]);
     printf("\n");
   }
 }
@@ -173,6 +174,7 @@ void Route::performEightStepEvaluationScheme()
     timeWindowViolation   = 0.0;
     maxRideTimeViolation  = 0.0;
     finalBatteryViolation = 0.0;
+    orderViolation        = 0;
     batteryLevelViolation = false;
 
     for (int i = 0; i < path.size(); i++) {
@@ -181,8 +183,12 @@ void Route::performEightStepEvaluationScheme()
 
       cost += 0.25 * rideTimeExcesses[i];
 
-      if (path[i]->isPickup())
+      if (path[i]->isPickup()) {
         maxRideTimeViolation += std::max(0.0, rideTimes[i] - path[i]->maxRideTime);
+
+        if (inst->getRequest(path[i]).delivery->index < i)
+          orderViolation += 1000;
+      }
 
       loadViolation += std::max(0, load[i] - vehicle.capacity);
       timeWindowViolation += std::max(0.0, serviceBeginningTimes[i] - path[i]->departureTime);

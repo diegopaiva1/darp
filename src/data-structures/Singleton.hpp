@@ -86,6 +86,15 @@ public:
   * @return   Travel time between n1 and n2.
   */
   double getTravelTime(Node *n1, Node *n2);
+
+ /**
+  * @brief Get the nearest recharging station between two nodes.
+  *
+  * @param n1 First node.
+  * @param n2 Second node.
+  * @return   Nearest recharging staiton between n1 and n2.
+  */
+  Node* getNearestStation(Node *n1, Node *n2);
 };
 
 #endif // SINGLETON_HPP_INCLUDED

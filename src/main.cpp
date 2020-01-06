@@ -12,9 +12,11 @@
 #include "gnuplot/Gnuplot.hpp"
 #include "utils/Timer.hpp"
 
+#include "utils/Prng.hpp"
+
 #define MIN_ARGS_AMOUNT 1
 
-void storeResults(std::string fileName, Solution s, double cpuTime);
+void storeResults(std::string fileName, Solution s, double cpuTime, double tt, double ert);
 bool isEmpty(std::fstream& file);
 
 int main(int argc, char *argv[])
@@ -30,7 +32,7 @@ int main(int argc, char *argv[])
   instance->init(argv[1]);
 
   Timer timer;
-  Solution solution = Grasp::solve(1000, 10, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Solution solution = Grasp::solve(2500, 250, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
   double elapsed = timer.elapsedInMinutes();
 
   for (auto k = solution.routes.begin(); k != solution.routes.end(); )
@@ -67,19 +69,20 @@ int main(int argc, char *argv[])
   Gnuplot::plotSolution(solution);
 
   if (argv[2])
-    storeResults(argv[2], solution, elapsed);
+    storeResults(argv[2], solution, elapsed, tt, ert);
 
   return EXIT_SUCCESS;
 }
 
-void storeResults(std::string fileName, Solution s, double elapsed)
+void storeResults(std::string fileName, Solution s, double elapsed, double tt, double ert)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
 
   if (isEmpty(file))
-    file << "Veiculos;Custo;CPU (s)\n";
+    file << "Veiculos;TT;ERT;Custo;CPU (min)\n";
 
-  file << s.routes.size() << ";" << std::fixed << std::setprecision(2) << s.cost << ";" << elapsed << "\n";
+  file << s.routes.size() << ';' << std::fixed << std::setprecision(2) << tt
+                          << ';' << ert << ';' << s.cost << ';' << elapsed << "\n";
 }
 
 bool isEmpty(std::fstream& file)

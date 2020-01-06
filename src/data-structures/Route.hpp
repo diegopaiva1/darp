@@ -32,6 +32,7 @@ public:
   double timeWindowViolation;
   double finalBatteryViolation;
   int loadViolation;
+  int orderViolation;
   bool batteryLevelViolation;
 
  /**

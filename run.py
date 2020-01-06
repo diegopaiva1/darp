@@ -41,22 +41,26 @@ def storeXlsx(filePath):
 
   # Write headers
   worksheet.write(row, 0, '#Run', headerFormat)
-  worksheet.write(row, 1, 'Cost', headerFormat)
-  worksheet.write(row, 2, 'CPU (s)', headerFormat)
-  worksheet.write(row, 3, 'Vehicles used', headerFormat)
+  worksheet.write(row, 1, 'TT', headerFormat)
+  worksheet.write(row, 2, 'ERT', headerFormat)
+  worksheet.write(row, 3, 'Cost', headerFormat)
+  worksheet.write(row, 4, 'CPU (min)', headerFormat)
+  worksheet.write(row, 5, 'Vehicles used', headerFormat)
 
-  # Width of column 3 set to 15
-  worksheet.set_column(3, 3, 15)
+  # Width of column 5 set to 15
+  worksheet.set_column(5, 5, 15)
 
   # Alignment to use in body cells
   center = workbook.add_format({'align': 'center'})
 
   # Iterate over the data and write it out row by row
-  for vehicles, cost, cpu in runs:
+  for vehicles, tt, ert, cost, cpu in runs:
     worksheet.write_number(row + 1, 0, row + 1, center)
-    worksheet.write_number(row + 1, 1, float(cost), center)
-    worksheet.write_number(row + 1, 2, float(cpu), center)
-    worksheet.write_number(row + 1, 3, float(vehicles), center)
+    worksheet.write_number(row + 1, 1, float(tt), center)
+    worksheet.write_number(row + 1, 2, float(ert), center)
+    worksheet.write_number(row + 1, 3, float(cost), center)
+    worksheet.write_number(row + 1, 4, float(cpu), center)
+    worksheet.write_number(row + 1, 5, float(vehicles), center)
     row += 1
 
   # Last rows format
@@ -71,12 +75,16 @@ def storeXlsx(filePath):
   worksheet.write(row + 1, 1, '=MIN(B2:B' + rowsLengthStr + ')', topBorder)
   worksheet.write(row + 1, 2, '=MIN(C2:C' + rowsLengthStr + ')', topBorder)
   worksheet.write(row + 1, 3, '=MIN(D2:D' + rowsLengthStr + ')', topBorder)
+  worksheet.write(row + 1, 4, '=MIN(E2:E' + rowsLengthStr + ')', topBorder)
+  worksheet.write(row + 1, 5, '=MIN(F2:F' + rowsLengthStr + ')', topBorder)
 
   # Collect the average value of all columns except 0
   worksheet.write(row + 2, 0, 'Avg', bottomBorder)
   worksheet.write(row + 2, 1, '=AVERAGE(B2:B' + rowsLengthStr + ')', bottomBorder)
   worksheet.write(row + 2, 2, '=AVERAGE(C2:C' + rowsLengthStr + ')', bottomBorder)
   worksheet.write(row + 2, 3, '=AVERAGE(D2:D' + rowsLengthStr + ')', bottomBorder)
+  worksheet.write(row + 2, 4, '=AVERAGE(E2:E' + rowsLengthStr + ')', bottomBorder)
+  worksheet.write(row + 2, 5, '=AVERAGE(F2:F' + rowsLengthStr + ')', bottomBorder)
 
   workbook.close()
 
