@@ -28,11 +28,12 @@ Route::~Route()
 
 bool Route::isFeasible()
 {
-  return loadViolation         == 0 &&
-         maxRideTimeViolation  == 0 &&
-         timeWindowViolation   == 0 &&
-         finalBatteryViolation == 0 &&
-         orderViolation        == 0 &&
+  return loadViolation          == 0 &&
+         maxRideTimeViolation   == 0 &&
+         timeWindowViolation    == 0 &&
+         finalBatteryViolation  == 0 &&
+         orderViolation         == 0 &&
+        //  chargingPlaceViolation == 0 &&
          !batteryLevelViolation;
 }
 
@@ -106,7 +107,7 @@ void Route::performEightStepEvaluationScheme()
       computeBatteryLevel(i);
 
       // Violated battery level, that's an irreparable violation
-      if (batteryLevels[i] < 0.0 || batteryLevels[i] > vehicle.batteryCapacity)
+      if (batteryLevels[i] < 0.0 /* || batteryLevels[i] > vehicle.batteryCapacity */)
         goto STEP8;
 
       computeDepartureTime(i);
@@ -169,13 +170,14 @@ void Route::performEightStepEvaluationScheme()
       computeRideTimeExcess(i);
 
   STEP8:
-    cost                  = 0.0;
-    loadViolation         = 0;
-    timeWindowViolation   = 0.0;
-    maxRideTimeViolation  = 0.0;
-    finalBatteryViolation = 0.0;
-    orderViolation        = 0;
-    batteryLevelViolation = false;
+    cost                   = 0.0;
+    loadViolation          = 0;
+    timeWindowViolation    = 0.0;
+    maxRideTimeViolation   = 0.0;
+    finalBatteryViolation  = 0.0;
+    orderViolation         = 0;
+    // chargingPlaceViolation = 0;
+    batteryLevelViolation  = false;
 
     for (int i = 0; i < path.size(); i++) {
       if (i < path.size() - 1)
@@ -189,6 +191,9 @@ void Route::performEightStepEvaluationScheme()
         if (inst->getRequest(path[i]).delivery->index < i)
           orderViolation += 1000;
       }
+
+      // if (path[i]->isStation() && load[i] > 0)
+      //   chargingPlaceViolation += 1000;
 
       loadViolation += std::max(0, load[i] - vehicle.capacity);
       timeWindowViolation += std::max(0.0, serviceBeginningTimes[i] - path[i]->departureTime);

@@ -19,7 +19,6 @@ public:
   Vehicle vehicle;
   std::vector<Node *> path;
   std::vector<int> load;
-  std::vector<double> rideTimeExcesses;
   std::vector<double> arrivalTimes;
   std::vector<double> serviceBeginningTimes;
   std::vector<double> departureTimes;
@@ -27,13 +26,15 @@ public:
   std::vector<double> rideTimes;
   std::vector<double> batteryLevels;
   std::vector<double> chargingTimes;
+  std::vector<double> rideTimeExcesses;
+  int loadViolation;
+  int orderViolation;
+  int chargingPlaceViolation;
+  bool batteryLevelViolation;
   double cost;
   double maxRideTimeViolation;
   double timeWindowViolation;
   double finalBatteryViolation;
-  int loadViolation;
-  int orderViolation;
-  bool batteryLevelViolation;
 
  /**
   * @brief Default constructor.
@@ -57,6 +58,7 @@ public:
   *        from i can be delayed without violating time constraints for the later nodes.
   *
   * @param i Index of the node in the route.
+  *
   * @return  The forward time slack at index i.
   */
   double computeForwardTimeSlack(int i);
@@ -135,7 +137,7 @@ public:
  /**
   * @brief Checks if current solution is feasible (no constraints violations).
   *
-  * @return True if it is feasible, false otherwise.
+  * @return True if feasible, false otherwise.
   */
   bool isFeasible();
 

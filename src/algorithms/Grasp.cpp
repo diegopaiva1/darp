@@ -383,10 +383,23 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
       // if (r.batteryLevelViolation) {
       //   for (int i = 0; i < r.path.size(); i++) {
       //     if (r.batteryLevels[i] < 0) {
-      //       Node *station = instance->getNearestStation(r.path[i - 1], r.path[i]);
+      //       for (int j = 0; j <= i; j++) {
+      //         if (r.load[j] == 0) {
+      //           Node *station = instance->getNearestStation(r.path[j], r.path[j + 1]);
 
-      //       r.path.insert(r.path.begin() + i, station);
-      //       r.performEightStepEvaluationScheme();
+      //           r.path.insert(r.path.begin() + j + 1, station);
+      //           r.performEightStepEvaluationScheme();
+
+      //           if (r.batteryLevels[i] > 0) {
+      //             // Solved the battery issue, we can leave the inner loop
+      //             break;
+      //           }
+      //           else {
+      //             // Issue not solved, just erase the inserted station and continue the search
+      //             r.path.erase(r.path.begin() + j + 1);
+      //           }
+      //         }
+      //       }
       //     }
       //   }
       // }
@@ -404,6 +417,10 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
 
       if (r.isFeasible() && r.cost < best.cost)
         best = r;
+
+      // for (Node *n : r.path)
+      //   if (n->isStation() || n == req.delivery)
+      //     r.path.erase(std::remove(r.path.begin(), r.path.end(), n), r.path.end());
 
       r.path.erase(r.path.begin() + d);
     }
