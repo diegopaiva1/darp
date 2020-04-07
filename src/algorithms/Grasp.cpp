@@ -35,8 +35,7 @@ Solution Grasp::solve(int iterations = 100, int blocks = 10, std::vector<double>
     if (it % blocks == 0)
       updateProbabilities(probabilities, q);
 
-    for (Request &req : instance->requests)
-      requests.push_back(req);
+    requests = instance->requests;
 
     for (Vehicle &v : instance->vehicles)
       currSolution.routes.push_back(Route(v));
