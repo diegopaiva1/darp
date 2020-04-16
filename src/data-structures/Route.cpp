@@ -171,6 +171,8 @@ void Route::performEightStepEvaluationScheme()
 
   STEP8:
     cost                   = 0.0;
+    travelTime             = 0.0;
+    excessRideTime         = 0.0;
     loadViolation          = 0;
     timeWindowViolation    = 0.0;
     maxRideTimeViolation   = 0.0;
@@ -181,9 +183,9 @@ void Route::performEightStepEvaluationScheme()
 
     for (int i = 0; i < path.size(); i++) {
       if (i < path.size() - 1)
-        cost += 0.75 * inst->getTravelTime(path[i], path[i + 1]);
+        travelTime += inst->getTravelTime(path[i], path[i + 1]);
 
-      cost += 0.25 * rideTimeExcesses[i];
+      excessRideTime += rideTimeExcesses[i];
 
       if (path[i]->isPickup()) {
         maxRideTimeViolation += std::max(0.0, rideTimes[i] - path[i]->maxRideTime);
@@ -202,7 +204,8 @@ void Route::performEightStepEvaluationScheme()
         batteryLevelViolation = true;
     }
 
-    finalBatteryViolation = std::max(0.0, vehicle.batteryCapacity * vehicle.minFinalBatteryRatioLevel - batteryLevels[path.size() - 1]);
+    finalBatteryViolation += std::max(0.0, vehicle.batteryCapacity * vehicle.minFinalBatteryRatioLevel - batteryLevels[path.size() - 1]);
+    cost = 0.75 * travelTime + 0.25 * excessRideTime;
 }
 
 double Route::computeForwardTimeSlack(int i)

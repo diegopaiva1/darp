@@ -6,6 +6,9 @@
 
 #include "Solution.hpp"
 
+#include <iomanip>
+#include <fstream>
+
 Solution::Solution()
 {
   // Empty constructor
@@ -29,6 +32,8 @@ bool Solution::isFeasible()
 
 void Solution::computeCost()
 {
+  travelTime            = 0.0;
+  excessRideTime        = 0.0;
   cost                  = 0.0;
   loadViolation         = 0;
   timeWindowViolation   = 0.0;
@@ -38,8 +43,8 @@ void Solution::computeCost()
   orderViolation        = 0;
 
   for (Route &r : routes) {
-    cost += r.cost + r.loadViolation + r.timeWindowViolation + r.maxRideTimeViolation +
-                     r.batteryLevelViolation + r.finalBatteryViolation + r.orderViolation;
+    travelTime     += r.travelTime;
+    excessRideTime += r.excessRideTime;
 
     loadViolation         += r.loadViolation;
     timeWindowViolation   += r.timeWindowViolation;
@@ -47,5 +52,8 @@ void Solution::computeCost()
     batteryLevelViolation += r.batteryLevelViolation;
     finalBatteryViolation += r.finalBatteryViolation;
     orderViolation        += r.orderViolation;
+
+    cost += r.cost + loadViolation + timeWindowViolation + maxRideTimeViolation +
+                     batteryLevelViolation + finalBatteryViolation + orderViolation;
   }
 }

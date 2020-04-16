@@ -22,7 +22,10 @@ class Singleton
 private:
   inline static Singleton *instance;
 
-  Singleton(); // Private constructor to prevent external instancing
+ /**
+  * @brief Private constructor to prevent external instancing.
+  */
+  Singleton();
 
 public:
   std::string name;
@@ -92,7 +95,7 @@ public:
   *
   * @param n1 First node.
   * @param n2 Second node.
-  * @return   Nearest recharging staiton between n1 and n2.
+  * @return   Nearest charging station between n1 and n2.
   */
   Node* getNearestStation(Node *n1, Node *n2);
 };

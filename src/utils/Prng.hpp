@@ -10,7 +10,6 @@
 #define PRNG_HPP_INCLUDED
 
 #include <random>
-#include <tuple>
 
 class Prng
 {
@@ -21,9 +20,9 @@ public:
   * @param min Lower bound.
   * @param max Upper bound.
   *
-  * @return A tuple containing the (0) random integer and (1) the seed.
+  * @return A pair containing the (0) random integer and (1) the seed.
   */
-  static std::tuple<int, int> generateInteger(int min, int max);
+  static std::pair<int, int> generateInteger(int min, int max);
 
  /**
   * @brief Use Mersenne Twister algorithm to generate a random double in interval [min, max).
@@ -31,9 +30,9 @@ public:
   * @param min Lower bound.
   * @param max Upper bound.
   *
-  * @return A tuple containing the (0) random double and (1) the seed.
+  * @return A pair containing the (0) random double and (1) the seed.
   */
-  static std::tuple<double, int> generateDouble(double min, double max);
+  static std::pair<double, int> generateDouble(double min, double max);
 };
 
 #endif // PRNG_HPP_INCLUDED

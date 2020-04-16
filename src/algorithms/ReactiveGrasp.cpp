@@ -1,124 +1,150 @@
 /**
- * @file   Grasp.cpp
+ * @file   ReactiveGrasp.cpp
  * @author Diego Paiva
  * @date   26/09/2019
  */
 
 #include <algorithm>
 
-#include "Grasp.hpp"
+#include "data-structures/Singleton.hpp"
+#include "ReactiveGrasp.hpp"
+#include "utils/Timer.hpp"
+#include "utils/Prng.hpp"
+#include "utils/Display.hpp"
 
 Singleton *instance = Singleton::getInstance();
 
-Solution Grasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {0.5, 1.0})
+std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
 {
-  Solution best;
+  // Starting a clock to count run time
+  Timer timer;
 
-  // GRASP components
-  int n = alphas.size();
-  std::vector<int>    counter (n, 0);
-  std::vector<double> probabilities (10, 1.0/n);
-  std::vector<double> costs (n, 0.0);
-  std::vector<double> q (n, 0.0);
+  std::vector<RandomParam> randomParams (alphas.size());
+
+  // Initializing each alpha as random parameter
+  for (int i = 0; i < alphas.size(); i++) {
+    RandomParam rp;
+
+    rp.alpha          = alphas[i];
+    rp.probability    = 1.0/alphas.size();
+    rp.q              = 0.0;
+    rp.cumulativeCost = 0.0;
+    rp.count          = 0;
+
+    randomParams[i] = rp;
+  }
+
+  Solution best;
 
   for (int it = 1; it <= iterations; it++) {
     int index;
-    int alphaIndex;
-    Solution currSolution;
-    std::vector<Request> requests;
+    double alpha;
 
-    if (it != 1) {
-      alphaIndex = chooseAlphaIndex(probabilities);
-      counter[alphaIndex]++;
+    // Go full greedy at first iteration
+    if (it == 1) {
+      alpha = 0.0;
     }
+    else {
+      index = chooseRandomParamIndex(randomParams);
+      alpha = randomParams[index].alpha;
+      randomParams[index].count++;
+    }
+
+    Solution curr = buildGreedyRandomizedSolution(alpha);
+    curr = rvnd(curr);
+
+    if (it == 1 || curr.routes.size() < best.routes.size() || (curr.routes.size() == best.routes.size() && curr.cost < best.cost))
+      best = curr;
 
     if (it % blocks == 0)
-      updateProbabilities(probabilities, q);
-
-    requests = instance->requests;
-
-    for (Vehicle &v : instance->vehicles)
-      currSolution.routes.push_back(Route(v));
-
-    for (Route &route : currSolution.routes) {
-      route.path.push_back(instance->getOriginDepot());
-      route.path.push_back(instance->getDestinationDepot());
-    }
-
-    while (!requests.empty()) {
-      if (it == 1)
-        index = 0;
-      else
-        index = std::get<0>(Prng::generateInteger(0, (int) (alphas[alphaIndex] * requests.size() - 1)));
-
-      Request request = requests[index];
-      Route bestRoute;
-
-      for (int i = 0; i < currSolution.routes.size(); i++) {
-        Route r = performCheapestFeasibleInsertion(request, currSolution.routes[i]);
-
-        if (i == 0 || r.cost < bestRoute.cost)
-          bestRoute = r;
-      }
-
-      // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
-      if (bestRoute.cost == MAXFLOAT) {
-        Route newest = createRoute(currSolution);
-        newest.path.push_back(instance->getOriginDepot());
-        newest.path.push_back(request.pickup);
-        newest.path.push_back(request.delivery);
-        newest.path.push_back(instance->getDestinationDepot());
-        newest.performEightStepEvaluationScheme();
-        currSolution.routes.push_back(newest);
-      }
-      else {
-        currSolution.routes.at(bestRoute.vehicle.id - 1) = bestRoute;
-      }
-
-      requests.erase(requests.begin() + index);
-    }
-
-    currSolution.computeCost();
-    currSolution = localSearch(currSolution);
-
-    if ((it == 1) || (currSolution.routes.size() < best.routes.size()) ||
-        (currSolution.routes.size() == best.routes.size() && currSolution.cost < best.cost))
-      best = currSolution;
+      updateProbabilities(randomParams);
 
     if (it != 1) {
-      int param1 = 0;
-      int param2 = 0;
+      int param1 = curr.routes.size() > instance->vehicles.size() ? 1000 : 0;
+      int param2 = best.routes.size() > instance->vehicles.size() ? 1000 : 0;
 
-      if (currSolution.routes.size() > instance->vehicles.size())
-        param1 = 1000;
-
-      if (best.routes.size() > instance->vehicles.size())
-        param2 = 1000;
-
-      costs[alphaIndex] += currSolution.cost + param1 * currSolution.routes.size();
-      q[alphaIndex] = (best.cost + param2 * best.routes.size())/(costs[alphaIndex]/counter[alphaIndex]);
-
-      printf("\ns* = %.2f e a[%d] = %.2f (%d)", best.cost, alphaIndex, costs[alphaIndex]/counter[alphaIndex], it);
+      randomParams[index].cumulativeCost += curr.cost + param1 * curr.routes.size();
+      randomParams[index].q = (best.cost + param2 * best.routes.size())/
+                              (randomParams[index].cumulativeCost/randomParams[index].count);
     }
 
-    if (it == iterations) {
-      printf("\n\nAlphas:\n");
-
-      for (int p = 0; p < probabilities.size(); p++)
-        printf("%d. %.2f (%.2f%%) - Escolhido %d vezes\n", p + 1, alphas[p], probabilities[p], counter[p]);
-    }
+    Display::printProgress(best.cost, (double) it/iterations);
   }
 
-  return best;
+  double elapsedTime = timer.elapsedInMinutes();
+
+  // Erase any route without requests
+  for (auto k = best.routes.begin(); k != best.routes.end(); )
+    k = (k->path.size() <= 2) ? best.routes.erase(k) : k + 1;
+
+  Display::printResults(best, elapsedTime);
+
+  return std::make_pair(best, elapsedTime);
 }
 
-Solution Grasp::localSearch(Solution s)
+Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
+{
+  Solution solution;
+
+  for (Vehicle &v : instance->vehicles)
+    solution.routes.push_back(Route(v));
+
+  for (Route &route : solution.routes) {
+    route.path.push_back(instance->getOriginDepot());
+    route.path.push_back(instance->getDestinationDepot());
+  }
+
+  struct Candidate {
+    Route   route;
+    Request request;
+  };
+
+  std::vector<Candidate> candidates;
+
+  // Initialize candidates
+  for (Request req : instance->requests)
+    candidates.push_back({getBestInsertion(req, solution), req});
+
+  while (!candidates.empty()) {
+    std::sort(candidates.begin(), candidates.end(), [] (Candidate &c1, Candidate &c2) {
+      return c1.route.cost < c2.route.cost;
+    });
+
+    int index = Prng::generateInteger(0, (int) (alpha * (candidates.size() - 1))).first;
+    Candidate chosen = candidates[index];
+
+    // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
+    if (chosen.route.cost == MAXFLOAT) {
+      Route newest = createRoute(solution);
+      newest.path.push_back(instance->getOriginDepot());
+      newest.path.push_back(chosen.request.pickup);
+      newest.path.push_back(chosen.request.delivery);
+      newest.path.push_back(instance->getDestinationDepot());
+      solution.routes.push_back(newest);
+    }
+    else {
+      solution.routes.at(chosen.route.vehicle.id - 1) = chosen.route;
+    }
+
+    candidates.erase(candidates.begin() + index);
+
+    // Update candidates
+    for (int i = 0; i < candidates.size(); i++)
+      candidates[i] = {getBestInsertion(candidates[i].request, solution), candidates[i].request};
+  }
+
+  solution.computeCost();
+
+  return solution;
+}
+
+Solution ReactiveGrasp::rvnd(Solution s)
 {
   std::vector<int> neighborhoods = {1, 2, 3};
 
   while (!neighborhoods.empty()) {
     Solution neighbor;
-    int k = std::get<0>(Prng::generateInteger(0, (int) neighborhoods.size() - 1));
+    int k = Prng::generateInteger(0, (int) neighborhoods.size() - 1).first;
 
     switch (neighborhoods.at(k)) {
       case 1:
@@ -144,7 +170,7 @@ Solution Grasp::localSearch(Solution s)
   return s;
 }
 
-Solution Grasp::_3opt(Solution s)
+Solution ReactiveGrasp::_3opt(Solution s)
 {
   Solution best = s;
 
@@ -247,7 +273,7 @@ Solution Grasp::_3opt(Solution s)
   return best;
 }
 
-Solution Grasp::_2opt(Solution s)
+Solution ReactiveGrasp::_2opt(Solution s)
 {
   Solution best = s;
 
@@ -270,7 +296,7 @@ Solution Grasp::_2opt(Solution s)
   return s;
 }
 
-Solution Grasp::swapZeroOne(Solution s)
+Solution ReactiveGrasp::swapZeroOne(Solution s)
 {
   Solution best = s;
 
@@ -304,7 +330,7 @@ Solution Grasp::swapZeroOne(Solution s)
   return best;
 }
 
-Solution Grasp::relocate(Solution s)
+Solution ReactiveGrasp::relocate(Solution s)
 {
   Solution best = s;
 
@@ -331,7 +357,7 @@ Solution Grasp::relocate(Solution s)
   return best;
 }
 
-Route Grasp::createRoute(Solution &s)
+Route ReactiveGrasp::createRoute(Solution &s)
 {
   Vehicle newest(s.routes.size() + 1);
   Vehicle v = s.routes.at(0).vehicle;
@@ -345,28 +371,21 @@ Route Grasp::createRoute(Solution &s)
   return Route(newest);
 }
 
-int Grasp::chooseAlphaIndex(std::vector<double> probabilities)
+Route ReactiveGrasp::getBestInsertion(Request request, Solution solution)
 {
-  double rand = std::get<0>(Prng::generateDouble(0.0, 1.0));
-  double sum = 0.0;
+  Route best;
 
-  for (int i = 0; i < probabilities.size(); i++) {
-    sum += probabilities[i];
+  for (int k = 0; k < solution.routes.size(); k++) {
+    Route r = performCheapestFeasibleInsertion(request, solution.routes[k]);
 
-    if (rand <= sum)
-      return i;
+    if (k == 0 || r.cost < best.cost)
+      best = r;
   }
 
-  return 0;
+  return best;
 }
 
-void Grasp::updateProbabilities(std::vector<double> &probabilities, std::vector<double> q)
-{
-  for (int i = 0; i < probabilities.size(); i++)
-    probabilities[i] = q[i]/std::accumulate(q.begin(), q.end(), 0.0);
-}
-
-Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
+Route ReactiveGrasp::performCheapestFeasibleInsertion(Request req, Route r)
 {
   // Best insertion starts with infinity cost, we will update it during the search
   Route best = r;
@@ -379,47 +398,8 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
       r.path.insert(r.path.begin() + d, req.delivery);
       r.performEightStepEvaluationScheme();
 
-      // if (r.batteryLevelViolation) {
-      //   for (int i = 0; i < r.path.size(); i++) {
-      //     if (r.batteryLevels[i] < 0) {
-      //       for (int j = 0; j <= i; j++) {
-      //         if (r.load[j] == 0) {
-      //           Node *station = instance->getNearestStation(r.path[j], r.path[j + 1]);
-
-      //           r.path.insert(r.path.begin() + j + 1, station);
-      //           r.performEightStepEvaluationScheme();
-
-      //           if (r.batteryLevels[i] > 0) {
-      //             // Solved the battery issue, we can leave the inner loop
-      //             break;
-      //           }
-      //           else {
-      //             // Issue not solved, just erase the inserted station and continue the search
-      //             r.path.erase(r.path.begin() + j + 1);
-      //           }
-      //         }
-      //       }
-      //     }
-      //   }
-      // }
-
-      // if (r.finalBatteryViolation) {
-      //   for (int i = 0; i < r.path.size(); i++) {
-      //     if (r.batteryLevels[i] < r.vehicle.minFinalBatteryRatioLevel * r.vehicle.batteryCapacity) {
-      //       Node *station = instance->getNearestStation(r.path[i - 1], r.path[i]);
-
-      //       r.path.insert(r.path.begin() + i, station);
-      //       r.performEightStepEvaluationScheme();
-      //     }
-      //   }
-      // }
-
       if (r.isFeasible() && r.cost < best.cost)
         best = r;
-
-      // for (Node *n : r.path)
-      //   if (n->isStation() || n == req.delivery)
-      //     r.path.erase(std::remove(r.path.begin(), r.path.end(), n), r.path.end());
 
       r.path.erase(r.path.begin() + d);
     }
@@ -428,4 +408,30 @@ Route Grasp::performCheapestFeasibleInsertion(Request req, Route r)
   }
 
   return best;
+}
+
+int ReactiveGrasp::chooseRandomParamIndex(std::vector<RandomParam> randomParams)
+{
+  double rand = Prng::generateDouble(0.0, 1.0).first;
+  double sum  = 0.0;
+
+  for (int i = 0; i < randomParams.size(); i++) {
+    sum += randomParams[i].probability;
+
+    if (rand <= sum)
+      return i;
+  }
+
+  return 0;
+}
+
+void ReactiveGrasp::updateProbabilities(std::vector<RandomParam> &randomParams)
+{
+  double qsum = 0.0;
+
+  for (RandomParam rp : randomParams)
+    qsum += rp.q;
+
+  for (int i = 0; i < randomParams.size(); i++)
+    randomParams[i].probability = randomParams[i].q/qsum;
 }

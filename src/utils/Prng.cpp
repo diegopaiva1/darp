@@ -7,7 +7,7 @@
 #include "Prng.hpp"
 #include <iostream>
 
-std::tuple<int, int> Prng::generateInteger(int min, int max)
+std::pair<int, int> Prng::generateInteger(int min, int max)
 {
   // Use random_device to generate a seed for Mersenne twister engine
   std::random_device seeder;
@@ -20,10 +20,10 @@ std::tuple<int, int> Prng::generateInteger(int min, int max)
   std::uniform_int_distribution<int> generate(min, max);
 
   // Generate pseudo-random integer
-  return std::make_tuple(generate(engine), seed);
+  return std::make_pair(generate(engine), seed);
 }
 
-std::tuple<double, int> Prng::generateDouble(double min, double max)
+std::pair<double, int> Prng::generateDouble(double min, double max)
 {
   // Use random_device to generate a seed for Mersenne twister engine
   std::random_device seeder;
@@ -36,5 +36,5 @@ std::tuple<double, int> Prng::generateDouble(double min, double max)
   std::uniform_real_distribution<double> generate(min, max);
 
   // Generate pseudo-random double
-  return std::make_tuple(generate(engine), seed);
+  return std::make_pair(generate(engine), seed);
 }

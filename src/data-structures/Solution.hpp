@@ -10,17 +10,21 @@
 #include "Route.hpp"
 #include "Singleton.hpp"
 
+#include <string>
+
 class Solution
 {
 public:
   std::vector<Route> routes;
-  double cost;
+  int loadViolation;
+  int orderViolation;
+  bool batteryLevelViolation;
   double timeWindowViolation;
   double maxRideTimeViolation;
   double finalBatteryViolation;
-  bool batteryLevelViolation;
-  int loadViolation;
-  int orderViolation;
+  double travelTime;
+  double excessRideTime;
+  double cost;
 
   Solution();
 

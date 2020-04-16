@@ -31,10 +31,12 @@ public:
   int orderViolation;
   int chargingPlaceViolation;
   bool batteryLevelViolation;
-  double cost;
   double maxRideTimeViolation;
   double timeWindowViolation;
   double finalBatteryViolation;
+  double cost;
+  double travelTime;
+  double excessRideTime;
 
  /**
   * @brief Default constructor.
@@ -140,11 +142,6 @@ public:
   * @return True if feasible, false otherwise.
   */
   bool isFeasible();
-
- /**
-  * @brief Print the nodes sequentially.
-  */
-  void printPath();
 
  /**
   * @brief Print arrival times, service beginning times, departure times, waiting times,
