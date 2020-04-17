@@ -130,7 +130,8 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
 
     // Update candidates
     for (int i = 0; i < candidates.size(); i++)
-      candidates[i] = {getBestInsertion(candidates[i].request, solution), candidates[i].request};
+      if (candidates[i].route.vehicle.id == chosen.route.vehicle.id)
+        candidates[i] = {getBestInsertion(candidates[i].request, solution), candidates[i].request};
   }
 
   solution.computeCost();
