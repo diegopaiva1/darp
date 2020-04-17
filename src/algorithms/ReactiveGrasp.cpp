@@ -12,8 +12,6 @@
 #include "utils/Prng.hpp"
 #include "utils/Display.hpp"
 
-Singleton *instance = Singleton::getInstance();
-
 std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
 {
   // Starting a clock to count run time
@@ -60,8 +58,8 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
       updateProbabilities(randomParams);
 
     if (it != 1) {
-      int param1 = curr.routes.size() > instance->vehicles.size() ? 1000 : 0;
-      int param2 = best.routes.size() > instance->vehicles.size() ? 1000 : 0;
+      int param1 = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
+      int param2 = best.routes.size() > inst->vehicles.size() ? 1000 : 0;
 
       randomParams[index].cumulativeCost += curr.cost + param1 * curr.routes.size();
       randomParams[index].q = (best.cost + param2 * best.routes.size())/
@@ -86,12 +84,12 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
 {
   Solution solution;
 
-  for (Vehicle &v : instance->vehicles)
+  for (Vehicle &v : inst->vehicles)
     solution.routes.push_back(Route(v));
 
   for (Route &route : solution.routes) {
-    route.path.push_back(instance->getOriginDepot());
-    route.path.push_back(instance->getDestinationDepot());
+    route.path.push_back(inst->getOriginDepot());
+    route.path.push_back(inst->getDestinationDepot());
   }
 
   struct Candidate {
@@ -102,7 +100,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
   std::vector<Candidate> candidates;
 
   // Initialize candidates
-  for (Request req : instance->requests)
+  for (Request req : inst->requests)
     candidates.push_back({getBestInsertion(req, solution), req});
 
   while (!candidates.empty()) {
@@ -116,10 +114,10 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
     // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
     if (chosen.route.cost == MAXFLOAT) {
       Route newest = createRoute(solution);
-      newest.path.push_back(instance->getOriginDepot());
+      newest.path.push_back(inst->getOriginDepot());
       newest.path.push_back(chosen.request.pickup);
       newest.path.push_back(chosen.request.delivery);
-      newest.path.push_back(instance->getDestinationDepot());
+      newest.path.push_back(inst->getDestinationDepot());
       solution.routes.push_back(newest);
     }
     else {
@@ -182,37 +180,37 @@ Solution ReactiveGrasp::_3opt(Solution s)
           for (int n = j + 1; n < s.routes[k].path.size() - 1; n++) {
             Route r = s.routes[k];
 
-            double d0 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
-                        instance->getTravelTime(r.path[j], r.path[j + 1]) +
-                        instance->getTravelTime(r.path[n], r.path[n + 1]);
+            double d0 = inst->getTravelTime(r.path[i], r.path[i + 1]) +
+                        inst->getTravelTime(r.path[j], r.path[j + 1]) +
+                        inst->getTravelTime(r.path[n], r.path[n + 1]);
 
-            double d1 = instance->getTravelTime(r.path[i], r.path[i + 1]) +
-                        instance->getTravelTime(r.path[j], r.path[n]) +
-                        instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
+            double d1 = inst->getTravelTime(r.path[i], r.path[i + 1]) +
+                        inst->getTravelTime(r.path[j], r.path[n]) +
+                        inst->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
-            double d2 = instance->getTravelTime(r.path[i], r.path[j]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                        instance->getTravelTime(r.path[n], r.path[n + 1]);
+            double d2 = inst->getTravelTime(r.path[i], r.path[j]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                        inst->getTravelTime(r.path[n], r.path[n + 1]);
 
-            double d3 = instance->getTravelTime(r.path[i], r.path[j]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[n]) +
-                        instance->getTravelTime(r.path[j + 1], r.path[n + 1]);
+            double d3 = inst->getTravelTime(r.path[i], r.path[j]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[n]) +
+                        inst->getTravelTime(r.path[j + 1], r.path[n + 1]);
 
-            double d4 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[n]) +
-                        instance->getTravelTime(r.path[j], r.path[n + 1]);
+            double d4 = inst->getTravelTime(r.path[i], r.path[j + 1]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[n]) +
+                        inst->getTravelTime(r.path[j], r.path[n + 1]);
 
-            double d5 = instance->getTravelTime(r.path[i], r.path[j + 1]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                        instance->getTravelTime(r.path[j], r.path[n]);
+            double d5 = inst->getTravelTime(r.path[i], r.path[j + 1]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                        inst->getTravelTime(r.path[j], r.path[n]);
 
-            double d6 = instance->getTravelTime(r.path[i], r.path[n]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                        instance->getTravelTime(r.path[j], r.path[n + 1]);
+            double d6 = inst->getTravelTime(r.path[i], r.path[n]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[j + 1]) +
+                        inst->getTravelTime(r.path[j], r.path[n + 1]);
 
-            double d7 = instance->getTravelTime(r.path[i], r.path[n]) +
-                        instance->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                        instance->getTravelTime(r.path[j], r.path[j + 1]);
+            double d7 = inst->getTravelTime(r.path[i], r.path[n]) +
+                        inst->getTravelTime(r.path[i + 1], r.path[n + 1]) +
+                        inst->getTravelTime(r.path[j], r.path[j + 1]);
 
             if (d1 < d0) {
               r = s.routes[k];
@@ -259,8 +257,8 @@ Solution ReactiveGrasp::_3opt(Solution s)
               r.performEightStepEvaluationScheme();
             }
 
-            if (r.isFeasible() && *r.path.begin() == instance->getOriginDepot() &&
-                *r.path.end() == instance->getDestinationDepot() && r.cost < best.routes[k].cost) {
+            if (r.isFeasible() && *r.path.begin() == inst->getOriginDepot() &&
+                *r.path.end() == inst->getDestinationDepot() && r.cost < best.routes[k].cost) {
               best.routes[k] = r;
             }
           }
@@ -305,7 +303,7 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
     for (Node *p : s.routes[k1].path) {
       if (p->isPickup()) {
         Route r1 = s.routes[k1];
-        Request req = instance->getRequest(p);
+        Request req = inst->getRequest(p);
 
         r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.pickup),   r1.path.end());
         r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.delivery), r1.path.end());
@@ -338,7 +336,7 @@ Solution ReactiveGrasp::relocate(Solution s)
   for (int k = 0; k < s.routes.size(); k++) {
     for (Node *p : s.routes[k].path) {
       if (p->isPickup()) {
-        Request req = instance->getRequest(p);
+        Request req = inst->getRequest(p);
         Route r = s.routes[k];
 
         r.path.erase(std::remove(r.path.begin(), r.path.end(), req.pickup),   r.path.end());

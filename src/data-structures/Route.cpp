@@ -9,8 +9,6 @@
 #include "Route.hpp"
 #include "Singleton.hpp"
 
-Singleton *inst = Singleton::getInstance();
-
 Route::Route(Vehicle v)
 {
   vehicle = v;
@@ -45,11 +43,11 @@ void Route::printSchedule()
     printf("B = %6.4g\t", serviceBeginningTimes[i]);
     printf("W = %6.4g\t", waitingTimes[i]);
     printf("D = %6.4g\t", departureTimes[i]);
-    printf("L = %6.4g\t", rideTimes[i]);
+    printf("R = %6.4g\t", rideTimes[i]);
     printf("Z = %6.4g\t", batteryLevels[i]);
-    printf("E = %6.4g\t", chargingTimes[i]);
+    printf("C = %6.4g\t", chargingTimes[i]);
     printf("Q = %6d\t",   load[i]);
-    printf("R = %6.4g",   rideTimeExcesses[i]);
+    printf("E = %6.4g",   rideTimeExcesses[i]);
     printf("\n");
   }
 }
@@ -274,7 +272,7 @@ void Route::computeChargingTime(int i)
   if (!path[i]->isStation())
     chargingTimes[i] = 0.0;
   else
-    chargingTimes[i] = computeForwardTimeSlack(i + 1);
+    chargingTimes[i] = serviceBeginningTimes[i] - inst->getTravelTime(path[i - 1], path[i]) - serviceBeginningTimes[i - 1];
 }
 
 void Route::computeBatteryLevel(int i)

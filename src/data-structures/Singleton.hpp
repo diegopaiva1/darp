@@ -17,6 +17,12 @@
 #include "Vehicle.hpp"
 #include "Request.hpp"
 
+/**
+ * @brief Macro for global access.
+ */
+#define inst \
+        Singleton::getInstance()
+
 class Singleton
 {
 private:
@@ -91,7 +97,7 @@ public:
   double getTravelTime(Node *n1, Node *n2);
 
  /**
-  * @brief Get the nearest recharging station between two nodes.
+  * @brief Get the nearest charging station between two nodes.
   *
   * @param n1 First node.
   * @param n2 Second node.

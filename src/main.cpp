@@ -19,8 +19,7 @@ int main(const int argc, char const *argv[])
     return EXIT_FAILURE;
   }
 
-  Singleton *instance = Singleton::getInstance();
-  instance->init(argv[1]);
+  inst->init(argv[1]);
 
   std::pair<Solution, double> solutionWithElapsedTime = ReactiveGrasp::solve(2500, 250, {
     0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0
