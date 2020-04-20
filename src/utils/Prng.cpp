@@ -4,8 +4,7 @@
  * @date    13/02/2019
  */
 
-#include "Prng.hpp"
-#include <iostream>
+#include "utils/Prng.hpp"
 
 std::pair<int, int> Prng::generateInteger(int min, int max)
 {

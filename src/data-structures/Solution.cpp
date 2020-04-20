@@ -4,7 +4,7 @@
  * @date   26/09/2019
  */
 
-#include "Solution.hpp"
+#include "data-structures/Solution.hpp"
 
 #include <iomanip>
 #include <fstream>

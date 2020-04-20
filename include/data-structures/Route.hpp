@@ -142,12 +142,6 @@ public:
   * @return True if feasible, false otherwise.
   */
   bool isFeasible();
-
- /**
-  * @brief Print arrival times, service beginning times, departure times, waiting times,
-  *        ride times, load, battery levels and charging times for every index in this route's path.
-  */
-  void printSchedule();
 };
 
 #endif // ROUTE_HPP_INCLUDED

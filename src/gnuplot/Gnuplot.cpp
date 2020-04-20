@@ -4,7 +4,7 @@
  * @date    23/10/2019
  */
 
-#include "Gnuplot.hpp"
+#include "gnuplot/Gnuplot.hpp"
 
 #include <map>
 

@@ -7,7 +7,7 @@
  * Implementation was based in the following article: https://www.learncpp.com/cpp-tutorial/8-16-timing-your-code/
  */
 
-#include "Timer.hpp"
+#include "utils/Timer.hpp"
 
 Timer::Timer()
 {

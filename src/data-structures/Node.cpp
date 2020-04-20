@@ -4,7 +4,7 @@
  * @date    22/09/2019
  */
 
-#include "Node.hpp"
+#include "data-structures/Node.hpp"
 
 Node::Node()
 {

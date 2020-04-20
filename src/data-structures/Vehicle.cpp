@@ -4,7 +4,7 @@
  * @date   26/09/2019
  */
 
-#include "Vehicle.hpp"
+#include "data-structures/Vehicle.hpp"
 
 Vehicle::Vehicle()
 {

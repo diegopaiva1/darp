@@ -6,7 +6,7 @@
  * <Class description here>
  */
 
-#include "SolutionFileStorer.hpp"
+#include "utils/SolutionFileStorer.hpp"
 
 #include <iomanip>
 

@@ -6,8 +6,8 @@
 
 #include <numeric>
 
-#include "Route.hpp"
-#include "Singleton.hpp"
+#include "data-structures/Route.hpp"
+#include "data-structures/Singleton.hpp"
 
 Route::Route(Vehicle v)
 {
@@ -33,23 +33,6 @@ bool Route::isFeasible()
          orderViolation         == 0 &&
         //  chargingPlaceViolation == 0 &&
          !batteryLevelViolation;
-}
-
-void Route::printSchedule()
-{
-  for (int i = 0; i < path.size(); i++) {
-    printf("[%d] %2d\t", i, path[i]->id);
-    printf("A = %6.4g\t", arrivalTimes[i]);
-    printf("B = %6.4g\t", serviceBeginningTimes[i]);
-    printf("W = %6.4g\t", waitingTimes[i]);
-    printf("D = %6.4g\t", departureTimes[i]);
-    printf("R = %6.4g\t", rideTimes[i]);
-    printf("Z = %6.4g\t", batteryLevels[i]);
-    printf("C = %6.4g\t", chargingTimes[i]);
-    printf("Q = %6d\t",   load[i]);
-    printf("E = %6.4g",   rideTimeExcesses[i]);
-    printf("\n");
-  }
 }
 
 void Route::performEightStepEvaluationScheme()

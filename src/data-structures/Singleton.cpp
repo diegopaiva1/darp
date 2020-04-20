@@ -4,7 +4,7 @@
  * @date    25/09/2019
  */
 
-#include "Singleton.hpp"
+#include "data-structures/Singleton.hpp"
 
 Singleton::Singleton()
 {

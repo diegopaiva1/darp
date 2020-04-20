@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "data-structures/Singleton.hpp"
-#include "ReactiveGrasp.hpp"
+#include "algorithms/ReactiveGrasp.hpp"
 #include "utils/Timer.hpp"
 #include "utils/Prng.hpp"
 #include "utils/Display.hpp"
@@ -66,7 +66,7 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
                               (randomParams[index].cumulativeCost/randomParams[index].count);
     }
 
-    Display::printProgress(best.cost, (double) it/iterations);
+    Display::printProgress(best.cost, best.isFeasible(), (double) it/iterations);
   }
 
   double elapsedTime = timer.elapsedInMinutes();

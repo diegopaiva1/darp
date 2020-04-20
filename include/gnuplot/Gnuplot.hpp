@@ -10,8 +10,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "../data-structures/Singleton.hpp"
-#include "../data-structures/Solution.hpp"
+#include "data-structures/Singleton.hpp"
+#include "data-structures/Solution.hpp"
 
 class Gnuplot
 {
@@ -24,8 +24,8 @@ public:
   static void plotSolution(Solution s);
 
 protected:
-  static inline const std::string graphScript       = "../src/gnuplot/graph.gp";
-  static inline const std::string scheduleScript    = "../src/gnuplot/schedule.gp";
+  static inline const std::string graphScript       = "../src/gnuplot/scripts/graph.gp";
+  static inline const std::string scheduleScript    = "../src/gnuplot/scripts/schedule.gp";
   static inline const std::string destinationFolder = "../tmp/gnuplot/";
 
  /**

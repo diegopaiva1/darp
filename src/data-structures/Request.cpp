@@ -4,7 +4,7 @@
  * @date   13/11/2018
  */
 
-#include "Request.hpp"
+#include "data-structures/Request.hpp"
 
 Request::Request(Node *pickup, Node *delivery)
 {
