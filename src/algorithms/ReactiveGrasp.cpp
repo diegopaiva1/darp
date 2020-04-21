@@ -5,6 +5,7 @@
  */
 
 #include <algorithm>
+#include <cmath>
 
 #include "data-structures/Singleton.hpp"
 #include "algorithms/ReactiveGrasp.hpp"
@@ -54,16 +55,16 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
     if (it == 1 || curr.routes.size() < best.routes.size() || (curr.routes.size() == best.routes.size() && curr.cost < best.cost))
       best = curr;
 
-    if (it % blocks == 0)
+    if (it % blocks == 0) {
+      for (int i = 0; i < randomParams.size(); i++)
+        randomParams[i].q = (best.cost)/(randomParams[i].cumulativeCost/randomParams[i].count);
+
       updateProbabilities(randomParams);
+    }
 
     if (it != 1) {
-      int param1 = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
-      int param2 = best.routes.size() > inst->vehicles.size() ? 1000 : 0;
-
-      randomParams[index].cumulativeCost += curr.cost + param1 * curr.routes.size();
-      randomParams[index].q = (best.cost + param2 * best.routes.size())/
-                              (randomParams[index].cumulativeCost/randomParams[index].count);
+      int param = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
+      randomParams[index].cumulativeCost += curr.cost + param * curr.routes.size();
     }
 
     Display::printProgress(best, (double) it/iterations);
@@ -76,6 +77,11 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
     k = (k->path.size() <= 2) ? best.routes.erase(k) : k + 1;
 
   Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
+
+  for (int i = 0; i < randomParams.size(); i++) {
+    RandomParam rp = randomParams[i];
+    printf("%2d. %.2f - %d times (%.2f%%)\n", i + 1, rp.alpha, rp.count, rp.probability);
+  }
 
   return std::make_pair(best, elapsedTime);
 }
