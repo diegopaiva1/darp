@@ -66,7 +66,7 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
                               (randomParams[index].cumulativeCost/randomParams[index].count);
     }
 
-    Display::printProgress(best.cost, best.isFeasible(), (double) it/iterations);
+    Display::printProgress(best, (double) it/iterations);
   }
 
   double elapsedTime = timer.elapsedInMinutes();
@@ -75,7 +75,7 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
   for (auto k = best.routes.begin(); k != best.routes.end(); )
     k = (k->path.size() <= 2) ? best.routes.erase(k) : k + 1;
 
-  Display::printResults(best, elapsedTime);
+  Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
 
   return std::make_pair(best, elapsedTime);
 }

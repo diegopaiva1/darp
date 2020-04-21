@@ -21,7 +21,7 @@ int main(const int argc, char const *argv[])
 
   inst->init(argv[1]);
 
-  std::pair<Solution, double> solutionWithElapsedTime = ReactiveGrasp::solve(1000, 100, {
+  std::pair<Solution, double> solutionWithElapsedTime = ReactiveGrasp::solve(2500, 250, {
     0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
   });
 
