@@ -7,8 +7,8 @@
  * Implementation was based in the following article: https://www.learncpp.com/cpp-tutorial/8-16-timing-your-code/
  */
 
-#ifndef TIMER_H_INCLUDED
-#define TIMER_H_INCLUDED
+#ifndef TIMER_HPP_INCLUDED
+#define TIMER_HPP_INCLUDED
 
 #include <chrono>
 
@@ -35,4 +35,4 @@ public:
   double elapsedInHours() const;
 };
 
-#endif // TIMER_H_INCLUDED
+#endif // TIMER_HPP_INCLUDED

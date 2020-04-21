@@ -6,8 +6,8 @@
  * Utility to pretty-print the program's progress and results in the console.
  */
 
-#ifndef DISPLAY_H_INCLUDED
-#define DISPLAY_H_INCLUDED
+#ifndef DISPLAY_HPP_INCLUDED
+#define DISPLAY_HPP_INCLUDED
 
 #include "data-structures/Solution.hpp"
 
@@ -41,9 +41,32 @@
 class Display
 {
 public:
-  static void printProgress(double bestCost, bool isFeasible, double percentage);
+ /**
+  * @brief Display solution's cost and feasibility and a progress bar.
+  *
+  * @param solution   A Solution.
+  * @param percentage Fraction of completed iterations.
+  */
+  static void printProgress(Solution s, double percentage);
 
-  static void printResults(Solution s, double elapsedTime);
+ /**
+  * @brief Print a schedule table containing all decision variables for every route in solution 's'.
+  *        Table is displayed as follows:
+  *
+  *  +----+-----------------------------------------------------------------+
+  *  | x  |                       ROUTE SCHEDULE                            |
+  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
+  *  | #  |   ID|     A|     B|     W|     D|     R|     Z|    C|    Q|    E|
+  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
+  *  | 0  |  ...|   ...|   ...|   ...|   ...|   ...|   ...| ... | ... |  ...|
+  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
+  *
+  * where 'x' is the id of the route. Then print solution's cost and elapsed time.
+  *
+  * @param s           The Solution.
+  * @param elapsedTime Time spent to achieve the Solution.
+  */
+  static void printSolutionInfoWithElapsedTime(Solution s, double elapsedTime);
 };
 
-#endif // DISPLAY_H_INCLUDED
+#endif // DISPLAY_HPP_INCLUDED

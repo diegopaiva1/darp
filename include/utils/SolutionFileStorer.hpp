@@ -6,8 +6,8 @@
  * <Class description here>
  */
 
-#ifndef SOLUTIONFILESTORER_H_INCLUDED
-#define SOLUTIONFILESTORER_H_INCLUDED
+#ifndef SOLUTIONFILESTORER_HPP_INCLUDED
+#define SOLUTIONFILESTORER_HPP_INCLUDED
 
 #include "data-structures/Solution.hpp"
 
@@ -20,4 +20,4 @@ private:
   static bool isEmpty(std::fstream &file);
 };
 
-#endif // SOLUTIONFILESTORER_H_INCLUDED
+#endif // SOLUTIONFILESTORER_HPP_INCLUDED
