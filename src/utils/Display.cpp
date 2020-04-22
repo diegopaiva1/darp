@@ -1,6 +1,8 @@
 #include "utils/Display.hpp"
 #include "fort.hpp"
 
+#include <iomanip>
+
 void Display::printProgress(Solution s, double percentage)
 {
   int value        = (int) (percentage * 100);
@@ -25,8 +27,9 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
 
     table[0][1].set_cell_span(10);
     table[0][1].set_cell_text_align(fort::text_align::center);
+    table << std::fixed << std::setprecision(2);
 
-    for (int i = 1; i < 11; i++)
+    for (int i = 0; i < 11; i++)
       table.column(i).set_cell_text_align(fort::text_align::right);
 
     for (int i = 0; i < s.routes[k].path.size(); i++) {
@@ -44,7 +47,7 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
             << fort::endr;
     }
 
-    std::cout << '\n' << table.to_string() << std::endl;
+    std::cout << '\n' << table.to_string() << '\n';
   }
 
   printf(BOLD_GREEN "Best found = %.2f\nTT \t   = %6.2f\nERT \t   = %5.2f\nTime \t   = %4.2f minutes\n" RESET,
