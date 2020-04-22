@@ -8,6 +8,14 @@
 #define REACTIVEGRASP_HPP_INCLUDED
 
 #include "data-structures/Solution.hpp"
+#include "effolkronium/random.hpp"
+
+#include <tuple>
+
+/**
+ * @brief Get base random alias.
+ */
+typedef effolkronium::random_static Random;
 
 /**
  * @brief Data type to abstract a random factor in Reactive GRASP.
@@ -29,9 +37,9 @@ public:
   * @param iterations Total number of iterations.
   * @param blocks     Frequency of iterations on which probabilities are updated.
   * @param alphas     GRASP's vector of random factors.
-  * @return           A std::pair containing (1) the Solution and (2) the time elapsed in minutes.
+  * @return           A std::tuple containing (0) Solution, (1) elapsed time in minutes and (2) seed.
   */
-  static std::pair<Solution, double> solve(int iterations, int blocks, std::vector<double> alphas);
+  static std::tuple<Solution, double, uint> solve(int iterations, int blocks, std::vector<double> alphas);
 
 private:
  /**

@@ -5,17 +5,20 @@
  */
 
 #include <algorithm>
-#include <cmath>
 
 #include "data-structures/Singleton.hpp"
 #include "algorithms/ReactiveGrasp.hpp"
 #include "utils/Timer.hpp"
-#include "utils/Prng.hpp"
 #include "utils/Display.hpp"
 
-std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
+std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
 {
-  // Starting a clock to count run time
+  // Use std::random_device to generate seed to Random engine
+  int seed = std::random_device{}();
+
+  Random::seed(seed);
+
+  // Starting a clock to count algorithm's run time
   Timer timer;
 
   std::vector<RandomParam> randomParams (alphas.size());
@@ -56,8 +59,12 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
       best = curr;
 
     if (it % blocks == 0) {
-      for (int i = 0; i < randomParams.size(); i++)
-        randomParams[i].q = (best.cost)/(randomParams[i].cumulativeCost/randomParams[i].count);
+      for (int i = 0; i < randomParams.size(); i++) {
+        double avg = randomParams[i].count > 0 ? randomParams[i].cumulativeCost/randomParams[i].count : 0;
+
+        if (avg > 0)
+          randomParams[i].q = (best.cost)/avg;
+      }
 
       updateProbabilities(randomParams);
     }
@@ -83,7 +90,7 @@ std::pair<Solution, double> ReactiveGrasp::solve(int iterations = 100, int block
     printf("%2d. %.2f - %d times (%.2f%%)\n", i + 1, rp.alpha, rp.count, rp.probability);
   }
 
-  return std::make_pair(best, elapsedTime);
+  return std::make_tuple(best, elapsedTime, seed);
 }
 
 Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
@@ -114,7 +121,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
       return c1.route.cost < c2.route.cost;
     });
 
-    int index = Prng::generateInteger(0, (int) (alpha * (candidates.size() - 1))).first;
+    int index = Random::get(0, (int) (alpha * (candidates.size() - 1)));
     Candidate chosen = candidates[index];
 
     // Request could not be feasibly inserted, so we create a new route (thus solution will be infeasible)
@@ -149,7 +156,7 @@ Solution ReactiveGrasp::rvnd(Solution s)
 
   while (!neighborhoods.empty()) {
     Solution neighbor;
-    int k = Prng::generateInteger(0, (int) neighborhoods.size() - 1).first;
+    int k = Random::get(0, (int) neighborhoods.size() - 1);
 
     switch (neighborhoods.at(k)) {
       case 1:
@@ -303,8 +310,6 @@ Solution ReactiveGrasp::_2opt(Solution s)
 
 Solution ReactiveGrasp::swapZeroOne(Solution s)
 {
-  Solution best = s;
-
   for (int k1 = 0; k1 < s.routes.size(); k1++) {
     for (Node *p : s.routes[k1].path) {
       if (p->isPickup()) {
@@ -319,10 +324,9 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
           if (k1 != k2) {
             Route r2 = performCheapestFeasibleInsertion(req, s.routes[k2]);
 
-            if (r1.isFeasible() && r2.cost != MAXFLOAT && r1.cost + r2.cost < best.routes[k1].cost + best.routes[k2].cost) {
-              best = s;
-              best.routes[k1] = r1;
-              best.routes[k2] = r2;
+            if (r1.isFeasible() && r2.isFeasible() && r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
+              s.routes[k1] = r1;
+              s.routes[k2] = r2;
             }
           }
         }
@@ -330,17 +334,17 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
     }
   }
 
-  best.computeCost();
+  s.computeCost();
 
-  return best;
+  return s;
 }
 
 Solution ReactiveGrasp::relocate(Solution s)
 {
-  Solution best = s;
-
   for (int k = 0; k < s.routes.size(); k++) {
-    for (Node *p : s.routes[k].path) {
+    for (int i = 1; i < s.routes[k].path.size() - 1; i++) {
+      Node *p = s.routes[k].path[i];
+
       if (p->isPickup()) {
         Request req = inst->getRequest(p);
         Route r = s.routes[k];
@@ -350,16 +354,17 @@ Solution ReactiveGrasp::relocate(Solution s)
 
         r = performCheapestFeasibleInsertion(req, r);
 
-        if (r.cost != MAXFLOAT && r.cost < best.routes[k].cost) {
-          best.routes[k] = r;
+        if (r.isFeasible() && r.cost < s.routes[k].cost) {
+          s.routes[k] = r;
+          i = 1;
         }
       }
     }
   }
 
-  best.computeCost();
+  s.computeCost();
 
-  return best;
+  return s;
 }
 
 Route ReactiveGrasp::createRoute(Solution &s)
@@ -417,7 +422,7 @@ Route ReactiveGrasp::performCheapestFeasibleInsertion(Request req, Route r)
 
 int ReactiveGrasp::chooseRandomParamIndex(std::vector<RandomParam> randomParams)
 {
-  double rand = Prng::generateDouble(0.0, 1.0).first;
+  double rand = Random::get(0.0, 1.0);
   double sum  = 0.0;
 
   for (int i = 0; i < randomParams.size(); i++) {
