@@ -16,12 +16,11 @@ void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double 
 
   if (isEmpty(file))
     // Start writing header first
-    file << "Veiculos;TT;ERT;Custo;CPU (min);Seed\n";
+    file << "TT;ERT;Cost;CPU (min);Vehicles used;Seed\n";
 
   // Write the actual data
-  file << s.routes.size() << ';' << std::fixed << std::setprecision(2) << s.travelTime
-                          << ';' << s.excessRideTime << ';' << s.cost << ';' << elapsedTime
-                          << ';' << seed << "\n";
+  file << std::fixed << std::setprecision(2) << s.travelTime << ';' << s.excessRideTime << ';'
+       << s.cost << ';' << elapsedTime << ';' << s.routes.size() << ';' << seed << "\n";
 }
 
 bool SolutionFileStorer::isEmpty(std::fstream &file)

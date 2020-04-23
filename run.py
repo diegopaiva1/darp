@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 # This script runs a instance or a group of instances a given amount of times and then stores the results
-# of each run in a .xlsx file under the 'results' folder
+# of each run in a .xlsx file under the 'results' folder.
 
 # Standard libraries
 import sys
 import os
 import re
+import string
 import readline
 
 # 3rd party packages
@@ -24,69 +25,63 @@ def storeXlsx(filePath):
   # Open the file to read the content of each run
   file = open(filePath, 'r')
 
+  # Worksheet columns
+  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Seed"]
+
+  # Width of columns 1 to 6 set to 10
+  worksheet.set_column(1, 6, 10)
+
+  # Start from the first cell (rows and columns are zero indexed)
+  row = 0
+
+  # Write header
+  for i, col in enumerate(cols):
+    if i == 0:
+      form = {'bold': True, 'align': 'center'}
+    else:
+      form = {'bold': True, 'align': 'right'}
+
+    worksheet.write(row, i, col, workbook.add_format(form))
+
   # Data from the runs that we want to write to the worksheet
+  # Each element from 'runs' list will be a tuple with size = len(cols)
   runs = []
 
-  # Save all lines from file in the list except the first one
+  # Append all lines from file in 'runs' list except the first one (the header)
   for i, line in enumerate(file):
     if i != 0:
       data = line.split(";")
       runs.append(data)
 
-  # Format to use in header cells
-  headerFormat = workbook.add_format({'bold': True, 'align': 'center'})
-
-  # Start from the first cell. Rows and columns are zero indexed
-  row = 0
-
-  # Write headers
-  worksheet.write(row, 0, '#Run',          headerFormat)
-  worksheet.write(row, 1, 'TT',            headerFormat)
-  worksheet.write(row, 2, 'ERT',           headerFormat)
-  worksheet.write(row, 3, 'Cost',          headerFormat)
-  worksheet.write(row, 4, 'CPU (min)',     headerFormat)
-  worksheet.write(row, 5, 'Vehicles used', headerFormat)
-  worksheet.write(row, 6, 'Seed',          headerFormat)
-
-  # Width of column 5 set to 15
-  worksheet.set_column(5, 5, 15)
-
-  # Alignment to use in body cells
-  alignment = workbook.add_format({'align': 'right'})
-
   # Iterate over the data and write it out row by row
-  for vehicles, tt, ert, cost, cpu, seed in runs:
-    worksheet.write_number(row + 1, 0, row + 1,         alignment)
-    worksheet.write_number(row + 1, 1, float(tt),       alignment)
-    worksheet.write_number(row + 1, 2, float(ert),      alignment)
-    worksheet.write_number(row + 1, 3, float(cost),     alignment)
-    worksheet.write_number(row + 1, 4, float(cpu),      alignment)
-    worksheet.write_number(row + 1, 5, float(vehicles), alignment)
-    worksheet.write_number(row + 1, 6, int(seed),       alignment)
+  for r, data in enumerate(runs, 1):
+    # Write run number
+    worksheet.write_number(row + 1, 0, r, workbook.add_format({'align': 'center'}))
+
+    # Write every other item in data
+    for c, item in enumerate(data, 1):
+      worksheet.write_number(row + 1, c, float(item), workbook.add_format({'align': 'right'}))
+
     row += 1
 
   # Last rows format
-  topBorder = workbook.add_format({'bold': True, 'align': 'right', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0})
-  bottomBorder = workbook.add_format({'bold': True, 'align': 'right', 'border': 2, 'top': 0, 'left': 0, 'right': 0})
+  topBorderCenter    = {'bold': True, 'align': 'center', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
+  topBorderRight     = {'bold': True, 'align': 'right', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
+  bottomBorderCenter = {'bold': True, 'align': 'center', 'border': 2, 'top': 0, 'left': 0, 'right': 0}
+  bottomBorderRight  = {'bold': True, 'align': 'right', 'border': 2, 'top': 0, 'left': 0, 'right': 0}
 
-  # The '+ 1' stands for the header row that is not present in 'runs' list
-  rowsLengthStr = str(len(runs) + 1)
+  # Collect the minimum value and the average of all columns except column 0
+  for i, col in enumerate(cols):
+    if i == 0:
+      worksheet.write(row + 1, 0, 'Min', workbook.add_format(topBorderCenter))
+      worksheet.write(row + 2, 0, 'Avg', workbook.add_format(bottomBorderCenter))
+    else:
+      # Access the letter of the cell and last row that contains a number
+      letter = string.ascii_uppercase[i]
+      last   = str(len(runs) + 1)
 
-  # Collect the minimum value of all columns except 0
-  worksheet.write(row + 1, 0, 'Min', topBorder)
-  worksheet.write(row + 1, 1, '=MIN(B2:B' + rowsLengthStr + ')', topBorder)
-  worksheet.write(row + 1, 2, '=MIN(C2:C' + rowsLengthStr + ')', topBorder)
-  worksheet.write(row + 1, 3, '=MIN(D2:D' + rowsLengthStr + ')', topBorder)
-  worksheet.write(row + 1, 4, '=MIN(E2:E' + rowsLengthStr + ')', topBorder)
-  worksheet.write(row + 1, 5, '=MIN(F2:F' + rowsLengthStr + ')', topBorder)
-
-  # Collect the average value of all columns except 0
-  worksheet.write(row + 2, 0, 'Avg', bottomBorder)
-  worksheet.write(row + 2, 1, '=AVERAGE(B2:B' + rowsLengthStr + ')', bottomBorder)
-  worksheet.write(row + 2, 2, '=AVERAGE(C2:C' + rowsLengthStr + ')', bottomBorder)
-  worksheet.write(row + 2, 3, '=AVERAGE(D2:D' + rowsLengthStr + ')', bottomBorder)
-  worksheet.write(row + 2, 4, '=AVERAGE(E2:E' + rowsLengthStr + ')', bottomBorder)
-  worksheet.write(row + 2, 5, '=AVERAGE(F2:F' + rowsLengthStr + ')', bottomBorder)
+      worksheet.write(row + 1, i, '=MIN('     + letter + '2:' + letter + last + ')', workbook.add_format(topBorderRight))
+      worksheet.write(row + 2, i, '=AVERAGE(' + letter + '2:' + letter + last + ')', workbook.add_format(bottomBorderRight))
 
   workbook.close()
 
