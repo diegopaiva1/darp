@@ -8,9 +8,6 @@
 #define SOLUTION_HPP_INCLUDED
 
 #include "Route.hpp"
-#include "Singleton.hpp"
-
-#include <string>
 
 class Solution
 {

@@ -6,6 +6,9 @@
 
 #include "data-structures/Singleton.hpp"
 
+#include <fstream>
+#include <cmath>
+
 Singleton::Singleton()
 {
   // Empty constructor

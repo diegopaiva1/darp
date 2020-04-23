@@ -4,8 +4,8 @@
  * @date    24/09/2019
  */
 
-#include "algorithms/ReactiveGrasp.hpp"
 #include "data-structures/Singleton.hpp"
+#include "algorithms/ReactiveGrasp.hpp"
 #include "gnuplot/Gnuplot.hpp"
 #include "utils/SolutionFileStorer.hpp"
 
@@ -21,7 +21,7 @@ int main(const int argc, char const *argv[])
 
   inst->init(argv[1]);
 
-  std::tuple<Solution, double, uint> solutionWithElapsedTimeAndSeed = ReactiveGrasp::solve(1000, 100, {
+  std::tuple<Solution, double, uint> solutionWithElapsedTimeAndSeed = ReactiveGrasp::solve(1000, 200, {
     0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
   });
 

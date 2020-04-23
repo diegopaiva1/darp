@@ -8,12 +8,8 @@
 #define SINGLETON_HPP_INCLUDED
 
 #include <vector>
-#include <fstream>
-#include <limits>
-#include <iostream>
-#include <cmath>
+#include <string>
 
-#include "Node.hpp"
 #include "Vehicle.hpp"
 #include "Request.hpp"
 
@@ -26,6 +22,9 @@
 class Singleton
 {
 private:
+ /**
+  * @brief Unique object.
+  */
   inline static Singleton *instance;
 
  /**

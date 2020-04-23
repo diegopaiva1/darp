@@ -11,6 +11,9 @@
 
 #include "data-structures/Solution.hpp"
 
+#include <fstream>
+#include <string>
+
 class SolutionFileStorer
 {
 public:

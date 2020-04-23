@@ -8,9 +8,8 @@
 #define ROUTE_HPP_INCLUDED
 
 #include "Vehicle.hpp"
-#include "Request.hpp"
+#include "Node.hpp"
 
-#include <iostream>
 #include <vector>
 
 class Route

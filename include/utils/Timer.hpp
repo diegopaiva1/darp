@@ -21,6 +21,7 @@ class Timer
 {
 private:
   Time::time_point beginning;
+
 public:
   Timer();
 

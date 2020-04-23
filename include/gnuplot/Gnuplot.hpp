@@ -7,11 +7,9 @@
 #ifndef GNUPLOT_HPP_INCLUDED
 #define GNUPLOT_HPP_INCLUDED
 
-#include <fstream>
-#include <iostream>
-
-#include "data-structures/Singleton.hpp"
 #include "data-structures/Solution.hpp"
+
+#include <string>
 
 class Gnuplot
 {

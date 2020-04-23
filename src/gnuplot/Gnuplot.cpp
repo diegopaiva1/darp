@@ -5,10 +5,11 @@
  */
 
 #include "gnuplot/Gnuplot.hpp"
+#include "data-structures/Singleton.hpp"
 
-#include <map>
-
-Singleton *in = Singleton::getInstance();
+#include <iostream>
+#include <fstream>
+#include <unordered_map>
 
 void Gnuplot::plotSolution(Solution s)
 {
@@ -28,14 +29,14 @@ void Gnuplot::plotGraph(std::vector<Route> routes, double cost)
 
   // Header metadata
   dataFile << "# Instance name, Solution cost, Number of routes, Number of requests, Number of stations" << "\n";
-  dataFile << in->name << ' ' << cost << ' ' << routes.size() << ' ' <<  in->requestsAmount << ' '
-           << in->stationsAmount << "\n";
+  dataFile << inst->name << ' ' << cost << ' ' << routes.size() << ' ' <<  inst->requestsAmount << ' '
+           << inst->stationsAmount << "\n";
 
   // Each datablock must be separated by two line breaks
   dataFile << "\n\n";
 
   dataFile << "# Id, Latitude, Longitude" << "\n";
-  for (Node *node : in->nodes)
+  for (Node *node : inst->nodes)
     dataFile << node->id << " " << node->latitude << " " << node->longitude << '\n';
 
   dataFile << "\n\n";
@@ -65,7 +66,7 @@ void Gnuplot::plotSchedule(Route r)
   std::string fileName = "../tmp/gnuplot/schedule" + std::to_string(r.vehicle.id) + ".dat";
 
   std::ofstream dataFile(fileName, std::ofstream::out | std::ofstream::trunc);
-  std::map<int, int> colors;
+  std::unordered_map<int, int> colors;
 
   // Define the color for each point
   for (int i = 0, color = 0; i < r.path.size(); i++) {
@@ -74,7 +75,7 @@ void Gnuplot::plotSchedule(Route r)
       color++;
     }
     else if (r.path[i]->isDelivery()) {
-      colors[r.path[i]->id] = colors[r.path[i]->id - in->requestsAmount];
+      colors[r.path[i]->id] = colors[r.path[i]->id - inst->requestsAmount];
     }
     else {
       colors[r.path[i]->id] = 0;

@@ -38,5 +38,5 @@ add_subdirectory (third-party/libfort)
 add_subdirectory (third-party/random)
 
 # Add include path to compiler
-target_link_libraries (${TARGET} PRIVATE fort)
-target_link_libraries (${TARGET} effolkronium_random)
+target_link_libraries (${TARGET} PRIVATE fort
+                                 effolkronium_random)

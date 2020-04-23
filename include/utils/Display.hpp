@@ -14,7 +14,7 @@
 /**
  * @brief The progress bar style and width while running the program.
  */
-#define PROGRESSBAR_STRING "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PROGRESSBAR_STRING "############################################################"
 #define WIDTH 60
 
 /**

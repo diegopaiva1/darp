@@ -15,7 +15,6 @@ std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, in
 {
   // Use std::random_device to generate seed to Random engine
   int seed = std::random_device{}();
-
   Random::seed(seed);
 
   // Starting a clock to count algorithm's run time
@@ -63,25 +62,31 @@ std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, in
         double avg = randomParams[i].count > 0 ? randomParams[i].cumulativeCost/randomParams[i].count : 0;
 
         if (avg > 0)
-          randomParams[i].q = (best.cost)/avg;
+          randomParams[i].q = best.cost/avg;
       }
 
       updateProbabilities(randomParams);
     }
+
+    // Erase any route without requests
+    for (auto k = curr.routes.begin(); k != curr.routes.end(); )
+      k = (k->path.size() <= 2) ? curr.routes.erase(k) : k + 1;
 
     if (it != 1) {
       int param = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
       randomParams[index].cumulativeCost += curr.cost + param * curr.routes.size();
     }
 
+    // printf("\n");
+    // for (int i = 0; i < randomParams.size(); i++) {
+    //   double avg = randomParams[i].count > 0 ? randomParams[i].cumulativeCost/randomParams[i].count : 0;
+    //   printf("Avg %.2f = %.2f (%.2f)\n", randomParams[i].alpha, avg, randomParams[i].probability);
+    // }
+
     Display::printProgress(best, (double) it/iterations);
   }
 
   double elapsedTime = timer.elapsedInMinutes();
-
-  // Erase any route without requests
-  for (auto k = best.routes.begin(); k != best.routes.end(); )
-    k = (k->path.size() <= 2) ? best.routes.erase(k) : k + 1;
 
   Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
 

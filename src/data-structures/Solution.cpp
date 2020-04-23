@@ -5,8 +5,9 @@
  */
 
 #include "data-structures/Solution.hpp"
+#include "data-structures/Singleton.hpp"
 
-#include <iomanip>
+// #include <iomanip>
 #include <fstream>
 
 Solution::Solution()

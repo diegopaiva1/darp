@@ -4,10 +4,11 @@
  * @date    06/10/2019
  */
 
-#include <numeric>
-
 #include "data-structures/Route.hpp"
 #include "data-structures/Singleton.hpp"
+
+#include <numeric> // std::accumulate
+#include <cmath>   // MAXFLOAT
 
 Route::Route(Vehicle v)
 {

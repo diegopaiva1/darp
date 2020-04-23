@@ -1,6 +1,7 @@
 #include "utils/Display.hpp"
 #include "fort.hpp"
 
+#include <iostream>
 #include <iomanip>
 
 void Display::printProgress(Solution s, double percentage)
