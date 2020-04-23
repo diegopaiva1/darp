@@ -40,32 +40,34 @@ def storeXlsx(filePath):
   row = 0
 
   # Write headers
-  worksheet.write(row, 0, '#Run', headerFormat)
-  worksheet.write(row, 1, 'TT', headerFormat)
-  worksheet.write(row, 2, 'ERT', headerFormat)
-  worksheet.write(row, 3, 'Cost', headerFormat)
-  worksheet.write(row, 4, 'CPU (min)', headerFormat)
+  worksheet.write(row, 0, '#Run',          headerFormat)
+  worksheet.write(row, 1, 'TT',            headerFormat)
+  worksheet.write(row, 2, 'ERT',           headerFormat)
+  worksheet.write(row, 3, 'Cost',          headerFormat)
+  worksheet.write(row, 4, 'CPU (min)',     headerFormat)
   worksheet.write(row, 5, 'Vehicles used', headerFormat)
+  worksheet.write(row, 6, 'Seed',          headerFormat)
 
   # Width of column 5 set to 15
   worksheet.set_column(5, 5, 15)
 
   # Alignment to use in body cells
-  center = workbook.add_format({'align': 'center'})
+  alignment = workbook.add_format({'align': 'right'})
 
   # Iterate over the data and write it out row by row
-  for vehicles, tt, ert, cost, cpu in runs:
-    worksheet.write_number(row + 1, 0, row + 1, center)
-    worksheet.write_number(row + 1, 1, float(tt), center)
-    worksheet.write_number(row + 1, 2, float(ert), center)
-    worksheet.write_number(row + 1, 3, float(cost), center)
-    worksheet.write_number(row + 1, 4, float(cpu), center)
-    worksheet.write_number(row + 1, 5, float(vehicles), center)
+  for vehicles, tt, ert, cost, cpu, seed in runs:
+    worksheet.write_number(row + 1, 0, row + 1,         alignment)
+    worksheet.write_number(row + 1, 1, float(tt),       alignment)
+    worksheet.write_number(row + 1, 2, float(ert),      alignment)
+    worksheet.write_number(row + 1, 3, float(cost),     alignment)
+    worksheet.write_number(row + 1, 4, float(cpu),      alignment)
+    worksheet.write_number(row + 1, 5, float(vehicles), alignment)
+    worksheet.write_number(row + 1, 6, int(seed),       alignment)
     row += 1
 
   # Last rows format
-  topBorder = workbook.add_format({'bold': True, 'align': 'center', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0})
-  bottomBorder = workbook.add_format({'bold': True, 'align': 'center', 'border': 2, 'top': 0, 'left': 0, 'right': 0})
+  topBorder = workbook.add_format({'bold': True, 'align': 'right', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0})
+  bottomBorder = workbook.add_format({'bold': True, 'align': 'right', 'border': 2, 'top': 0, 'left': 0, 'right': 0})
 
   # The '+ 1' stands for the header row that is not present in 'runs' list
   rowsLengthStr = str(len(runs) + 1)
@@ -127,7 +129,7 @@ if re.match("^[aA]$", option):
 
   instances.append(filePath)
 else:
-  instancesDir = input("\nEnter instances directory (separe multiple data sets with a space): ").split(" ")
+  instancesDir = input("\nEnter instances directory (separe multiple datasets with a space): ").split(" ")
 
   for dir in instancesDir:
     if not os.path.isdir(dir):

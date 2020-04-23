@@ -8,19 +8,20 @@
 
 #include "utils/SolutionFileStorer.hpp"
 
-#include <iomanip>
+#include <iomanip> // std::fixed, std::setprecision
 
-void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double elapsedTime)
+void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
 
   if (isEmpty(file))
-    // In case we have a empty file, start writing the header
-    file << "Veiculos;TT;ERT;Custo;CPU (min)\n";
+    // Start writing header first
+    file << "Veiculos;TT;ERT;Custo;CPU (min);Seed\n";
 
   // Write the actual data
   file << s.routes.size() << ';' << std::fixed << std::setprecision(2) << s.travelTime
-                          << ';' << s.excessRideTime << ';' << s.cost << ';' << elapsedTime << "\n";
+                          << ';' << s.excessRideTime << ';' << s.cost << ';' << elapsedTime
+                          << ';' << seed << "\n";
 }
 
 bool SolutionFileStorer::isEmpty(std::fstream &file)
