@@ -11,7 +11,8 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
-std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
+std::tuple<Solution, double, uint, int>
+ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
 {
   // Use std::random_device to generate seed to Random engine
   int seed = std::random_device{}();
@@ -36,6 +37,7 @@ std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, in
   }
 
   Solution best;
+  int optimalIteration = 0;
 
   for (int it = 1; it <= iterations; it++) {
     int index;
@@ -54,8 +56,12 @@ std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, in
     Solution curr = buildGreedyRandomizedSolution(alpha);
     curr = rvnd(curr);
 
-    if (it == 1 || curr.routes.size() < best.routes.size() || (curr.routes.size() == best.routes.size() && curr.cost < best.cost))
+    if (it == 1 || curr.routes.size() < best.routes.size() || (curr.routes.size() == best.routes.size() && curr.cost < best.cost)) {
       best = curr;
+
+      if (optimalIteration == 0 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
+        optimalIteration = it;
+    }
 
     if (it % blocks == 0) {
       for (int i = 0; i < randomParams.size(); i++) {
@@ -95,7 +101,9 @@ std::tuple<Solution, double, uint> ReactiveGrasp::solve(int iterations = 100, in
     printf("%2d. %.2f - %d times (%.2f%%)\n", i + 1, rp.alpha, rp.count, rp.probability);
   }
 
-  return std::make_tuple(best, elapsedTime, seed);
+  printf("%d\n", optimalIteration);
+
+  return std::make_tuple(best, elapsedTime, seed, optimalIteration);
 }
 
 Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)

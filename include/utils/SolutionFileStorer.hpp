@@ -17,7 +17,7 @@
 class SolutionFileStorer
 {
 public:
-  static void storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed);
+  static void storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed, int optimalIt);
 
 private:
   static bool isEmpty(std::fstream &file);

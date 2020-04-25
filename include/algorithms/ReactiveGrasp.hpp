@@ -37,9 +37,10 @@ public:
   * @param iterations Total number of iterations.
   * @param blocks     Frequency of iterations on which probabilities are updated.
   * @param alphas     GRASP's vector of random factors.
-  * @return           A std::tuple containing (0) Solution, (1) elapsed time in minutes and (2) seed.
+  * @return           A std::tuple containing (0) Solution, (1) elapsed time in minutes, (2) seed and (3)
+  *                   number of the iterarion which optimal solution was reached.
   */
-  static std::tuple<Solution, double, uint> solve(int iterations, int blocks, std::vector<double> alphas);
+  static std::tuple<Solution, double, uint, int> solve(int iterations, int blocks, std::vector<double> alphas);
 
 private:
  /**

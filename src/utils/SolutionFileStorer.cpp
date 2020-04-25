@@ -10,17 +10,17 @@
 
 #include <iomanip> // std::fixed, std::setprecision
 
-void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed)
+void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed, int optimalIt)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
 
   if (isEmpty(file))
     // Start writing header first
-    file << "TT;ERT;Cost;CPU (min);Vehicles used;Seed\n";
+    file << "TT;ERT;Cost;CPU (min);Vehicles;Opt. iteration;Seed\n";
 
   // Write the actual data
   file << std::fixed << std::setprecision(2) << s.travelTime << ';' << s.excessRideTime << ';'
-       << s.cost << ';' << elapsedTime << ';' << s.routes.size() << ';' << seed << "\n";
+       << s.cost << ';' << elapsedTime << ';' << s.routes.size() << ';' << optimalIt << ';' << seed << "\n";
 }
 
 bool SolutionFileStorer::isEmpty(std::fstream &file)

@@ -11,7 +11,19 @@
 
 Singleton::Singleton()
 {
-  // Empty constructor
+  // Register the known optimal solutions for the instances
+  optimalSolutions["instances/dataset/a/a2-16-0.7.txt"] = 237.38;
+  optimalSolutions["instances/dataset/a/a2-20-0.7.txt"] = 279.08;
+  optimalSolutions["instances/dataset/a/a2-24-0.7.txt"] = 346.21;
+  optimalSolutions["instances/dataset/a/a3-18-0.7.txt"] = 236.82;
+  optimalSolutions["instances/dataset/a/a3-24-0.7.txt"] = 274.81;
+  optimalSolutions["instances/dataset/a/a3-30-0.7.txt"] = 413.27;
+  optimalSolutions["instances/dataset/a/a3-36-0.7.txt"] = 481.17;
+  optimalSolutions["instances/dataset/a/a4-16-0.7.txt"] = 222.49;
+  optimalSolutions["instances/dataset/a/a4-24-0.7.txt"] = 310.84;
+  optimalSolutions["instances/dataset/a/a4-32-0.7.txt"] = 393.96;
+  optimalSolutions["instances/dataset/a/a4-40-0.7.txt"] = 453.84;
+  optimalSolutions["instances/dataset/a/a5-40-0.7.txt"] = 414.51;
 }
 
 Singleton* Singleton::getInstance()

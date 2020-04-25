@@ -26,10 +26,10 @@ def storeXlsx(filePath):
   file = open(filePath, 'r')
 
   # Worksheet columns
-  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Seed"]
+  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Opt. iteration", "Seed"]
 
-  # Width of columns 1 to 6 set to 10
-  worksheet.set_column(1, 6, 10)
+  # Width of columns 1 to 7 set to 10
+  worksheet.set_column(1, 7, 10)
 
   # Start from the first cell (rows and columns are zero indexed)
   row = 0
