@@ -14,12 +14,12 @@
 std::tuple<Solution, double, uint, int>
 ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
 {
-  // Use std::random_device to generate seed to Random engine
-  int seed = std::random_device{}();
-  Random::seed(seed);
-
   // Starting a clock to count algorithm's run time
   Timer timer;
+
+  // Use std::random_device to generate seed to Random engine
+  uint seed = std::random_device{}();
+  Random::seed(seed);
 
   std::vector<RandomParam> randomParams (alphas.size());
 
@@ -118,7 +118,8 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
     route.path.push_back(inst->getDestinationDepot());
   }
 
-  struct Candidate {
+  struct Candidate
+  {
     Route   route;
     Request request;
   };
@@ -144,6 +145,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
       newest.path.push_back(chosen.request.pickup);
       newest.path.push_back(chosen.request.delivery);
       newest.path.push_back(inst->getDestinationDepot());
+      newest.performEightStepEvaluationScheme();
       solution.routes.push_back(newest);
     }
     else {
@@ -154,7 +156,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
 
     // Update candidates
     for (int i = 0; i < candidates.size(); i++)
-      if (candidates[i].route.vehicle.id == chosen.route.vehicle.id)
+      if (candidates[i].route == chosen.route)
         candidates[i] = {getBestInsertion(candidates[i].request, solution), candidates[i].request};
   }
 
@@ -173,13 +175,13 @@ Solution ReactiveGrasp::rvnd(Solution s)
 
     switch (neighborhoods.at(k)) {
       case 1:
-        neighbor = relocate(s);
+        neighbor = reinsert(s);
         break;
       case 2:
-        neighbor = _3opt(s);
+        neighbor = swapZeroOne(s);
         break;
       case 3:
-        neighbor = swapZeroOne(s);
+        neighbor = swapOneOne(s);
         break;
     }
 
@@ -195,151 +197,31 @@ Solution ReactiveGrasp::rvnd(Solution s)
   return s;
 }
 
-Solution ReactiveGrasp::_3opt(Solution s)
-{
-  Solution best = s;
-
-  for (int k = 0; k < s.routes.size(); k++) {
-    if (s.routes[k].path.size() >= 3) {
-      for (int i = 0; i < s.routes[k].path.size() - 3; i++) {
-        for (int j = i + 1; j < s.routes[k].path.size() - 2; j++) {
-          for (int n = j + 1; n < s.routes[k].path.size() - 1; n++) {
-            Route r = s.routes[k];
-
-            double d0 = inst->getTravelTime(r.path[i], r.path[i + 1]) +
-                        inst->getTravelTime(r.path[j], r.path[j + 1]) +
-                        inst->getTravelTime(r.path[n], r.path[n + 1]);
-
-            double d1 = inst->getTravelTime(r.path[i], r.path[i + 1]) +
-                        inst->getTravelTime(r.path[j], r.path[n]) +
-                        inst->getTravelTime(r.path[j + 1], r.path[n + 1]);
-
-            double d2 = inst->getTravelTime(r.path[i], r.path[j]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                        inst->getTravelTime(r.path[n], r.path[n + 1]);
-
-            double d3 = inst->getTravelTime(r.path[i], r.path[j]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[n]) +
-                        inst->getTravelTime(r.path[j + 1], r.path[n + 1]);
-
-            double d4 = inst->getTravelTime(r.path[i], r.path[j + 1]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[n]) +
-                        inst->getTravelTime(r.path[j], r.path[n + 1]);
-
-            double d5 = inst->getTravelTime(r.path[i], r.path[j + 1]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                        inst->getTravelTime(r.path[j], r.path[n]);
-
-            double d6 = inst->getTravelTime(r.path[i], r.path[n]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[j + 1]) +
-                        inst->getTravelTime(r.path[j], r.path[n + 1]);
-
-            double d7 = inst->getTravelTime(r.path[i], r.path[n]) +
-                        inst->getTravelTime(r.path[i + 1], r.path[n + 1]) +
-                        inst->getTravelTime(r.path[j], r.path[j + 1]);
-
-            if (d1 < d0) {
-              r = s.routes[k];
-              std::swap(r.path[j + 1], r.path[n]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d2 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d3 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j]);
-              std::swap(r.path[j + 1], r.path[n]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d4 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j + 1]);
-              std::swap(r.path[j + 1], r.path[j]);
-              std::swap(r.path[j + 1], r.path[n]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d5 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j + 1]);
-              std::swap(r.path[j + 1], r.path[j]);
-              std::swap(r.path[j + 1], r.path[n]);
-              std::swap(r.path[j + 1], r.path[n + 1]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d6 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j]);
-              std::swap(r.path[i + 1], r.path[n]);
-              r.performEightStepEvaluationScheme();
-            }
-            else if (d7 < d0 || !r.isFeasible()) {
-              r = s.routes[k];
-              std::swap(r.path[i + 1], r.path[j]);
-              std::swap(r.path[i + 1], r.path[n]);
-              std::swap(r.path[j + 1], r.path[n + 1]);
-              r.performEightStepEvaluationScheme();
-            }
-
-            if (r.isFeasible() && *r.path.begin() == inst->getOriginDepot() &&
-                *r.path.end() == inst->getDestinationDepot() && r.cost < best.routes[k].cost) {
-              best.routes[k] = r;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  best.computeCost();
-
-  return best;
-}
-
-Solution ReactiveGrasp::_2opt(Solution s)
-{
-  Solution best = s;
-
-  for (int k = 0; k < s.routes.size(); k++) {
-    for (int i = 1; i < s.routes[k].path.size() - 2; i++) {
-      for (int j = i + 1; j < s.routes[k].path.size() - 1; j++) {
-        Route r = s.routes[k];
-        std::reverse(r.path.begin() + i, r.path.begin() + j + 1);
-        r.performEightStepEvaluationScheme();
-
-        if (r.isFeasible() && r.cost < best.routes[k].cost) {
-          best.routes[k] = r;
-        }
-      }
-    }
-  }
-
-  best.computeCost();
-
-  return s;
-}
-
 Solution ReactiveGrasp::swapZeroOne(Solution s)
 {
   for (int k1 = 0; k1 < s.routes.size(); k1++) {
-    for (Node *p : s.routes[k1].path) {
-      if (p->isPickup()) {
-        Route r1 = s.routes[k1];
-        Request req = inst->getRequest(p);
+    for (int i = 1; i < s.routes[k1].path.size() - 1; i++) {
+      Node *node = s.routes[k1].path[i];
+
+      if (node->isPickup()) {
+        Request req = inst->getRequest(node);
+        Route   r1  = s.routes[k1];
 
         r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.pickup),   r1.path.end());
         r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.delivery), r1.path.end());
+
         r1.performEightStepEvaluationScheme();
 
         for (int k2 = 0; k2 < s.routes.size(); k2++) {
           if (k1 != k2) {
             Route r2 = performCheapestFeasibleInsertion(req, s.routes[k2]);
 
-            if (r1.isFeasible() && r2.isFeasible() && r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
+            if (r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
               s.routes[k1] = r1;
               s.routes[k2] = r2;
+              k1 = 0;
+              i  = 1;
+              break;
             }
           }
         }
@@ -352,22 +234,83 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
   return s;
 }
 
-Solution ReactiveGrasp::relocate(Solution s)
+Solution ReactiveGrasp::swapOneOne(Solution s)
+{
+  std::vector<int> possibleRoutes;
+
+  // Only routes with at least one request are eligible
+  for (int k = 0; k < s.routes.size(); k++)
+    if (s.routes[k].path.size() > 2)
+      possibleRoutes.push_back(k);
+
+  // To perform the movement, there must be at least two routes with requests to be swapped
+  if (possibleRoutes.size() >= 2) {
+    bool improved;
+    bool eligible;
+
+    do {
+      improved = false;
+
+      // Select two distinct random routes
+      int k1 = *Random::get(possibleRoutes);
+      int k2 = *Random::get(possibleRoutes);
+
+      while (k2 == k1)
+        k2 = *Random::get(possibleRoutes);
+
+      Route r1 = s.routes[k1];
+      Route r2 = s.routes[k2];
+
+      // Select two random requests in each route
+      Node *node1 = *Random::get(r1.path.begin() + 1, r1.path.end() - 1);
+      Node *node2 = *Random::get(r2.path.begin() + 1, r2.path.end() - 1);
+
+      Request req1 = inst->getRequest(node1);
+      Request req2 = inst->getRequest(node2);
+
+      // Remove req1 from r1 and req2 from r2
+      r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.pickup),   r1.path.end());
+      r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.delivery), r1.path.end());
+
+      r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.pickup),   r2.path.end());
+      r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.delivery), r2.path.end());
+
+      // Insert req2 in r1 and req1 in r2
+      r1 = performCheapestFeasibleInsertion(req2, r1);
+      r2 = performCheapestFeasibleInsertion(req1, r2);
+
+      if (r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
+        s.routes[k1] = r1;
+        s.routes[k2] = r2;
+        improved = true;
+      }
+    }
+    while (improved);
+  }
+
+  s.computeCost();
+
+  return s;
+}
+
+Solution ReactiveGrasp::reinsert(Solution s)
 {
   for (int k = 0; k < s.routes.size(); k++) {
     for (int i = 1; i < s.routes[k].path.size() - 1; i++) {
-      Node *p = s.routes[k].path[i];
+      Node *node = s.routes[k].path[i];
 
-      if (p->isPickup()) {
-        Request req = inst->getRequest(p);
-        Route r = s.routes[k];
+      if (node->isPickup()) {
+        // Remove request from the route
+        Request req = inst->getRequest(node);
+        Route   r   = s.routes[k];
 
         r.path.erase(std::remove(r.path.begin(), r.path.end(), req.pickup),   r.path.end());
         r.path.erase(std::remove(r.path.begin(), r.path.end(), req.delivery), r.path.end());
 
+        // Reinsert the request
         r = performCheapestFeasibleInsertion(req, r);
 
-        if (r.isFeasible() && r.cost < s.routes[k].cost) {
+        if (r.cost < s.routes[k].cost) {
           s.routes[k] = r;
           i = 1;
         }

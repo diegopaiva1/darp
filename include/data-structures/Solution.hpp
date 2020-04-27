@@ -14,7 +14,6 @@ class Solution
 public:
   std::vector<Route> routes;
   int loadViolation;
-  int orderViolation;
   bool batteryLevelViolation;
   double timeWindowViolation;
   double maxRideTimeViolation;

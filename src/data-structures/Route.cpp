@@ -31,8 +31,6 @@ bool Route::isFeasible()
          maxRideTimeViolation   == 0 &&
          timeWindowViolation    == 0 &&
          finalBatteryViolation  == 0 &&
-         orderViolation         == 0 &&
-        //  chargingPlaceViolation == 0 &&
          !batteryLevelViolation;
 }
 
@@ -159,8 +157,6 @@ void Route::performEightStepEvaluationScheme()
     timeWindowViolation    = 0.0;
     maxRideTimeViolation   = 0.0;
     finalBatteryViolation  = 0.0;
-    orderViolation         = 0;
-    // chargingPlaceViolation = 0;
     batteryLevelViolation  = false;
 
     for (int i = 0; i < path.size(); i++) {
@@ -169,15 +165,8 @@ void Route::performEightStepEvaluationScheme()
 
       excessRideTime += rideTimeExcesses[i];
 
-      if (path[i]->isPickup()) {
+      if (path[i]->isPickup())
         maxRideTimeViolation += std::max(0.0, rideTimes[i] - path[i]->maxRideTime);
-
-        if (inst->getRequest(path[i]).delivery->index < i)
-          orderViolation += 1000;
-      }
-
-      // if (path[i]->isStation() && load[i] > 0)
-      //   chargingPlaceViolation += 1000;
 
       loadViolation += std::max(0, load[i] - vehicle.capacity);
       timeWindowViolation += std::max(0.0, serviceBeginningTimes[i] - path[i]->departureTime);
@@ -263,4 +252,14 @@ void Route::computeBatteryLevel(int i)
 {
   batteryLevels[i] = batteryLevels[i - 1] + path[i - 1]->rechargingRate * chargingTimes[i - 1] -
                      vehicle.dischargingRate * inst->getTravelTime(path[i - 1], path[i]);
+}
+
+bool Route::operator==(Route &r) const
+{
+  return vehicle.id == r.vehicle.id;
+}
+
+bool Route::operator!=(Route &r) const
+{
+  return !operator==(r);
 }

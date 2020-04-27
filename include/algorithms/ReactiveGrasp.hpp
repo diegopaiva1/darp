@@ -20,12 +20,13 @@ typedef effolkronium::random_static Random;
 /**
  * @brief Data type to abstract a random factor in Reactive GRASP.
  */
-struct RandomParam {
-    double alpha;
-    double probability;
-    double q;
-    double cumulativeCost;
-    int    count;
+struct RandomParam
+{
+  double alpha;
+  double probability;
+  double q;
+  double cumulativeCost;
+  int    count;
 };
 
 class ReactiveGrasp
@@ -71,15 +72,11 @@ private:
 
   static Solution rvnd(Solution s);
 
-  static Solution relocate(Solution s);
+  static Solution reinsert(Solution s);
 
   static Solution swapZeroOne(Solution s);
 
-  static Solution eliminate(Solution s);
-
-  static Solution _2opt(Solution s);
-
-  static Solution _3opt(Solution s);
+  static Solution swapOneOne(Solution s);
 };
 
 #endif // REACTIVEGRASP_HPP_INCLUDED

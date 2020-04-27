@@ -26,7 +26,6 @@ bool Solution::isFeasible()
          timeWindowViolation   == 0 &&
          maxRideTimeViolation  == 0 &&
          finalBatteryViolation == 0 &&
-         orderViolation        == 0 &&
          !batteryLevelViolation     &&
          routes.size() <= Singleton::getInstance()->vehicles.size();
 }
@@ -41,7 +40,6 @@ void Solution::computeCost()
   maxRideTimeViolation  = 0.0;
   batteryLevelViolation = false;
   finalBatteryViolation = 0.0;
-  orderViolation        = 0;
 
   for (Route &r : routes) {
     travelTime     += r.travelTime;
@@ -52,9 +50,8 @@ void Solution::computeCost()
     maxRideTimeViolation  += r.maxRideTimeViolation;
     batteryLevelViolation += r.batteryLevelViolation;
     finalBatteryViolation += r.finalBatteryViolation;
-    orderViolation        += r.orderViolation;
 
     cost += r.cost + loadViolation + timeWindowViolation + maxRideTimeViolation +
-                     batteryLevelViolation + finalBatteryViolation + orderViolation;
+                     batteryLevelViolation + finalBatteryViolation;
   }
 }

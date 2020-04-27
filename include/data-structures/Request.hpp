@@ -16,6 +16,8 @@ public:
   Node *pickup;
   Node *delivery;
 
+  Request();
+
   Request(Node *pickup, Node *delivery);
 
   ~Request();

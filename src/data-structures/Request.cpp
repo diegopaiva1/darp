@@ -6,6 +6,11 @@
 
 #include "data-structures/Request.hpp"
 
+Request::Request()
+{
+  // Empty constructor
+}
+
 Request::Request(Node *pickup, Node *delivery)
 {
   this->pickup = pickup;

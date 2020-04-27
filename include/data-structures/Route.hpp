@@ -27,7 +27,6 @@ public:
   std::vector<double> chargingTimes;
   std::vector<double> rideTimeExcesses;
   int loadViolation;
-  int orderViolation;
   int chargingPlaceViolation;
   bool batteryLevelViolation;
   double maxRideTimeViolation;
@@ -141,6 +140,24 @@ public:
   * @return True if feasible, false otherwise.
   */
   bool isFeasible();
+
+ /**
+  * @brief Overload of '==' operator.
+  *
+  * @param r A route to be compared to this.
+  *
+  * @return True if r is equal this, false otherwise.
+  */
+  bool operator==(Route &r) const;
+
+  /**
+  * @brief Overload of '!=' operator.
+  *
+  * @param r A route to be compared to this.
+  *
+  * @return True if r is not equal this, false otherwise.
+  */
+  bool operator!=(Route &r) const;
 };
 
 #endif // ROUTE_HPP_INCLUDED

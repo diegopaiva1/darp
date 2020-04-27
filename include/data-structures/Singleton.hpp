@@ -83,8 +83,8 @@ public:
  /**
   * @brief Get the request associated with a node.
   *
-  * @param  pickup The node.
-  * @return        The request associated to the node.
+  * @param  node The node.
+  * @return      The request associated to the node.
   */
   Request getRequest(Node *node);
 
