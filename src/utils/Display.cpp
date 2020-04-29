@@ -30,7 +30,7 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
     table[0][1].set_cell_text_align(fort::text_align::center);
     table << std::fixed << std::setprecision(2);
 
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 13; i++)
       table.column(i).set_cell_text_align(fort::text_align::right);
 
     for (int i = 0; i < s.routes[k].path.size(); i++) {

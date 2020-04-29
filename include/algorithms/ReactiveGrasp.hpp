@@ -52,6 +52,18 @@ private:
   */
   static Solution buildGreedyRandomizedSolution(double alpha);
 
+ /**
+  * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
+  *        which evaluates a given route in terms of cost and feasibility. This procedure compute the routes
+  *        violations, cost and optimizes route duration.
+  *
+  * @details This procedure updates all vectors of the route.
+  *
+  * @param r A route to be evaluated
+  * @return  True if r is feasible, false otherwise.
+  */
+  static bool performEightStepEvaluationScheme(Route &r);
+
   static int chooseRandomParamIndex(std::vector<RandomParam> randomParams);
 
   static void updateProbabilities(std::vector<RandomParam> &randomParams);

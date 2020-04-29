@@ -13,11 +13,6 @@ class Solution
 {
 public:
   std::vector<Route> routes;
-  int loadViolation;
-  bool batteryLevelViolation;
-  double timeWindowViolation;
-  double maxRideTimeViolation;
-  double finalBatteryViolation;
   double travelTime;
   double excessRideTime;
   double cost;
@@ -28,7 +23,7 @@ public:
 
   bool isFeasible();
 
-  void computeCost();
+  void updateCost();
 };
 
 #endif // SOLUTION_HPP_INCLUDED

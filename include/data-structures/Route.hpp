@@ -26,15 +26,9 @@ public:
   std::vector<double> batteryLevels;
   std::vector<double> chargingTimes;
   std::vector<double> rideTimeExcesses;
-  int loadViolation;
-  int chargingPlaceViolation;
-  bool batteryLevelViolation;
-  double maxRideTimeViolation;
-  double timeWindowViolation;
-  double finalBatteryViolation;
-  double cost;
   double travelTime;
   double excessRideTime;
+  double cost;
 
  /**
   * @brief Default constructor.
@@ -54,22 +48,29 @@ public:
   ~Route();
 
  /**
+  * @brief Overload of '==' operator.
+  *
+  * @param r A route to be compared to this.
+  * @return  True if r is equal this, false otherwise.
+  */
+  bool operator==(Route &r) const;
+
+ /**
+  * @brief Overload of '!=' operator.
+  *
+  * @param r A route to be compared to this.
+  * @return  True if r is not equal this, false otherwise.
+  */
+  bool operator!=(Route &r) const;
+
+ /**
   * @brief The forward time slack at index i in path is the maximum amount of time that the departure
   *        from i can be delayed without violating time constraints for the later nodes.
   *
   * @param i Index of the node in the route.
-  *
   * @return  The forward time slack at index i.
   */
   double computeForwardTimeSlack(int i);
-
- /**
-  * @brief The eight-step evaluation scheme is a procedure designed by (Cordeau and Laporte, 2003) for the DARP
-  *        which evaluates a given route in terms of cost and feasibility. This procedure compute the routes
-  *        violations, optimizes route duration and complies with ride time constraint.
-  *        Note that this procedure updates all vectors of the route.
-  */
-  void performEightStepEvaluationScheme();
 
  /**
   * @brief Compute the load (number of ocuppied seats) at index i in path.
@@ -133,31 +134,6 @@ public:
   * @param i Index.
   */
   void computeRideTimeExcess(int i);
-
- /**
-  * @brief Checks if current solution is feasible (no constraints violations).
-  *
-  * @return True if feasible, false otherwise.
-  */
-  bool isFeasible();
-
- /**
-  * @brief Overload of '==' operator.
-  *
-  * @param r A route to be compared to this.
-  *
-  * @return True if r is equal this, false otherwise.
-  */
-  bool operator==(Route &r) const;
-
-  /**
-  * @brief Overload of '!=' operator.
-  *
-  * @param r A route to be compared to this.
-  *
-  * @return True if r is not equal this, false otherwise.
-  */
-  bool operator!=(Route &r) const;
 };
 
 #endif // ROUTE_HPP_INCLUDED
