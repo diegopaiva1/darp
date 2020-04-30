@@ -105,6 +105,21 @@ ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> 
   return std::make_tuple(best, elapsedTime, seed, optimalIteration);
 }
 
+int ReactiveGrasp::chooseRandomFactorIndex(std::vector<RandomFactor> randomFactors)
+{
+  double rand = Random::get(0.0, 1.0);
+  double sum  = 0.0;
+
+  for (int i = 0; i < randomFactors.size(); i++) {
+    sum += randomFactors[i].probability;
+
+    if (rand <= sum)
+      return i;
+  }
+
+  return 0;
+}
+
 Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
 {
   Solution solution;
@@ -163,6 +178,44 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
   return solution;
 }
 
+Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Solution s)
+{
+  Route best;
+
+  for (int k = 0; k < s.routes.size(); k++) {
+    Route r = getCheapestFeasibleInsertion(req, s.routes[k]);
+
+    if (k == 0 || r.cost < best.cost)
+      best = r;
+  }
+
+  return best;
+}
+
+Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
+{
+  // Best insertion starts with infinity cost, we will update it during the search
+  Route best = r;
+  best.cost = MAXFLOAT;
+
+  for (int p = 1; p < r.path.size(); p++) {
+    r.path.insert(r.path.begin() + p, req.pickup);
+
+    for (int d = p + 1; d < r.path.size(); d++) {
+      r.path.insert(r.path.begin() + d, req.delivery);
+
+      if (r.isFeasible() && r.cost < best.cost)
+        best = r;
+
+      r.path.erase(r.path.begin() + d);
+    }
+
+    r.path.erase(r.path.begin() + p);
+  }
+
+  return best;
+}
+
 Solution ReactiveGrasp::rvnd(Solution s)
 {
   std::vector<int> neighborhoods = {1, 2, 3};
@@ -191,6 +244,36 @@ Solution ReactiveGrasp::rvnd(Solution s)
       neighborhoods.erase(neighborhoods.begin() + k);
     }
   }
+
+  return s;
+}
+
+Solution ReactiveGrasp::reinsert(Solution s)
+{
+  for (int k = 0; k < s.routes.size(); k++) {
+    for (int i = 1; i < s.routes[k].path.size() - 1; i++) {
+      Node *node = s.routes[k].path[i];
+
+      if (node->isPickup()) {
+        // Remove request from the route
+        Request req = inst->getRequest(node);
+        Route   r   = s.routes[k];
+
+        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.pickup),   r.path.end());
+        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.delivery), r.path.end());
+
+        // Reinsert the request
+        r = getCheapestFeasibleInsertion(req, r);
+
+        if (r.cost < s.routes[k].cost) {
+          s.routes[k] = r;
+          i = 1;
+        }
+      }
+    }
+  }
+
+  s.updateCost();
 
   return s;
 }
@@ -245,7 +328,6 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
   // To perform the movement, there must be at least two routes with requests to be swapped
   if (possibleRoutes.size() >= 2) {
     bool improved;
-    bool eligible;
 
     do {
       improved = false;
@@ -290,89 +372,6 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
   s.updateCost();
 
   return s;
-}
-
-Solution ReactiveGrasp::reinsert(Solution s)
-{
-  for (int k = 0; k < s.routes.size(); k++) {
-    for (int i = 1; i < s.routes[k].path.size() - 1; i++) {
-      Node *node = s.routes[k].path[i];
-
-      if (node->isPickup()) {
-        // Remove request from the route
-        Request req = inst->getRequest(node);
-        Route   r   = s.routes[k];
-
-        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.pickup),   r.path.end());
-        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.delivery), r.path.end());
-
-        // Reinsert the request
-        r = getCheapestFeasibleInsertion(req, r);
-
-        if (r.cost < s.routes[k].cost) {
-          s.routes[k] = r;
-          i = 1;
-        }
-      }
-    }
-  }
-
-  s.updateCost();
-
-  return s;
-}
-
-Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Solution s)
-{
-  Route best;
-
-  for (int k = 0; k < s.routes.size(); k++) {
-    Route r = getCheapestFeasibleInsertion(req, s.routes[k]);
-
-    if (k == 0 || r.cost < best.cost)
-      best = r;
-  }
-
-  return best;
-}
-
-Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
-{
-  // Best insertion starts with infinity cost, we will update it during the search
-  Route best = r;
-  best.cost = MAXFLOAT;
-
-  for (int p = 1; p < r.path.size(); p++) {
-    r.path.insert(r.path.begin() + p, req.pickup);
-
-    for (int d = p + 1; d < r.path.size(); d++) {
-      r.path.insert(r.path.begin() + d, req.delivery);
-
-      if (r.isFeasible() && r.cost < best.cost)
-        best = r;
-
-      r.path.erase(r.path.begin() + d);
-    }
-
-    r.path.erase(r.path.begin() + p);
-  }
-
-  return best;
-}
-
-int ReactiveGrasp::chooseRandomFactorIndex(std::vector<RandomFactor> randomFactors)
-{
-  double rand = Random::get(0.0, 1.0);
-  double sum  = 0.0;
-
-  for (int i = 0; i < randomFactors.size(); i++) {
-    sum += randomFactors[i].probability;
-
-    if (rand <= sum)
-      return i;
-  }
-
-  return 0;
 }
 
 void ReactiveGrasp::updateProbabilities(std::vector<RandomFactor> &randomFactors)

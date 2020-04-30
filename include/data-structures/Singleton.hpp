@@ -67,6 +67,14 @@ public:
   Node* getNode(int id);
 
  /**
+  * @brief Get the request associated with a node.
+  *
+  * @param  node The node.
+  * @return      The request associated to the node.
+  */
+  Request getRequest(Node *node);
+
+ /**
   * @brief Get the origin depot node.
   *
   * @return The origin depot node.
@@ -79,14 +87,6 @@ public:
   * @return The destination depot node.
   */
   Node* getDestinationDepot();
-
- /**
-  * @brief Get the request associated with a node.
-  *
-  * @param  node The node.
-  * @return      The request associated to the node.
-  */
-  Request getRequest(Node *node);
 
  /**
   * @brief Get the travel time between two nodes.

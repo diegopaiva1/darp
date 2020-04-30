@@ -2,6 +2,8 @@
  * @file   Vehicle.hpp
  * @author Diego Paiva
  * @date   26/09/2019
+ *
+ * A class to represent a vehicle for the e-ADARP.
  */
 
 #ifndef VEHICLE_HPP_INCLUDED
@@ -17,10 +19,19 @@ public:
   double batteryCapacity;
   double minFinalBatteryRatioLevel;
 
+ /**
+  * @brief Default constructor.
+  */
   Vehicle();
 
+ /**
+  * @brief Constructor with id as argument.
+  */
   Vehicle(int id);
 
+ /**
+  * @brief Default destructor.
+  */
   ~Vehicle();
 };
 

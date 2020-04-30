@@ -21,11 +21,6 @@ Node::~Node()
   // Empty destructor
 }
 
-double Node::getTimeWindowMedian()
-{
-  return (arrivalTime + departureTime)/2;
-}
-
 bool Node::isPickup()
 {
   return this->type == Type::PICKUP;

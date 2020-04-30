@@ -144,14 +144,15 @@ void Singleton::init(std::string instanceFileName)
       Request request(getNode(i), getNode(i + requestsAmount));
       Node *pickup   = request.pickup;
       Node *delivery = request.delivery;
+      bool isInbound;
 
       if (pickup->departureTime - pickup->arrivalTime == 15)
-        request.isInbound = true;
+        isInbound = true;
       else
-        request.isInbound = false;
+        isInbound = false;
 
-      // Tigthen time windows
-      if (request.isInbound) {
+      // Tigthen time windows as done in (Cordeau and Laporte, 2003)
+      if (isInbound) {
         delivery->arrivalTime = std::max(
           0.0, pickup->arrivalTime + pickup->serviceTime + getTravelTime(pickup, delivery)
         );
@@ -177,10 +178,7 @@ void Singleton::init(std::string instanceFileName)
 
 Node* Singleton::getNode(int id)
 {
-  if (nodes.at(id) != nullptr)
-    return nodes.at(id);
-  else
-    throw "Unknown node for this instance";
+  return nodes.at(id);
 }
 
 Request Singleton::getRequest(Node *node)

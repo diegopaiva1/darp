@@ -2,6 +2,8 @@
  * @file    Route.hpp
  * @author  Diego Paiva
  * @date    06/10/2019
+ *
+ * A class to represent a route for the e-ADARP.
  */
 
 #ifndef ROUTE_HPP_INCLUDED

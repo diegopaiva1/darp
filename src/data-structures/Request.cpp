@@ -11,23 +11,13 @@ Request::Request()
   // Empty constructor
 }
 
-Request::Request(Node *pickup, Node *delivery)
+Request::Request(Node *p, Node *d)
 {
-  this->pickup = pickup;
-  this->delivery = delivery;
+  pickup   = p;
+  delivery = d;
 }
 
 Request::~Request()
 {
   // Empty destructor
-}
-
-double Request::getTimeWindowMedian()
-{
-  return getCriticalNode()->getTimeWindowMedian();
-}
-
-Node* Request::getCriticalNode()
-{
-  return this->isInbound ? pickup : delivery;
 }
