@@ -17,7 +17,7 @@ ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> 
 
   // Use std::random_device to generate seed to Random engine
   uint seed = std::random_device{}();
-  Random::seed(1231595941);
+  Random::seed(seed);
 
   std::vector<RandomParam> randomParams (alphas.size());
 
