@@ -23,10 +23,10 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
     fort::char_table table;
 
     table << fort::header << k + 1 << "ROUTE SCHEDULE" << fort::endr
-          << "#" << "ID" << "A" << "B" << "W" << "D" << "R" << "Z" << "C" << "Q" << "E" << fort::endr
+          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Z" << "C" << "Q" << "E" << fort::endr
           << fort::separator;
 
-    table[0][1].set_cell_span(10);
+    table[0][1].set_cell_span(12);
     table[0][1].set_cell_text_align(fort::text_align::center);
     table << std::fixed << std::setprecision(2);
 
@@ -36,6 +36,8 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
     for (int i = 0; i < s.routes[k].path.size(); i++) {
       table << i
             << s.routes[k].path[i]->id
+            << s.routes[k].path[i]->arrivalTime
+            << s.routes[k].path[i]->departureTime
             << s.routes[k].arrivalTimes[i]
             << s.routes[k].serviceBeginningTimes[i]
             << s.routes[k].waitingTimes[i]

@@ -8,6 +8,7 @@
 #define ROUTE_HPP_INCLUDED
 
 #include "Vehicle.hpp"
+#include "Request.hpp"
 #include "Node.hpp"
 
 #include <vector>
@@ -38,9 +39,17 @@ public:
  /**
   * @brief Constructor with vehicle as argument.
   *
-  * @param v The vehicle.
+  * @param v A vehicle.
   */
   Route(Vehicle v);
+
+ /**
+  * @brief Constructor with vehicle as argument and a request to be accomodated.
+  *
+  * @param v   A vehicle.
+  * @param req A request.
+  */
+  Route(Vehicle v, Request req);
 
  /**
   * @brief Default destructor.
@@ -62,6 +71,15 @@ public:
   * @return  True if r is not equal this, false otherwise.
   */
   bool operator!=(Route &r) const;
+
+ /**
+  * @brief Perform eight-step evaluation scheme designed by (Cordeau and Laporte, 2003) to check feasibility.
+  *
+  * @details This procedure updates a lot of variables of the route.
+  *
+  * @return True if this is feasible, false otherwise.
+  */
+  bool isFeasible();
 
  /**
   * @brief The forward time slack at index i in path is the maximum amount of time that the departure
@@ -115,18 +133,18 @@ public:
   void computeRideTime(int i);
 
  /**
-  * @brief Compute vehicle's charging time at index i in path.
-  *
-  * @param i Index.
-  */
-  void computeChargingTime(int i);
-
- /**
   * @brief Compute vehicle's battery level at index i in path.
   *
   * @param i Index.
   */
   void computeBatteryLevel(int i);
+
+ /**
+  * @brief Compute vehicle's charging time at index i in path.
+  *
+  * @param i Index.
+  */
+  void computeChargingTime(int i);
 
  /**
   * @brief Compute the ride time excess of user at index i in path.
