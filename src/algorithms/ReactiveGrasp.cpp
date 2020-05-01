@@ -52,10 +52,13 @@ ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> 
     }
 
     Solution curr = buildGreedyRandomizedSolution(alpha);
-    curr = rvnd(curr);
+    curr = rvnd(curr, {reinsert, swapZeroOne, swapOneOne});
 
-    if (it == 1 or curr.routes.size() < best.routes.size() or
-       (curr.routes.size() == best.routes.size() && curr.cost < best.cost)) {
+    // Erase any route without requests
+    for (auto k = curr.routes.begin(); k != curr.routes.end(); )
+      k = (k->path.size() <= 2) ? curr.routes.erase(k) : k + 1;
+
+    if (it == 1 || (curr.isFeasible() && curr.cost < best.cost)) {
       best = curr;
 
       if (optimalIteration == 0 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
@@ -72,10 +75,6 @@ ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> 
 
       updateProbabilities(randomFactors);
     }
-
-    // Erase any route without requests
-    for (auto k = curr.routes.begin(); k != curr.routes.end(); )
-      k = (k->path.size() <= 2) ? curr.routes.erase(k) : k + 1;
 
     if (it != 1) {
       int param = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
@@ -149,27 +148,30 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
       return c1.route.cost < c2.route.cost;
     });
 
-    int index = Random::get(0, (int) (alpha * (candidates.size() - 1)));
-    Candidate chosen = candidates[index];
+    // Get an iterator to a random candidate in restricted range
+    auto candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
 
-    if (chosen.route.cost == MAXFLOAT) {
+    if (candidate->route.cost == MAXFLOAT) {
      /* Request could not be feasibly inserted, so we open a new route (thus solution will be infeasible).
       * New vehicle is created by copying first vehicle of solution and changing its id.
       */
       Vehicle v = solution.routes[0].vehicle;
-      v.id      = solution.routes.size() + 1;
+      v.id = solution.routes.size() + 1;
 
-      solution.routes.push_back(Route(v, chosen.request));
+      solution.routes.push_back(Route(v, candidate->request));
     }
     else {
-      solution.routes.at(chosen.route.vehicle.id - 1) = chosen.route;
+      solution.routes.at(candidate->route.vehicle.id - 1) = candidate->route;
     }
 
-    candidates.erase(candidates.begin() + index);
+    // Save route to optimize the update of candidates
+    Route selected = candidate->route;
+
+    candidates.erase(candidate);
 
     // Update candidates
     for (int i = 0; i < candidates.size(); i++)
-      if (candidates[i].route == chosen.route)
+      if (candidates[i].route == selected)
         candidates[i] = {getCheapestFeasibleInsertion(candidates[i].request, solution), candidates[i].request};
   }
 
@@ -198,14 +200,61 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
   Route best = r;
   best.cost = MAXFLOAT;
 
+  // printf("Insert req (%d, %d) in route [", req.pickup->id, req.delivery->id);
+
+  // for (Node *n : r.path)
+  //   printf(" %d ", n->id);
+
+  // printf("]\n");
+
   for (int p = 1; p < r.path.size(); p++) {
     r.path.insert(r.path.begin() + p, req.pickup);
 
     for (int d = p + 1; d < r.path.size(); d++) {
       r.path.insert(r.path.begin() + d, req.delivery);
 
+      // double bat = 14.85;
+      // int stationPos = -1;
+
+      // for (int i = 1; i < r.path.size(); i++) {
+      //   bat -= r.vehicle.dischargingRate * inst->getTravelTime(r.path[i - 1], r.path[i]);
+
+      //   if (bat < 0) {
+      //     Node *station;
+
+      //     if (r.path[i - 1]->isDepot() || r.path[i]->isDepot())
+      //       station = inst->getNearestStation(r.path[i - 1], r.path[i - 1]);
+      //     else
+      //       station = inst->getNearestStation(r.path[i - 1], r.path[i]);
+
+      //     stationPos = i;
+      //     r.path.insert(r.path.begin() + i, station);
+      //     break;
+      //   }
+      // }
+
+      // printf("\n\t=> [");
+      // for (Node *n : r.path)
+      //   printf(" %d ", n->id);
+      // printf("]\n");
+
       if (r.isFeasible() && r.cost < best.cost)
         best = r;
+
+      // for (int i = 0; i < r.path.size(); i++) {
+      //   printf("A[%02d] = %6.4g\t", i,  r.arrivalTimes[i]);
+      //   printf("B[%02d] = %6.4g\t", i,  r.serviceBeginningTimes[i]);
+      //   printf("D[%02d] = %6.4g\t", i,  r.departureTimes[i]);
+      //   printf("W[%02d] = %.4g\t",  i,  r.waitingTimes[i]);
+      //   printf("R[%02d] = %.4g\t",  i,  r.rideTimes[i]);
+      //   printf("Z[%02d] = %.4g\t",  i,  r.batteryLevels[i]);
+      //   printf("C[%02d] = %.4g\t",  i,  r.chargingTimes[i]);
+      //   printf("Q[%02d] = %d",      i,  r.load[i]);
+      //   printf("\n");
+      // }
+
+      // if (stationPos != -1)
+      //   r.path.erase(r.path.begin() + stationPos);
 
       r.path.erase(r.path.begin() + d);
     }
@@ -213,35 +262,27 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
     r.path.erase(r.path.begin() + p);
   }
 
+  // printf("\n");
+
   return best;
 }
 
-Solution ReactiveGrasp::rvnd(Solution s)
+Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
 {
-  std::vector<int> neighborhoods = {1, 2, 3};
+  std::vector<Move> rvndMoves = moves;
 
-  while (!neighborhoods.empty()) {
-    Solution neighbor;
-    int k = Random::get(0, (int) neighborhoods.size() - 1);
+  while (!rvndMoves.empty()) {
+    // Get an iterator to a random move
+    auto move = Random::get(rvndMoves);
 
-    switch (neighborhoods.at(k)) {
-      case 1:
-        neighbor = reinsert(s);
-        break;
-      case 2:
-        neighbor = swapZeroOne(s);
-        break;
-      case 3:
-        neighbor = swapOneOne(s);
-        break;
-    }
+    Solution neighbor = (*move)(s);
 
     if (neighbor.cost < s.cost) {
       s = neighbor;
-      neighborhoods = {1, 2, 3};
+      rvndMoves = moves;
     }
     else {
-      neighborhoods.erase(neighborhoods.begin() + k);
+      rvndMoves.erase(move);
     }
   }
 
@@ -325,7 +366,7 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
     if (s.routes[k].path.size() > 2)
       possibleRoutes.push_back(k);
 
-  // To perform the movement, there must be at least two routes with requests to be swapped
+  // To perform the move, there must be at least two routes with requests to be swapped
   if (possibleRoutes.size() >= 2) {
     bool improved;
 

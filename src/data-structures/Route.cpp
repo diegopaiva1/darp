@@ -102,7 +102,7 @@ bool Route::isFeasible()
       computeBatteryLevel(i);
 
       // Violated battery level, that's an irreparable violation
-      if (batteryLevels[i] < 0.0 /* || batteryLevels[i] > vehicle.batteryCapacity */)
+      if (batteryLevels[i] < 0.0)
         goto STEP8;
 
       computeDepartureTime(i);
@@ -249,7 +249,10 @@ void Route::computeWaitingTime(int i)
 
 void Route::computeDepartureTime(int i)
 {
-  departureTimes[i] = serviceBeginningTimes[i] + path[i]->serviceTime;
+  if (path[i]->isStation())
+    departureTimes[i] = serviceBeginningTimes[i] + chargingTimes[i];
+  else
+    departureTimes[i] = serviceBeginningTimes[i] + path[i]->serviceTime;
 }
 
 void Route::computeRideTime(int i)
@@ -268,7 +271,7 @@ void Route::computeChargingTime(int i)
   if (!path[i]->isStation())
     chargingTimes[i] = 0.0;
   else
-    chargingTimes[i] = serviceBeginningTimes[i] - inst->getTravelTime(path[i - 1], path[i]) - serviceBeginningTimes[i - 1];
+    chargingTimes[i] = computeForwardTimeSlack(i);
 }
 
 void Route::computeRideTimeExcess(int i)

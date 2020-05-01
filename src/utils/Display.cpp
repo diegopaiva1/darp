@@ -20,34 +20,37 @@ void Display::printProgress(Solution s, double percentage)
 void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
 {
   for (int k = 0; k < s.routes.size(); k++) {
+    Route r = s.routes[k];
+
     fort::char_table table;
 
     table << fort::header << k + 1 << "ROUTE SCHEDULE" << fort::endr
-          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Z" << "C" << "Q" << "E" << fort::endr
+          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Z (%)" << "C" << "Q" << "E" << fort::endr
           << fort::separator;
 
     table[0][1].set_cell_span(12);
     table[0][1].set_cell_text_align(fort::text_align::center);
+
     table << std::fixed << std::setprecision(2);
 
     for (int i = 0; i < 13; i++)
       table.column(i).set_cell_text_align(fort::text_align::right);
 
-    for (int i = 0; i < s.routes[k].path.size(); i++) {
-      table << i
-            << s.routes[k].path[i]->id
-            << s.routes[k].path[i]->arrivalTime
-            << s.routes[k].path[i]->departureTime
-            << s.routes[k].arrivalTimes[i]
-            << s.routes[k].serviceBeginningTimes[i]
-            << s.routes[k].waitingTimes[i]
-            << s.routes[k].departureTimes[i]
-            << s.routes[k].rideTimes[i]
-            << s.routes[k].batteryLevels[i]
-            << s.routes[k].chargingTimes[i]
-            << s.routes[k].load[i]
-            << s.routes[k].rideTimeExcesses[i]
-            << fort::endr;
+    for (int i = 0; i < r.path.size(); i++) {
+      int   id = r.path[i]->id;
+      double e = r.path[i]->arrivalTime;
+      double l = r.path[i]->departureTime;
+      double A = r.arrivalTimes[i];
+      double B = r.serviceBeginningTimes[i];
+      double W = r.waitingTimes[i];
+      double D = r.departureTimes[i];
+      double R = r.rideTimes[i];
+      double Z = (r.batteryLevels[i]/r.vehicle.batteryCapacity) * 100.0; // Battery level to be shown in percentage
+      double C = r.chargingTimes[i];
+      int    Q = r.load[i];
+      double E = r.rideTimeExcesses[i];
+
+      table << i << id << e << l << A << B << W << D << R << Z << C << Q << E << fort::endr;
     }
 
     std::cout << '\n' << table.to_string() << '\n';

@@ -18,6 +18,11 @@
 typedef effolkronium::random_static Random;
 
 /**
+ * @brief Define as "Move" a method that receives a Solution and returns another Solution.
+ */
+typedef Solution (*Move)(Solution s);
+
+/**
  * @brief Data type to abstract a random factor of Reactive GRASP.
  */
 struct RandomFactor
@@ -85,10 +90,11 @@ private:
  /**
   * @brief Implementation of Random Variable Neighborhood Descent procedure.
   *
-  * @param s A solution to be updated.
-  * @return  Updated solution.
+  * @param s     A solution to be updated.
+  * @param moves A vector containing move methods.
+  * @return      Updated solution.
   */
-  static Solution rvnd(Solution s);
+  static Solution rvnd(Solution s, std::vector<Move> moves);
 
  /**
   * @brief Update a given solution by performing the "reinsert" movement.
