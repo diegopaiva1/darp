@@ -9,10 +9,10 @@ void Display::printProgress(Solution s, double percentage)
   int value        = (int) (percentage * 100);
   int leftPadding  = (int) (percentage * WIDTH);
   int rightPadding = WIDTH - leftPadding;
-  auto costColor   = s.isFeasible() ? BOLD_GREEN : BOLD_RED;
+  auto costColor   = s.feasible() ? BOLD_GREEN : BOLD_RED;
 
   printf(BOLD_WHITE "\rComputing solution... Best found = %s%.2f " BOLD_BLUE "[%.*s%*s] %3d%%" RESET,
-         costColor, s.cost, leftPadding, PROGRESSBAR_STRING, rightPadding, "", value);
+         costColor, s.cost, leftPadding, PROGRESS_BAR_STRING, rightPadding, "", value);
 
   fflush(stdout);
 }

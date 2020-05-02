@@ -34,7 +34,7 @@ public:
   *
   * @return True if feasible, false otherwise.
   */
-  bool isFeasible();
+  bool feasible();
 
  /**
   * @brief Update solution's cost variables.

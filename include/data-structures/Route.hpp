@@ -46,7 +46,7 @@ public:
   Route(Vehicle v);
 
  /**
-  * @brief Constructor with vehicle as argument and a request to be accomodated.
+  * @brief Constructor with vehicle as argument and a request to be accommodated.
   *
   * @param v   A vehicle.
   * @param req A request.
@@ -77,11 +77,11 @@ public:
  /**
   * @brief Perform eight-step evaluation scheme designed by (Cordeau and Laporte, 2003) to check feasibility.
   *
-  * @details This procedure updates a lot of variables of the route.
+  * @details Updates a lot of variables of the route.
   *
-  * @return True if this is feasible, false otherwise.
+  * @return True if route is feasible, false otherwise.
   */
-  bool isFeasible();
+  bool feasible();
 
  /**
   * @brief The forward time slack at index i in path is the maximum amount of time that the departure
@@ -91,6 +91,13 @@ public:
   * @return  The forward time slack at index i.
   */
   double computeForwardTimeSlack(int i);
+
+ /**
+  * @brief Check if route has no requests accommodated.
+  *
+  * @return True if empty, false otherwise.
+  */
+  bool empty();
 
  /**
   * @brief Compute the load (number of ocuppied seats) at index i in path.

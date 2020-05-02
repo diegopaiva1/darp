@@ -30,7 +30,7 @@ Route::Route(Vehicle v, Request req)
   path.push_back(inst->getDestinationDepot());
 
   // Route will be definitely feasible, but we call this procedure to update its member variables
-  isFeasible();
+  feasible();
 }
 
 Route::Route()
@@ -48,7 +48,7 @@ bool Route::operator!=(Route &r) const
   return !operator==(r);
 }
 
-bool Route::isFeasible()
+bool Route::feasible()
 {
   int size = path.size();
 
@@ -225,6 +225,12 @@ double Route::computeForwardTimeSlack(int i)
   }
 
   return forwardTimeSlack;
+}
+
+bool Route::empty()
+{
+  // Empty only when path has origin and destination depots or no nodes at all
+  return path.size() <= 2;
 }
 
 void Route::computeLoad(int i)

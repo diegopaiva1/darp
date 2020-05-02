@@ -10,82 +10,56 @@
 #include "utils/Display.hpp"
 
 std::tuple<Solution, double, uint, int>
-ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> alphas = {1.0})
+ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double> alphas = {1.0})
 {
-  // Starting a clock to count algorithm's run time
+  // Starting a clock to count algorithm run time
   Timer timer;
 
   // Use std::random_device to generate seed to Random engine
   uint seed = std::random_device{}();
   Random::seed(seed);
 
-  std::vector<RandomFactor> randomFactors (alphas.size());
+  // A map to track each alpha performance
+  std::map<double, AlphaInfo> alphasMap;
 
-  // Initializing each alpha as random factor
-  for (int i = 0; i < alphas.size(); i++) {
-    RandomFactor rf;
-
-    rf.alpha          = alphas[i];
-    rf.probability    = 1.0/alphas.size();
-    rf.q              = 0.0;
-    rf.cumulativeCost = 0.0;
-    rf.count          = 0;
-
-    randomFactors[i] = rf;
-  }
+  // Initialize alphas map
+  for (int i = 0; i < alphas.size(); i++)
+    alphasMap[alphas[i]] = {1.0/alphas.size(), 0.0, 0};
 
   Solution best;
   int optimalIteration = 0;
 
   for (int it = 1; it <= iterations; it++) {
-    int index;
-    double alpha;
-
     // Go full greedy at first iteration
-    if (it == 1) {
-      alpha = 0.0;
-    }
-    else {
-      index = chooseRandomFactorIndex(randomFactors);
-      alpha = randomFactors[index].alpha;
-      randomFactors[index].count++;
-    }
+    double alpha = it == 1 ? 0.0 : getRandomAlpha(alphasMap);
 
     Solution curr = buildGreedyRandomizedSolution(alpha);
     curr = rvnd(curr, {reinsert, swapZeroOne, swapOneOne});
 
     // Erase any route without requests
-    for (auto k = curr.routes.begin(); k != curr.routes.end(); )
-      k = (k->path.size() <= 2) ? curr.routes.erase(k) : k + 1;
+    for (auto r = curr.routes.begin(); r != curr.routes.end(); )
+      r = (r->empty()) ? curr.routes.erase(r) : r + 1;
 
-    if (it == 1 || (curr.isFeasible() && curr.cost < best.cost)) {
+    if (it == 1 || (curr.feasible() && (curr.cost < best.cost || !best.feasible()))) {
       best = curr;
 
       if (optimalIteration == 0 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
         optimalIteration = it;
     }
 
-    if (it % blocks == 0) {
-      for (int i = 0; i < randomFactors.size(); i++) {
-        double avg = randomFactors[i].count > 0 ? randomFactors[i].cumulativeCost/randomFactors[i].count : 0;
+    if (it % blocks == 0)
+      updateProbabilities(alphasMap, best.cost);
 
-        if (avg > 0)
-          randomFactors[i].q = best.cost/avg;
-      }
-
-      updateProbabilities(randomFactors);
-    }
-
+    // Remember: first iteration is full greedy, so no need to update alpha info
     if (it != 1) {
-      int param = curr.routes.size() > inst->vehicles.size() ? 1000 : 0;
-      randomFactors[index].cumulativeCost += curr.cost + param * curr.routes.size();
+      int penalty = !curr.feasible() ? 1000 : 0; // Penalize alphas that generated infeasible solutions
+
+      alphasMap[alpha].count++;
+      alphasMap[alpha].cumulativeCost += curr.cost + penalty * curr.routes.size();
     }
 
-    // printf("\n");
-    // for (int i = 0; i < randomFactors.size(); i++) {
-    //   double avg = randomFactors[i].count > 0 ? randomFactors[i].cumulativeCost/randomFactors[i].count : 0;
-    //   printf("Avg %.2f = %.2f (%.2f)\n", randomFactors[i].alpha, avg, randomFactors[i].probability);
-    // }
+    // for (std::pair<double, AlphaInfo> pair : alphasMap)
+    //   printf("\nAvg %.2f = %.2f (%.2f)", pair.first, pair.second.avg(), pair.second.probability);
 
     Display::printProgress(best, (double) it/iterations);
   }
@@ -94,26 +68,24 @@ ReactiveGrasp::solve(int iterations = 100, int blocks = 10, std::vector<double> 
 
   Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
 
-  for (int i = 0; i < randomFactors.size(); i++) {
-    RandomFactor rf = randomFactors[i];
-    printf("%2d. %.2f - %d times (%.2f%%)\n", i + 1, rf.alpha, rf.count, rf.probability);
-  }
+  for (std::pair<double, AlphaInfo> pair : alphasMap)
+    printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
 
   printf("%d\n", optimalIteration);
 
   return std::make_tuple(best, elapsedTime, seed, optimalIteration);
 }
 
-int ReactiveGrasp::chooseRandomFactorIndex(std::vector<RandomFactor> randomFactors)
+double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)
 {
   double rand = Random::get(0.0, 1.0);
   double sum  = 0.0;
 
-  for (int i = 0; i < randomFactors.size(); i++) {
-    sum += randomFactors[i].probability;
+  for (std::pair<double, AlphaInfo> pair : alphasMap) {
+    sum += pair.second.probability;
 
     if (rand <= sum)
-      return i;
+      return pair.first;
   }
 
   return 0;
@@ -238,7 +210,7 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
       //   printf(" %d ", n->id);
       // printf("]\n");
 
-      if (r.isFeasible() && r.cost < best.cost)
+      if (r.feasible() && r.cost < best.cost)
         best = r;
 
       // for (int i = 0; i < r.path.size(); i++) {
@@ -272,9 +244,7 @@ Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
   std::vector<Move> rvndMoves = moves;
 
   while (!rvndMoves.empty()) {
-    // Get an iterator to a random move
-    auto move = Random::get(rvndMoves);
-
+    auto move = Random::get(rvndMoves); // Get an iterator to a random move
     Solution neighbor = (*move)(s);
 
     if (neighbor.cost < s.cost) {
@@ -307,6 +277,7 @@ Solution ReactiveGrasp::reinsert(Solution s)
         r = getCheapestFeasibleInsertion(req, r);
 
         if (r.cost < s.routes[k].cost) {
+          // Reset the search with updated route
           s.routes[k] = r;
           i = 1;
         }
@@ -333,13 +304,14 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
         r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.delivery), r1.path.end());
 
         // Route will be definitely feasible, but we call this procedure to update its member variables
-        r1.isFeasible();
+        r1.feasible();
 
         for (int k2 = 0; k2 < s.routes.size(); k2++) {
           if (k1 != k2) {
             Route r2 = getCheapestFeasibleInsertion(req, s.routes[k2]);
 
             if (r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
+              // Reset the search with updated route
               s.routes[k1] = r1;
               s.routes[k2] = r2;
               k1 = 0;
@@ -415,13 +387,14 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
   return s;
 }
 
-void ReactiveGrasp::updateProbabilities(std::vector<RandomFactor> &randomFactors)
+void ReactiveGrasp::updateProbabilities(std::map<double, AlphaInfo> &alphasMap, double bestCost)
 {
   double qsum = 0.0;
 
-  for (RandomFactor rf : randomFactors)
-    qsum += rf.q;
+  for (std::pair<double, AlphaInfo> pair : alphasMap)
+    if (pair.second.avg() > 0)
+      qsum += bestCost/pair.second.avg();
 
-  for (int i = 0; i < randomFactors.size(); i++)
-    randomFactors[i].probability = randomFactors[i].q/qsum;
+  for (std::pair<double, AlphaInfo> pair : alphasMap)
+    alphasMap[pair.first].probability = (bestCost/pair.second.avg())/qsum;
 }

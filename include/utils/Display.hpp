@@ -14,7 +14,7 @@
 /**
  * @brief The progress bar style and width while running the program.
  */
-#define PROGRESSBAR_STRING "############################################################"
+#define PROGRESS_BAR_STRING "############################################################"
 #define WIDTH 60
 
 /**
@@ -63,8 +63,8 @@ public:
   *
   * where 'x' is the id of the route. Then print solution's cost and elapsed time.
   *
-  * @param s           The Solution.
-  * @param elapsedTime Time spent to achieve the Solution.
+  * @param s           A Solution.
+  * @param elapsedTime Time spent to achieve 's'.
   */
   static void printSolutionInfoWithElapsedTime(Solution s, double elapsedTime);
 };

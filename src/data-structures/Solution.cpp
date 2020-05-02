@@ -17,7 +17,7 @@ Solution::~Solution()
   // Empty destructor
 }
 
-bool Solution::isFeasible()
+bool Solution::feasible()
 {
   return routes.size() <= inst->vehicles.size();
 }

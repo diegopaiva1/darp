@@ -11,6 +11,7 @@
 #include "effolkronium/random.hpp"
 
 #include <tuple>
+#include <map>
 
 /**
  * @brief Get base random alias.
@@ -23,15 +24,22 @@ typedef effolkronium::random_static Random;
 typedef Solution (*Move)(Solution s);
 
 /**
- * @brief Data type to abstract a random factor of Reactive GRASP.
+ * @brief Auxiliary data type to track performance of each alpha in Reactive GRASP.
  */
-struct RandomFactor
+struct AlphaInfo
 {
-  double alpha;
   double probability;
-  double q;
   double cumulativeCost;
   int    count;
+
+ /**
+  * @brief Get the average value of all solutions found using the attached alpha.
+  *
+  * @return The average.
+  */
+  double avg() {
+    return count > 0 ? cumulativeCost/count : 0;
+  }
 };
 
 class ReactiveGrasp
@@ -50,12 +58,12 @@ public:
 
 private:
  /**
-  * @brief Choose a random factor in a vector of random factors and get its index in the vector.
+  * @brief Make a draw and select an alpha based in their probabilities.
   *
-  * @param randomFactors A vector of random factors.
-  * @return              Index of the chosen random factor in the vector.
+  * @param alphasMap A map with each alpha performance info.
+  * @return          A (double) alpha value.
   */
-  static int chooseRandomFactorIndex(std::vector<RandomFactor> randomFactors);
+  static double getRandomAlpha(std::map<double, AlphaInfo> alphasMap);
 
  /**
   * @brief Build a random greedy solution.
@@ -121,11 +129,12 @@ private:
   static Solution swapOneOne(Solution s);
 
  /**
-  * @brief Update probability of each random factor in vector of random factors.
+  * @brief Update probability of each random alpha based in the best solution found so far.
   *
-  * @param randomFactors A vector of random factors.
+  * @param alphasMap A map with each alpha performance info.
+  * @param bestCost  Cost of best solution found at the moment.
   */
-  static void updateProbabilities(std::vector<RandomFactor> &randomFactors);
+  static void updateProbabilities(std::map<double, AlphaInfo> &alphasMap, double bestCost);
 };
 
 #endif // REACTIVEGRASP_HPP_INCLUDED
