@@ -40,6 +40,23 @@ public:
   * @brief Update solution's cost variables.
   */
   void updateCost();
+
+ /**
+  * @brief Set the route traversed by a vehicle.
+  *
+  * @param v A vehicle.
+  * @param r A route.
+  */
+  void setRoute(Vehicle v, Route r);
+
+ /**
+  * @brief Get the route traversed by a given vehicle.
+  *
+  * @param v A vehicle.
+  * @return  Route traversed by 'v'.
+  */
+  Route getRoute(Vehicle v);
+
 };
 
 #endif // SOLUTION_HPP_INCLUDED

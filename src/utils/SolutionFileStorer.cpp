@@ -2,15 +2,13 @@
  * @file   SolutionFileStorer.cpp
  * @author Diego Paiva
  * @date   07/05/2020
- *
- * <Class description here>
  */
 
 #include "utils/SolutionFileStorer.hpp"
 
 #include <iomanip> // std::fixed, std::setprecision
 
-void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed, int optimalIt)
+void SolutionFileStorer::storeSolution(std::string fileName, Run run)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
 
@@ -19,8 +17,10 @@ void SolutionFileStorer::storeSolution(std::string fileName, Solution s, double 
     file << "TT;ERT;Cost;CPU (min);Vehicles;Opt. iteration;Seed\n";
 
   // Write the actual data
-  file << std::fixed << std::setprecision(2) << s.travelTime << ';' << s.excessRideTime << ';'
-       << s.cost << ';' << elapsedTime << ';' << s.routes.size() << ';' << optimalIt << ';' << seed << "\n";
+  file << std::fixed << std::setprecision(2)
+       << run.solution.travelTime << ';' << run.solution.excessRideTime << ';' << run.solution.cost    << ';'
+       << run.elapsedMinutes      << ';' << run.solution.routes.size()  << ';' << run.optimalIteration << ';'
+       << run.seed << "\n";
 }
 
 bool SolutionFileStorer::isEmpty(std::fstream &file)

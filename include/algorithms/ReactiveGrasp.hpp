@@ -7,10 +7,9 @@
 #ifndef REACTIVEGRASP_HPP_INCLUDED
 #define REACTIVEGRASP_HPP_INCLUDED
 
-#include "data-structures/Solution.hpp"
+#include "data-structures/Run.hpp"
 #include "effolkronium/random.hpp"
 
-#include <tuple>
 #include <map>
 
 /**
@@ -51,10 +50,9 @@ public:
   * @param iterations Total number of iterations.
   * @param blocks     Frequency of iterations on which probabilities are updated.
   * @param alphas     GRASP's vector of random factors.
-  * @return           A std::tuple containing (0) Solution, (1) elapsed time in minutes, (2) seed and (3)
-  *                   number of the iterarion which optimal solution was reached.
+  * @return           A Run object.
   */
-  static std::tuple<Solution, double, uint, int> solve(int iterations, int blocks, std::vector<double> alphas);
+  static Run solve(int iterations, int blocks, std::vector<double> alphas);
 
 private:
  /**

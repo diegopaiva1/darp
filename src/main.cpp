@@ -5,6 +5,7 @@
  */
 
 #include "data-structures/Singleton.hpp"
+#include "data-structures/Run.hpp"
 #include "algorithms/ReactiveGrasp.hpp"
 #include "gnuplot/Gnuplot.hpp"
 #include "utils/SolutionFileStorer.hpp"
@@ -21,25 +22,14 @@ int main(const int argc, char const *argv[])
 
   inst->init(argv[1]);
 
-  std::tuple<Solution, double, uint, int> solutionTuple = ReactiveGrasp::solve(1000, 100, {
-    0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
-  });
+  Run run = ReactiveGrasp::solve(3000, 300, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
 
-  Solution solution = std::get<0>(solutionTuple);
+  Gnuplot::plotSolution(run.solution);
 
-  Gnuplot::plotSolution(solution);
+  if (argv[2])
+    SolutionFileStorer::storeSolution(argv[2], run);
 
-  if (argv[2]) {
-    double elapsedTime = std::get<1>(solutionTuple);
-    uint seed          = std::get<2>(solutionTuple);
-    uint optimalIt     = std::get<3>(solutionTuple);
-
-    SolutionFileStorer::storeSolution(argv[2], solution, elapsedTime, seed, optimalIt);
-  }
-
-  uint seed = std::get<2>(solutionTuple);
-
-  printf("\nSeed = %u\n", seed);
+  printf("\nSeed = %u, Opt. iteration = %d\n", run.seed, run.optimalIteration);
 
   return EXIT_SUCCESS;
 }

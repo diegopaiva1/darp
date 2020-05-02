@@ -16,6 +16,7 @@ set (SOURCES src/main.cpp
              src/data-structures/Node.cpp
              src/data-structures/Request.cpp
              src/data-structures/Route.cpp
+             src/data-structures/Run.cpp
              src/data-structures/Singleton.cpp
              src/data-structures/Solution.cpp
              src/data-structures/Vehicle.cpp

@@ -29,11 +29,11 @@ public:
 
   void reset();
 
-	double elapsedInSeconds() const;
+	double elapsedSeconds() const;
 
-  double elapsedInMinutes() const;
+  double elapsedMinutes() const;
 
-  double elapsedInHours() const;
+  double elapsedHours() const;
 };
 
 #endif // TIMER_HPP_INCLUDED

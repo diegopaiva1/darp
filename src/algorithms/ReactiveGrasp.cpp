@@ -9,14 +9,13 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
-std::tuple<Solution, double, uint, int>
-ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double> alphas = {1.0})
+Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double> alphas = {0.5, 1.0})
 {
   // Starting a clock to count algorithm run time
   Timer timer;
 
   // Use std::random_device to generate seed to Random engine
-  uint seed = std::random_device{}();
+  unsigned int seed = std::random_device{}();
   Random::seed(seed);
 
   // A map to track each alpha performance
@@ -29,8 +28,8 @@ ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double
   Solution best;
   int optimalIteration = 0;
 
-  for (int it = 1; it <= iterations; it++) {
-    // Go full greedy at first iteration
+  for (int it = 1; it <= iterations + 1; it++) {
+    // Go full greedy in first iteration
     double alpha = it == 1 ? 0.0 : getRandomAlpha(alphasMap);
 
     Solution curr = buildGreedyRandomizedSolution(alpha);
@@ -64,16 +63,14 @@ ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double
     Display::printProgress(best, (double) it/iterations);
   }
 
-  double elapsedTime = timer.elapsedInMinutes();
+  double elapsedTime = timer.elapsedMinutes();
 
   Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
 
-  for (std::pair<double, AlphaInfo> pair : alphasMap)
-    printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
+  // for (std::pair<double, AlphaInfo> pair : alphasMap)
+  //   printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
 
-  printf("%d\n", optimalIteration);
-
-  return std::make_tuple(best, elapsedTime, seed, optimalIteration);
+  return Run(best, elapsedTime, seed, optimalIteration);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)
@@ -133,7 +130,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
       solution.routes.push_back(Route(v, candidate->request));
     }
     else {
-      solution.routes.at(candidate->route.vehicle.id - 1) = candidate->route;
+      solution.setRoute(candidate->route.vehicle, candidate->route);
     }
 
     // Save route to optimize the update of candidates
@@ -142,9 +139,9 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
     candidates.erase(candidate);
 
     // Update candidates
-    for (int i = 0; i < candidates.size(); i++)
-      if (candidates[i].route == selected)
-        candidates[i] = {getCheapestFeasibleInsertion(candidates[i].request, solution), candidates[i].request};
+    for (Candidate &c : candidates)
+      if (c.route == selected)
+        c = {getCheapestFeasibleInsertion(c.request, solution), c.request};
   }
 
   solution.updateCost();
@@ -157,10 +154,10 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Solution s)
   Route best;
 
   for (int k = 0; k < s.routes.size(); k++) {
-    Route r = getCheapestFeasibleInsertion(req, s.routes[k]);
+    Route curr = getCheapestFeasibleInsertion(req, s.routes[k]);
 
-    if (k == 0 || r.cost < best.cost)
-      best = r;
+    if (k == 0 || curr.cost < best.cost)
+      best = curr;
   }
 
   return best;
@@ -170,7 +167,7 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
 {
   // Best insertion starts with infinity cost, we will update it during the search
   Route best = r;
-  best.cost = MAXFLOAT;
+  best.cost  = MAXFLOAT;
 
   // printf("Insert req (%d, %d) in route [", req.pickup->id, req.delivery->id);
 
@@ -261,25 +258,25 @@ Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
 
 Solution ReactiveGrasp::reinsert(Solution s)
 {
-  for (int k = 0; k < s.routes.size(); k++) {
-    for (int i = 1; i < s.routes[k].path.size() - 1; i++) {
-      Node *node = s.routes[k].path[i];
+  START:
 
+  for (Route &r : s.routes) {
+    for (Node *node : r.path) {
       if (node->isPickup()) {
-        // Remove request from the route
         Request req = inst->getRequest(node);
-        Route   r   = s.routes[k];
+        Route  curr = r;
 
-        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.pickup),   r.path.end());
-        r.path.erase(std::remove(r.path.begin(), r.path.end(), req.delivery), r.path.end());
+        // Erase request by value
+        curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req.pickup),   curr.path.end());
+        curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req.delivery), curr.path.end());
 
         // Reinsert the request
-        r = getCheapestFeasibleInsertion(req, r);
+        curr = getCheapestFeasibleInsertion(req, r);
 
-        if (r.cost < s.routes[k].cost) {
-          // Reset the search with updated route
-          s.routes[k] = r;
-          i = 1;
+        if (curr.cost < r.cost) {
+          // Update solution and reset the search
+          r = curr;
+          goto START;
         }
       }
     }
@@ -292,31 +289,32 @@ Solution ReactiveGrasp::reinsert(Solution s)
 
 Solution ReactiveGrasp::swapZeroOne(Solution s)
 {
-  for (int k1 = 0; k1 < s.routes.size(); k1++) {
-    for (int i = 1; i < s.routes[k1].path.size() - 1; i++) {
-      Node *node = s.routes[k1].path[i];
+  START:
 
+  for (Route &r1 : s.routes) {
+    for (Node *node : r1.path) {
       if (node->isPickup()) {
-        Request req = inst->getRequest(node);
-        Route   r1  = s.routes[k1];
+        Request req   = inst->getRequest(node);
+        Route   curr1 = r1;
 
-        r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.pickup),   r1.path.end());
-        r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req.delivery), r1.path.end());
+        // Erase request by value
+        curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.pickup),   curr1.path.end());
+        curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.delivery), curr1.path.end());
 
-        // Route will be definitely feasible, but we call this procedure to update its member variables
-        r1.feasible();
+       /* Route will be definitely feasible because removing a request from a feasible route does not
+        * make it infeasible, but we call this procedure to update its member variables
+        */
+        curr1.feasible();
 
-        for (int k2 = 0; k2 < s.routes.size(); k2++) {
-          if (k1 != k2) {
-            Route r2 = getCheapestFeasibleInsertion(req, s.routes[k2]);
+        for (Route &r2 : s.routes) {
+          if (r1 != r2) {
+            Route curr2 = getCheapestFeasibleInsertion(req, r2);
 
-            if (r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
-              // Reset the search with updated route
-              s.routes[k1] = r1;
-              s.routes[k2] = r2;
-              k1 = 0;
-              i  = 1;
-              break;
+            if (curr1.cost + curr2.cost < r1.cost + r2.cost) {
+              // Update solution and reset the search
+              r1 = curr1;
+              r2 = curr2;
+              goto START;
             }
           }
         }
@@ -331,55 +329,45 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
 
 Solution ReactiveGrasp::swapOneOne(Solution s)
 {
-  std::vector<int> possibleRoutes;
+  START:
 
-  // Only routes with at least one request are eligible
-  for (int k = 0; k < s.routes.size(); k++)
-    if (s.routes[k].path.size() > 2)
-      possibleRoutes.push_back(k);
+  std::vector<Route> possibleRoutes;
+
+  // Only routes with at least one request accommodated are eligible
+  for (Route r : s.routes)
+    if (!r.empty())
+      possibleRoutes.push_back(r);
 
   // To perform the move, there must be at least two routes with requests to be swapped
   if (possibleRoutes.size() >= 2) {
-    bool improved;
+    // Select two distinct random routes
+    Route r1 = *Random::get(possibleRoutes);
+    Route r2 = *Random::get(possibleRoutes);
 
-    do {
-      improved = false;
+    while (r2 == r1)
+      r2 = *Random::get(possibleRoutes);
 
-      // Select two distinct random routes
-      int k1 = *Random::get(possibleRoutes);
-      int k2 = *Random::get(possibleRoutes);
+    // Select a random request in each route
+    Request req1 = inst->getRequest(*Random::get(r1.path.begin() + 1, r1.path.end() - 1));
+    Request req2 = inst->getRequest(*Random::get(r2.path.begin() + 1, r2.path.end() - 1));
 
-      while (k2 == k1)
-        k2 = *Random::get(possibleRoutes);
+    // Remove (by value) req1 from r1 and req2 from r2
+    r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.pickup),   r1.path.end());
+    r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.delivery), r1.path.end());
 
-      Route r1 = s.routes[k1];
-      Route r2 = s.routes[k2];
+    r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.pickup),   r2.path.end());
+    r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.delivery), r2.path.end());
 
-      // Select two random requests in each route
-      Node *node1 = *Random::get(r1.path.begin() + 1, r1.path.end() - 1);
-      Node *node2 = *Random::get(r2.path.begin() + 1, r2.path.end() - 1);
+    // Insert req2 in r1 and req1 in r2
+    r1 = getCheapestFeasibleInsertion(req2, r1);
+    r2 = getCheapestFeasibleInsertion(req1, r2);
 
-      Request req1 = inst->getRequest(node1);
-      Request req2 = inst->getRequest(node2);
-
-      // Remove req1 from r1 and req2 from r2
-      r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.pickup),   r1.path.end());
-      r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.delivery), r1.path.end());
-
-      r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.pickup),   r2.path.end());
-      r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.delivery), r2.path.end());
-
-      // Insert req2 in r1 and req1 in r2
-      r1 = getCheapestFeasibleInsertion(req2, r1);
-      r2 = getCheapestFeasibleInsertion(req1, r2);
-
-      if (r1.cost + r2.cost < s.routes[k1].cost + s.routes[k2].cost) {
-        s.routes[k1] = r1;
-        s.routes[k2] = r2;
-        improved = true;
-      }
+    if (r1.cost + r2.cost < s.getRoute(r1.vehicle).cost + s.getRoute(r2.vehicle).cost) {
+      // Update solution and reset the search
+      s.setRoute(r1.vehicle, r1);
+      s.setRoute(r2.vehicle, r2);
+      goto START;
     }
-    while (improved);
   }
 
   s.updateCost();

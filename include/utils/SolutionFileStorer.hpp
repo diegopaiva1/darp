@@ -9,7 +9,7 @@
 #ifndef SOLUTIONFILESTORER_HPP_INCLUDED
 #define SOLUTIONFILESTORER_HPP_INCLUDED
 
-#include "data-structures/Solution.hpp"
+#include "data-structures/Run.hpp"
 
 #include <fstream>
 #include <string>
@@ -17,7 +17,7 @@
 class SolutionFileStorer
 {
 public:
-  static void storeSolution(std::string fileName, Solution s, double elapsedTime, uint seed, int optimalIt);
+  static void storeSolution(std::string fileName, Run run);
 
 private:
   static bool isEmpty(std::fstream &file);

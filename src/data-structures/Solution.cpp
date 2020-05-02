@@ -34,3 +34,13 @@ void Solution::updateCost()
     cost           += r.cost;
   }
 }
+
+void Solution::setRoute(Vehicle v, Route r)
+{
+  routes[v.id - 1] = r;
+}
+
+Route Solution::getRoute(Vehicle v)
+{
+  return routes[v.id - 1];
+}

@@ -24,17 +24,17 @@ void Timer::reset()
   beginning = Time::now();
 }
 
-double Timer::elapsedInSeconds() const
+double Timer::elapsedSeconds() const
 {
   return std::chrono::duration_cast<Seconds>(Time::now() - beginning).count();
 }
 
-double Timer::elapsedInMinutes() const
+double Timer::elapsedMinutes() const
 {
   return std::chrono::duration_cast<Minutes>(Time::now() - beginning).count();
 }
 
-double Timer::elapsedInHours() const
+double Timer::elapsedHours() const
 {
   return std::chrono::duration_cast<Hours>(Time::now() - beginning).count();
 }
