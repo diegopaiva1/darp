@@ -50,18 +50,18 @@ public:
   static void printProgress(Solution s, double fraction);
 
  /**
-  * @brief Print a schedule table containing all decision variables for every route in solution 's'.
-  *        Table is displayed as follows:
+  * @brief Print all data about a Run object. A schedule table containing all decision
+  *        variables for every route will be also displayed as follows:
   *
-  *  +----+-----------------------------------------------------------------+
-  *  | x  |                       ROUTE SCHEDULE                            |
-  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
-  *  | #  |   ID|     A|     B|     W|     D|     R|     Z|    C|    Q|    E|
-  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
-  *  | 0  |  ...|   ...|   ...|   ...|   ...|   ...|   ...| ... | ... |  ...|
-  *  +----+-----+------+------+------+------+------+------+-----+-----+-----+
+  * +----+----------------------------------------------------------------------------+
+  * |  k |                             ROUTE SCHEDULE                                 |
+  * +----+----+------+------+------+------+------+------+-----+--------+----+---+-----+
+  * |  # | ID |    e |    l |    A |    B |    W |    D |   R |  Z (%) |  C | Q |   E |
+  * +----+----+------+------+------+------+------+------+-----+--------+----+---+-----+
+  * | ...| ...|   ...|   ...|   ...|   ...|   ...|   ...|  ...|     ...| ...| . |  ...|
+  * +----+----+------+------+------+------+------+------+-----+--------+----+---+-----+
   *
-  * where 'x' is the id of the route. Then print solution's cost and elapsed time.
+  * where 'k' is the id of the route.
   *
   * @param run A Run.
   */

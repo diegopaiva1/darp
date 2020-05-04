@@ -6,7 +6,7 @@
 
 #include "data-structures/Singleton.hpp"
 #include "algorithms/ReactiveGrasp.hpp"
-#include "gnuplot/Gnuplot.hpp"
+#include "utils/Gnuplot.hpp"
 #include "utils/SolutionFileStorer.hpp"
 #include "utils/Display.hpp"
 

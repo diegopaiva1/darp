@@ -29,7 +29,7 @@ Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<do
   int optimalIteration = -1;
 
   for (int it = 0; it <= iterations; it++) {
-    // Go full greedy in first iteration
+    // Reserve a first iteration to go full greedy
     double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
 
     Solution curr = buildGreedyRandomizedSolution(alpha);

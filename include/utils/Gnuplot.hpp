@@ -29,24 +29,26 @@ public:
   static const std::string getDestinationDir();
 
 protected:
-  static inline const std::string graphScript    = "../src/gnuplot/scripts/graph.gp";
-  static inline const std::string scheduleScript = "../src/gnuplot/scripts/schedule.gp";
-  static inline const std::string destinationDir = "../tmp/gnuplot/";
+  static inline const std::string graphScript    = "../extras/scripts/gnuplot/graph.gp";
+  static inline const std::string scheduleScript = "../extras/scripts/gnuplot/schedule.gp";
+  static inline const std::string destinationDir = "../data/plots/";
 
  /**
   * @brief Plot the graph containing all nodes and the links between them.
   *
   * @param routes A set of routes.
   * @param cost   Sum of all routes' cost.
+  * @param output Output file name.
   */
-  static void plotGraph(std::vector<Route> routes, double cost);
+  static void plotGraph(std::vector<Route> routes, double cost, std::string output);
 
  /**
   * @brief Plot the schedule of a given route.
   *
-  * @param r A route.
+  * @param r      A route.
+  * @param output Output file name.
   */
-  static void plotSchedule(Route r);
+  static void plotSchedule(Route r, std::string output);
 };
 
 #endif // GNUPLOT_HPP_INCLUDED

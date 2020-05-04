@@ -1,6 +1,6 @@
 #include "fort.hpp"
 #include "utils/Display.hpp"
-#include "gnuplot/Gnuplot.hpp"
+#include "utils/Gnuplot.hpp"
 
 #include <iostream>
 

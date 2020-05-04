@@ -20,10 +20,10 @@ set (SOURCES src/main.cpp
              src/data-structures/Singleton.cpp
              src/data-structures/Solution.cpp
              src/data-structures/Vehicle.cpp
-             src/utils/Timer.cpp
-             src/utils/SolutionFileStorer.cpp
              src/utils/Display.cpp
-             src/gnuplot/Gnuplot.cpp)
+             src/utils/Gnuplot.cpp
+             src/utils/SolutionFileStorer.cpp
+             src/utils/Timer.cpp)
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++1z -Wall -O3")
