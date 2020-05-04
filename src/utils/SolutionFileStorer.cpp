@@ -8,11 +8,11 @@
 
 #include <iomanip> // std::fixed, std::setprecision
 
-void SolutionFileStorer::storeSolution(std::string fileName, Run run)
+void SolutionFileStorer::saveRun(std::string fileName, Run run)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
 
-  if (isEmpty(file))
+  if (empty(file))
     // Start writing header first
     file << "TT;ERT;Cost;CPU (min);Vehicles;Opt. iteration;Seed\n";
 
@@ -23,7 +23,7 @@ void SolutionFileStorer::storeSolution(std::string fileName, Run run)
        << run.seed << "\n";
 }
 
-bool SolutionFileStorer::isEmpty(std::fstream &file)
+bool SolutionFileStorer::empty(std::fstream &file)
 {
   // Get length of file
   file.seekg(0, std::ios::end);

@@ -20,7 +20,7 @@ class Route
 public:
   Vehicle vehicle;
   std::vector<Node *> path;
-  std::vector<int> load;
+  std::vector<int>    load;
   std::vector<double> arrivalTimes;
   std::vector<double> serviceBeginningTimes;
   std::vector<double> departureTimes;
@@ -62,7 +62,7 @@ public:
   * @brief Overload of '==' operator.
   *
   * @param r A route to be compared to this.
-  * @return  True if r is equal this, false otherwise.
+  * @return  True if r is equal this.
   */
   bool operator==(Route &r) const;
 
@@ -70,7 +70,7 @@ public:
   * @brief Overload of '!=' operator.
   *
   * @param r A route to be compared to this.
-  * @return  True if r is not equal this, false otherwise.
+  * @return  True if r is not equal this.
   */
   bool operator!=(Route &r) const;
 
@@ -79,7 +79,7 @@ public:
   *
   * @details Updates a lot of variables of the route.
   *
-  * @return True if route is feasible, false otherwise.
+  * @return True if feasible.
   */
   bool feasible();
 
@@ -95,7 +95,7 @@ public:
  /**
   * @brief Check if route has no requests accommodated.
   *
-  * @return True if empty, false otherwise.
+  * @return True if empty.
   */
   bool empty();
 

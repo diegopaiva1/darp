@@ -14,7 +14,7 @@
 void Gnuplot::plotSolution(Solution s)
 {
   // Clear our gnuplot's tmp folder before saving the resulting plots
-  system(("rm -f " + destinationFolder + "*").c_str());
+  system(("rm -f " + destinationDir + "*").c_str());
 
   plotGraph(s.routes, s.cost);
 
@@ -25,7 +25,7 @@ void Gnuplot::plotSolution(Solution s)
 void Gnuplot::plotGraph(std::vector<Route> routes, double cost)
 {
   // Data to be used in the plot
-  std::ofstream dataFile(destinationFolder +  "routes.dat");
+  std::ofstream dataFile(destinationDir +  "routes.dat");
 
   // Header metadata
   dataFile << "# Instance name, Solution cost, Number of routes, Number of requests, Number of stations" << "\n";
@@ -118,8 +118,13 @@ void Gnuplot::plotSchedule(Route r)
     dataFile << r.path[i]->departureTime << ' ' << i << '\n';
   }
 
-  std::string output = destinationFolder + std::to_string(r.vehicle.id) + ".png";
+  std::string output = destinationDir + std::to_string(r.vehicle.id) + ".png";
 
   // Call gnuplot. '-c' flag allows to send command line args to gnuplot
   popen(("gnuplot -c " + scheduleScript + " " + fileName + " " + output + " " + std::to_string(r.path.size())).c_str(), "w");
+}
+
+const std::string Gnuplot::getDestinationDir()
+{
+  return destinationDir;
 }

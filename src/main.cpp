@@ -8,6 +8,7 @@
 #include "algorithms/ReactiveGrasp.hpp"
 #include "gnuplot/Gnuplot.hpp"
 #include "utils/SolutionFileStorer.hpp"
+#include "utils/Display.hpp"
 
 int main(const int argc, char const *argv[])
 {
@@ -21,14 +22,14 @@ int main(const int argc, char const *argv[])
 
   inst->init(argv[1]);
 
-  Run run = ReactiveGrasp::solve(3000, 300, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Run run = ReactiveGrasp::solve(1000, 100, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+
+  Display::printRun(run);
 
   Gnuplot::plotSolution(run.solution);
 
   if (argv[2])
-    SolutionFileStorer::storeSolution(argv[2], run);
-
-  printf("\nSeed = %u, Opt. iteration = %d\n", run.seed, run.optimalIteration);
+    SolutionFileStorer::saveRun(argv[2], run);
 
   return EXIT_SUCCESS;
 }

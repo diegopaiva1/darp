@@ -26,11 +26,11 @@ Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<do
     alphasMap[alphas[i]] = {1.0/alphas.size(), 0.0, 0};
 
   Solution best;
-  int optimalIteration = 0;
+  int optimalIteration = -1;
 
-  for (int it = 1; it <= iterations + 1; it++) {
+  for (int it = 0; it <= iterations; it++) {
     // Go full greedy in first iteration
-    double alpha = it == 1 ? 0.0 : getRandomAlpha(alphasMap);
+    double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
 
     Solution curr = buildGreedyRandomizedSolution(alpha);
     curr = rvnd(curr, {reinsert, swapZeroOne, swapOneOne});
@@ -39,19 +39,20 @@ Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<do
     for (auto r = curr.routes.begin(); r != curr.routes.end(); )
       r = (r->empty()) ? curr.routes.erase(r) : r + 1;
 
-    if (it == 1 || (curr.feasible() && (curr.cost < best.cost || !best.feasible()))) {
+    if (it == 0 || (curr.feasible() && (curr.cost < best.cost || !best.feasible()))) {
       best = curr;
 
-      if (optimalIteration == 0 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
+      if (optimalIteration == -1 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
         optimalIteration = it;
     }
 
-    if (it % blocks == 0)
-      updateProbabilities(alphasMap, best.cost);
-
     // Remember: first iteration is full greedy, so no need to update alpha info
-    if (it != 1) {
-      int penalty = !curr.feasible() ? 1000 : 0; // Penalize alphas that generated infeasible solutions
+    if (it != 0) {
+      if (it % blocks == 0)
+        updateProbabilities(alphasMap, best.cost);
+
+      // Penalize alphas that generated infeasible solutions
+      int penalty = !curr.feasible() ? 1000 : 0;
 
       alphasMap[alpha].count++;
       alphasMap[alpha].cumulativeCost += curr.cost + penalty * curr.routes.size();
@@ -63,14 +64,10 @@ Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<do
     Display::printProgress(best, (double) it/iterations);
   }
 
-  double elapsedTime = timer.elapsedMinutes();
-
-  Display::printSolutionInfoWithElapsedTime(best, elapsedTime);
-
   // for (std::pair<double, AlphaInfo> pair : alphasMap)
   //   printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
 
-  return Run(best, elapsedTime, seed, optimalIteration);
+  return Run(best, timer.elapsedMinutes(), seed, optimalIteration);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)

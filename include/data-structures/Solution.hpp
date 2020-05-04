@@ -32,7 +32,7 @@ public:
  /**
   * @brief Check if solution is feasible.
   *
-  * @return True if feasible, false otherwise.
+  * @return True if feasible.
   */
   bool feasible();
 
@@ -56,7 +56,6 @@ public:
   * @return  Route traversed by 'v'.
   */
   Route getRoute(Vehicle v);
-
 };
 
 #endif // SOLUTION_HPP_INCLUDED

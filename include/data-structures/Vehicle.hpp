@@ -12,8 +12,8 @@
 class Vehicle
 {
 public:
-  int id;
-  int capacity;
+  int    id;
+  int    capacity;
   double dischargingRate;
   double initialBatteryLevel;
   double batteryCapacity;

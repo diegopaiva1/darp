@@ -21,10 +21,17 @@ public:
   */
   static void plotSolution(Solution s);
 
+/**
+  * @brief Get directory where plots will be stored.
+  *
+  * @return Directory string.
+  */
+  static const std::string getDestinationDir();
+
 protected:
-  static inline const std::string graphScript       = "../src/gnuplot/scripts/graph.gp";
-  static inline const std::string scheduleScript    = "../src/gnuplot/scripts/schedule.gp";
-  static inline const std::string destinationFolder = "../tmp/gnuplot/";
+  static inline const std::string graphScript    = "../src/gnuplot/scripts/graph.gp";
+  static inline const std::string scheduleScript = "../src/gnuplot/scripts/schedule.gp";
+  static inline const std::string destinationDir = "../tmp/gnuplot/";
 
  /**
   * @brief Plot the graph containing all nodes and the links between them.

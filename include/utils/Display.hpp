@@ -9,13 +9,7 @@
 #ifndef DISPLAY_HPP_INCLUDED
 #define DISPLAY_HPP_INCLUDED
 
-#include "data-structures/Solution.hpp"
-
-/**
- * @brief The progress bar style and width while running the program.
- */
-#define PROGRESS_BAR_STRING "############################################################"
-#define WIDTH 60
+#include "data-structures/Run.hpp"
 
 /**
  * @brief Some ANSI-based text style definitions.
@@ -40,14 +34,20 @@
 
 class Display
 {
+private:
+ /**
+  * @brief Create a styled progress bar string of fixed width.
+  */
+  static inline const std::string progressBar = std::string(60, '#');
+
 public:
  /**
   * @brief Display solution's cost and feasibility and a progress bar.
   *
-  * @param solution   A Solution.
-  * @param percentage Fraction of completed iterations.
+  * @param solution A Solution.
+  * @param fraction Fraction of completed iterations.
   */
-  static void printProgress(Solution s, double percentage);
+  static void printProgress(Solution s, double fraction);
 
  /**
   * @brief Print a schedule table containing all decision variables for every route in solution 's'.
@@ -63,10 +63,9 @@ public:
   *
   * where 'x' is the id of the route. Then print solution's cost and elapsed time.
   *
-  * @param s           A Solution.
-  * @param elapsedTime Time spent to achieve 's'.
+  * @param run A Run.
   */
-  static void printSolutionInfoWithElapsedTime(Solution s, double elapsedTime);
+  static void printRun(Run run);
 };
 
 #endif // DISPLAY_HPP_INCLUDED

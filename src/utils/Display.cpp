@@ -1,26 +1,29 @@
-#include "utils/Display.hpp"
 #include "fort.hpp"
+#include "utils/Display.hpp"
+#include "gnuplot/Gnuplot.hpp"
 
 #include <iostream>
-#include <iomanip>
 
-void Display::printProgress(Solution s, double percentage)
+void Display::printProgress(Solution s, double fraction)
 {
-  int value        = (int) (percentage * 100);
-  int leftPadding  = (int) (percentage * WIDTH);
-  int rightPadding = WIDTH - leftPadding;
-  auto costColor   = s.feasible() ? BOLD_GREEN : BOLD_RED;
+  int percentage  = (int) (fraction * 100);
+  int leftLength  = (int) (fraction * progressBar.size());
+  int rightLength = progressBar.size() - leftLength;
 
-  printf(BOLD_WHITE "\rComputing solution... Best found = %s%.2f " BOLD_BLUE "[%.*s%*s] %3d%%" RESET,
-         costColor, s.cost, leftPadding, PROGRESS_BAR_STRING, rightPadding, "", value);
+  std::cout << std::fixed << std::setprecision(2)
+            << BOLD_WHITE
+            << "\rComputing solution... Best found = " << (s.feasible() ? BOLD_GREEN : BOLD_RED) << s.cost
+            << BOLD_BLUE
+            << " [" << progressBar.substr(0, leftLength) << std::string(rightLength, ' ') << "] " << percentage << "\%"
+            << RESET;
 
   fflush(stdout);
 }
 
-void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
+void Display::printRun(Run run)
 {
-  for (int k = 0; k < s.routes.size(); k++) {
-    Route r = s.routes[k];
+  for (int k = 0; k < run.solution.routes.size(); k++) {
+    Route r = run.solution.routes[k];
 
     fort::char_table table;
 
@@ -56,7 +59,16 @@ void Display::printSolutionInfoWithElapsedTime(Solution s, double elapsedTime)
     std::cout << '\n' << table.to_string() << '\n';
   }
 
-  printf(BOLD_GREEN "Best found = %.2f\nTT \t   = %6.2f\nERT \t   = %5.2f\nTime \t   = %4.2f minutes\n" RESET,
-        s.cost, s.travelTime, s.excessRideTime, elapsedTime);
-  printf("\nPlots have been saved to tmp/gnuplot directory\n");
+  std::cout << std::fixed << std::setprecision(2)
+            << BOLD_GREEN
+            << "Best     = " << run.solution.cost << '\n'
+            << "TT       = " << run.solution.travelTime << '\n'
+            << "ERT      = " << run.solution.excessRideTime << '\n'
+            << "CPU      = " << run.elapsedMinutes << " min\n"
+            << "Seed     = " << run.seed << '\n';
+
+  if (run.optimalIteration != -1)
+    std::cout << "Opt. it. = " << run.optimalIteration << '\n';
+
+  std::cout << RESET << "\nPlots have been saved to " << Gnuplot::getDestinationDir() << " directory\n";
 }

@@ -17,9 +17,10 @@ enum class Type {DEPOT, PICKUP, DELIVERY, STATION};
 class Node
 {
 public:
-  int id;
-  int load;
-  int index;
+  int    id;
+  int    load;
+  Type   type;
+  int    index;
   double latitude;
   double longitude;
   double serviceTime;
@@ -27,7 +28,6 @@ public:
   double departureTime;
   double arrivalTime;
   double rechargingRate;
-  Type type;
 
  /**
   * @brief Default constructor.
@@ -47,28 +47,28 @@ public:
  /**
   * @brief Checks if this is a pickup node.
   *
-  * @return True if it is a pickup node, false otherwise.
+  * @return True if pickup node.
   */
   bool isPickup();
 
  /**
   * @brief Checks if this is a delivery node.
   *
-  * @return True if it is a delivery node, false otherwise.
+  * @return True if delivery node.
   */
   bool isDelivery();
 
  /**
   * @brief Checks if this is a depot node.
   *
-  * @return True if it is a depot node, false otherwise.
+  * @return True if depot node.
   */
   bool isDepot();
 
  /**
   * @brief Checks if this is a station node.
   *
-  * @return True if it's a station node, false otherwhise.
+  * @return True if station node.
   */
   bool isStation();
 };
