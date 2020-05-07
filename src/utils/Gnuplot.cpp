@@ -22,7 +22,7 @@ void Gnuplot::plotSolution(Solution s)
     plotSchedule(s.routes[k], destinationDir + "schedule" + std::to_string(k + 1) + ".png");
 
   // Sleep to avoid concurrence issues with gnuplot process
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   // Erase all .tmp files
   system(("rm -f " + destinationDir + "/*.tmp").c_str());
