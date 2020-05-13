@@ -28,7 +28,7 @@ typedef Solution (*Move)(Solution s);
 struct AlphaInfo
 {
   double probability;
-  double cumulativeCost;
+  double sum;
   int    count;
 
  /**
@@ -37,7 +37,7 @@ struct AlphaInfo
   * @return The average.
   */
   double avg() {
-    return count > 0 ? cumulativeCost/count : 0;
+    return count > 0 ? sum/count : 0;
   }
 };
 
@@ -125,6 +125,14 @@ private:
   * @return  Updated solution.
   */
   static Solution swapOneOne(Solution s);
+
+ /**
+  * @brief Update a given solution by performing the "removeStation" movement.
+  *
+  * @param s A solution to be updated.
+  * @return  Updated solution.
+  */
+  static Solution removeStation(Solution s);
 
  /**
   * @brief Update probability of each random alpha based in the best solution found so far.

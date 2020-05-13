@@ -17,7 +17,7 @@ public:
   double dischargingRate;
   double initialBatteryLevel;
   double batteryCapacity;
-  double minFinalBatteryRatioLevel;
+  double finalMinStateOfCharge;
 
  /**
   * @brief Default constructor.

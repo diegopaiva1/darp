@@ -64,7 +64,7 @@ void Singleton::init(std::string instanceFileName)
       file >> vehicle.capacity;
       file >> vehicle.batteryCapacity;
       file >> vehicle.initialBatteryLevel;
-      file >> vehicle.minFinalBatteryRatioLevel;
+      file >> vehicle.finalMinStateOfCharge;
       file >> vehicle.dischargingRate;
       vehicles.push_back(vehicle);
     }
@@ -125,7 +125,6 @@ void Singleton::init(std::string instanceFileName)
 
       for (int j = 0; j < nodesAmount; j++) {
         int nearestStationId;
-
         double nearestStationDistance = MAXFLOAT;
 
         for (int k = nodesAmount - stationsAmount; k < nodesAmount; k++) {

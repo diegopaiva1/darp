@@ -90,7 +90,7 @@ public:
   * @param i Index of the node in the route.
   * @return  The forward time slack at index i.
   */
-  double computeForwardTimeSlack(int i);
+  double getForwardTimeSlack(int i);
 
  /**
   * @brief Check if route has no requests accommodated.
@@ -161,6 +161,13 @@ public:
   * @param i Index.
   */
   void computeRideTimeExcess(int i);
+
+ /**
+  * @brief Get state of charge rate at index i in path.
+  *
+  * @param i Index.
+  */
+  double getStateOfCharge(int i);
 };
 
 #endif // ROUTE_HPP_INCLUDED
