@@ -144,7 +144,6 @@ for instance in instances:
   resultsFilePath = instance.replace("instances", "results")
 
   # We then remove anything that comes after a dot ('.') and append the current timestamp to the file name
-  resultsFilePath = re.sub("\.[^.]*", "", resultsFilePath)
   resultsFilePath += os.popen("date '+%Y-%m-%d_%H:%M:%S.temp'").read().replace("\n", "")
 
   for i in range(runs):
