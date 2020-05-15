@@ -9,7 +9,7 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
-Run ReactiveGrasp::solve(int iterations = 1000, int blocks = 100, std::vector<double> alphas = {0.5, 1.0})
+Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
   // Starting a clock to count algorithm run time
   Timer timer;
@@ -77,11 +77,11 @@ double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)
   double rand = Random::get(0.0, 1.0);
   double sum  = 0.0;
 
-  for (std::pair<double, AlphaInfo> pair : alphasMap) {
-    sum += pair.second.probability;
+  for (auto [alpha, info] : alphasMap) {
+    sum += info.probability;
 
     if (rand <= sum)
-      return pair.first;
+      return alpha;
   }
 
   return 0;
@@ -407,10 +407,10 @@ void ReactiveGrasp::updateProbabilities(std::map<double, AlphaInfo> &alphasMap, 
 {
   double qsum = 0.0;
 
-  for (std::pair<double, AlphaInfo> pair : alphasMap)
-    if (pair.second.avg() > 0)
-      qsum += bestCost/pair.second.avg();
+  for (auto [alpha, info] : alphasMap)
+    if (info.avg() > 0)
+      qsum += bestCost/info.avg();
 
-  for (std::pair<double, AlphaInfo> pair : alphasMap)
-    alphasMap[pair.first].probability = (bestCost/pair.second.avg())/qsum;
+  for (auto &[alpha, info] : alphasMap)
+    info.probability = (bestCost/info.avg())/qsum;
 }
