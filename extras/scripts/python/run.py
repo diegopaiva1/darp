@@ -23,13 +23,13 @@ def storeXlsx(filePath):
   worksheet = workbook.add_worksheet()
 
   # Worksheet columns
-  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Best iteration", "Seed"]
+  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Best iteration", "Best Alpha", "Seed"]
 
   # Width of columns 1 to 5 set to 10
   worksheet.set_column(1, 5, 10)
 
-  # Width of columns 6 and 7 set to 12
-  worksheet.set_column(6, 7, 12)
+  # Width of columns 6 to 8 set to 12
+  worksheet.set_column(6, 8, 12)
 
   # Start from the first cell (rows and columns are zero indexed)
   row = 0
@@ -77,14 +77,18 @@ def storeXlsx(filePath):
   for i, col in enumerate(cols):
     if i == 0:
       worksheet.write(row + 1, 0, 'Min', workbook.add_format(topBorderCenter))
-      worksheet.write(row + 2, 0, 'Avg', workbook.add_format(bottomBorderCenter))
+      worksheet.write(row + 2, 0, 'Max', workbook.add_format({'bold': True, 'align': 'center'}))
+      worksheet.write(row + 3, 0, 'Avg', workbook.add_format({'bold': True, 'align': 'center'}))
+      worksheet.write(row + 4, 0, 'SD',  workbook.add_format(bottomBorderCenter))
     else:
       # Access the letter of the cell and last row that contains a number
       letter = string.ascii_uppercase[i]
       last   = str(len(runs) + 1)
 
       worksheet.write(row + 1, i, '=MIN('     + letter + '2:' + letter + last + ')', workbook.add_format(topBorderRight))
-      worksheet.write(row + 2, i, '=AVERAGE(' + letter + '2:' + letter + last + ')', workbook.add_format(bottomBorderRight))
+      worksheet.write(row + 2, i, '=MAX('     + letter + '2:' + letter + last + ')', workbook.add_format({'bold': True, 'align': 'right'}))
+      worksheet.write(row + 3, i, '=AVERAGE(' + letter + '2:' + letter + last + ')', workbook.add_format({'bold': True, 'align': 'right'}))
+      worksheet.write(row + 4, i, '=STDEV('   + letter + '2:' + letter + last + ')', workbook.add_format(bottomBorderRight))
 
   workbook.close()
 
@@ -119,13 +123,14 @@ runs = int(runs)
 instances = []
 
 if re.match("^[aA]$", option):
-  filePath = input("\nEnter instance path: ")
+  paths = input("\nEnter instance path (separe multiple datasets with a space): ").split(" ")
 
-  if not os.path.isfile(filePath):
-    print("\nError: path is not a valid file")
-    exit(1)
+  for path in paths:
+    if not os.path.isfile(path):
+      print("\nError: " + path + " is not a file")
+      exit(1)
 
-  instances.append(filePath)
+    instances.append(path)
 else:
   instancesDir = input("\nEnter instances directory (separe multiple datasets with a space): ").split(" ")
 
