@@ -29,7 +29,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   std::vector<Move> moves = {reinsert, swapZeroOne, swapOneOne, removeStation};
 
   Solution best;
-  int optimalIteration = -1;
+  int bestIteration;
 
   for (int it = 0; it <= iterations; it++) {
     // Reserve a first iteration to go full greedy
@@ -44,9 +44,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
     if (it == 0 || (curr.feasible() && (curr.cost < best.cost || !best.feasible()))) {
       best = curr;
-
-      if (optimalIteration == -1 && fabs(best.cost - inst->optimalSolutions[inst->name]) < 0.01)
-        optimalIteration = it;
+      bestIteration = it;
     }
 
     // Remember: first iteration is full greedy, so no need to update alpha info
@@ -69,7 +67,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // for (std::pair<double, AlphaInfo> pair : alphasMap)
   //   printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
 
-  return Run(best, timer.elapsedMinutes(), seed, optimalIteration);
+  return Run(best, timer.elapsedMinutes(), seed, bestIteration);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)

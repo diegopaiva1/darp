@@ -65,10 +65,8 @@ void Display::printRun(Run run)
             << "TT       = " << run.solution.travelTime << '\n'
             << "ERT      = " << run.solution.excessRideTime << '\n'
             << "CPU      = " << run.elapsedMinutes << " min\n"
-            << "Seed     = " << run.seed << '\n';
-
-  if (run.optimalIteration != -1)
-    std::cout << "Opt. it. = " << run.optimalIteration << '\n';
+            << "Seed     = " << run.seed << '\n'
+            << "Best it. = " << run.bestIteration << '\n';
 
   std::cout << RESET << "\nPlots have been saved to " << Gnuplot::getDestinationDir() << " directory\n";
 }

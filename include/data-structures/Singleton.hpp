@@ -42,7 +42,6 @@ public:
   std::vector<Request> requests;
   std::vector<std::vector<double>> travelTimes;
   std::vector<std::vector<int>> nearestStations;
-  std::unordered_map<std::string, double> optimalSolutions;
 
  /**
   * @brief Get the instance.

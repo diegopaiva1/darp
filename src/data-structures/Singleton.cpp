@@ -11,43 +11,7 @@
 
 Singleton::Singleton()
 {
-  // Register the known optimal solutions for the instances
-
-  // r = 0.1
-  optimalSolutions["data/instances/a/0.1/a2-16-0.1.txt"] = 237.38;
-  optimalSolutions["data/instances/a/0.1/a2-20-0.1.txt"] = 279.08;
-  optimalSolutions["data/instances/a/0.1/a2-24-0.1.txt"] = 346.21;
-  optimalSolutions["data/instances/a/0.1/a3-18-0.1.txt"] = 236.82;
-  optimalSolutions["data/instances/a/0.1/a3-24-0.1.txt"] = 274.81;
-  optimalSolutions["data/instances/a/0.1/a3-30-0.1.txt"] = 413.27;
-  optimalSolutions["data/instances/a/0.1/a3-36-0.1.txt"] = 481.17;
-  optimalSolutions["data/instances/a/0.1/a4-16-0.1.txt"] = 222.49;
-  optimalSolutions["data/instances/a/0.1/a4-24-0.1.txt"] = 310.84;
-  optimalSolutions["data/instances/a/0.1/a4-32-0.1.txt"] = 393.96;
-  optimalSolutions["data/instances/a/0.1/a4-40-0.1.txt"] = 453.84;
-  optimalSolutions["data/instances/a/0.1/a5-40-0.1.txt"] = 414.51;
-
-  // r = 0.4
-  optimalSolutions["data/instances/a/0.4/a2-16-0.4.txt"] = 237.38;
-  optimalSolutions["data/instances/a/0.4/a2-20-0.4.txt"] = 280.70;
-  optimalSolutions["data/instances/a/0.4/a2-24-0.4.txt"] = 348.04;
-  optimalSolutions["data/instances/a/0.4/a3-18-0.4.txt"] = 236.82;
-  optimalSolutions["data/instances/a/0.4/a3-24-0.4.txt"] = 274.81;
-  optimalSolutions["data/instances/a/0.4/a3-30-0.4.txt"] = 413.37;
-  optimalSolutions["data/instances/a/0.4/a3-36-0.4.txt"] = 484.14;
-  optimalSolutions["data/instances/a/0.4/a4-16-0.4.txt"] = 222.49;
-  optimalSolutions["data/instances/a/0.4/a4-24-0.4.txt"] = 311.03;
-  optimalSolutions["data/instances/a/0.4/a4-32-0.4.txt"] = 394.26;
-  optimalSolutions["data/instances/a/0.4/a4-40-0.4.txt"] = 453.84;
-  optimalSolutions["data/instances/a/0.4/a5-40-0.4.txt"] = 414.51;
-
-  // r = 0.7
-  optimalSolutions["../../../data/instances/a/0.7/a2-16-0.7.txt"] = 240.66;
-  optimalSolutions["../../../data/instances/a/0.7/a2-24-0.7.txt"] = 358.21;
-  optimalSolutions["../../../data/instances/a/0.7/a3-18-0.7.txt"] = 240.58;
-  optimalSolutions["../../../data/instances/a/0.7/a3-24-0.7.txt"] = 277.72;
-  optimalSolutions["../../../data/instances/a/0.7/a4-16-0.7.txt"] = 223.13;
-  optimalSolutions["../../../data/instances/a/0.7/a4-24-0.7.txt"] = 318.21;
+  // Empty constructor
 }
 
 Singleton* Singleton::getInstance()
@@ -58,7 +22,6 @@ Singleton* Singleton::getInstance()
   return instance;
 }
 
-// Build the nodes, vehicles and requests to this unique object through the file passed as arg
 void Singleton::init(std::string instanceFileName)
 {
   std::ifstream file(instanceFileName);

@@ -17,7 +17,7 @@ public:
   Solution     solution;
   double       elapsedMinutes;
   unsigned int seed;
-  int          optimalIteration;
+  int          bestIteration;
 
  /**
   * @brief Default constructor.
@@ -25,9 +25,9 @@ public:
   * @param solution         Solution.
   * @param elapsedMinutes   Time in minutes spent in the run to achieve the Solution.
   * @param seed             Seed used in the Random engine.
-  * @param optimalIteration Iteration which the known optimal solution was found.
+  * @param bestIteration    Iteration in which the best solution was found.
   */
-  Run(Solution solution, double elapsedMinutes, unsigned int seed, int optimalIteration);
+  Run(Solution solution, double elapsedMinutes, unsigned int seed, int bestIteration);
 
  /**
   * @brief Default destructor.

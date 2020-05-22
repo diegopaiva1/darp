@@ -14,12 +14,12 @@ void SolutionFileStorer::saveRun(std::string fileName, Run run)
 
   if (empty(file))
     // Start writing header first
-    file << "TT;ERT;Cost;CPU (min);Vehicles;Opt. iteration;Seed\n";
+    file << "TT;ERT;Cost;CPU (min);Vehicles;Best iteration;Seed\n";
 
   // Write the actual data
   file << std::fixed << std::setprecision(2)
        << run.solution.travelTime << ';' << run.solution.excessRideTime << ';' << run.solution.cost    << ';'
-       << run.elapsedMinutes      << ';' << run.solution.routes.size()  << ';' << run.optimalIteration << ';'
+       << run.elapsedMinutes      << ';' << run.solution.routes.size()  << ';' << run.bestIteration << ';'
        << run.seed << "\n";
 }
 

@@ -22,14 +22,14 @@ def storeXlsx(filePath):
   workbook  = xlsxwriter.Workbook(filePath.replace("temp", "xlsx"))
   worksheet = workbook.add_worksheet()
 
-  # Open the file to read the content of each run
-  file = open(filePath, 'r')
-
   # Worksheet columns
-  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Opt. iteration", "Seed"]
+  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Best iteration", "Seed"]
 
-  # Width of columns 1 to 7 set to 10
-  worksheet.set_column(1, 7, 10)
+  # Width of columns 1 to 5 set to 10
+  worksheet.set_column(1, 5, 10)
+
+  # Width of columns 6 and 7 set to 12
+  worksheet.set_column(6, 7, 12)
 
   # Start from the first cell (rows and columns are zero indexed)
   row = 0
@@ -46,6 +46,9 @@ def storeXlsx(filePath):
   # Data from the runs that we want to write to the worksheet
   # Each element from 'runs' list will be a tuple with size = len(cols)
   runs = []
+
+  # Open the file to read the content of each run
+  file = open(filePath, 'r')
 
   # Append all lines from file in 'runs' list except the first one (the header)
   for i, line in enumerate(file):
@@ -66,9 +69,9 @@ def storeXlsx(filePath):
 
   # Last rows format
   topBorderCenter    = {'bold': True, 'align': 'center', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
-  topBorderRight     = {'bold': True, 'align': 'right', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
-  bottomBorderCenter = {'bold': True, 'align': 'center', 'border': 2, 'top': 0, 'left': 0, 'right': 0}
-  bottomBorderRight  = {'bold': True, 'align': 'right', 'border': 2, 'top': 0, 'left': 0, 'right': 0}
+  topBorderRight     = {'bold': True, 'align': 'right',  'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
+  bottomBorderCenter = {'bold': True, 'align': 'center', 'border': 2, 'top':    0, 'left': 0, 'right': 0}
+  bottomBorderRight  = {'bold': True, 'align': 'right',  'border': 2, 'top':    0, 'left': 0, 'right': 0}
 
   # Collect the minimum value and the average of all columns except column 0
   for i, col in enumerate(cols):
@@ -140,15 +143,19 @@ else:
 os.system("cmake build && make -C build")
 
 for instance in instances:
-  # The data file will be stored under it's original path but in the results directory
-  resultsFilePath = instance.replace("instances", "results")
+  # Results directory folder
+  dir = re.sub('instances', 'results', instance)
+  dir = re.sub('[a-zA-Z][0-9]+.*', '', dir)
 
-  # We then remove anything that comes after a dot ('.') and append the current timestamp to the file name
-  resultsFilePath += os.popen("date '+%Y-%m-%d_%H:%M:%S.temp'").read().replace("\n", "")
+  if not os.path.exists(dir):
+    os.makedirs(dir, exist_ok = True)
+
+  # We then append the current timestamp to the file name
+  path = re.sub('instances', 'results', instance) + os.popen("date '+%Y-%m-%d_%H:%M:%S.temp'").read().replace("\n", "")
 
   for i in range(runs):
-    os.system("build/e-adarp " + instance + " " + resultsFilePath)
+    os.system("build/e-adarp " + instance + " " + path)
 
   # Write the results to xlsx file and then remove the temp file
-  storeXlsx(resultsFilePath)
-  os.system("rm -f " + resultsFilePath)
+  storeXlsx(path)
+  os.system("rm -f " + path)
