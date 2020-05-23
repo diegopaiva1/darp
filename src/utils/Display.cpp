@@ -22,8 +22,8 @@ void Display::printProgress(Solution s, double fraction)
 
 void Display::printRun(Run run)
 {
-  for (int k = 0; k < run.solution.routes.size(); k++) {
-    Route r = run.solution.routes[k];
+  for (int k = 0; k < run.best.routes.size(); k++) {
+    Route r = run.best.routes[k];
 
     fort::char_table table;
 
@@ -61,9 +61,9 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
-            << "Best     = " << run.solution.cost << '\n'
-            << "TT       = " << run.solution.travelTime << '\n'
-            << "ERT      = " << run.solution.excessRideTime << '\n'
+            << "Best     = " << run.best.cost << '\n'
+            << "TT       = " << run.best.travelTime << '\n'
+            << "ERT      = " << run.best.excessRideTime << '\n'
             << "CPU      = " << run.elapsedMinutes << " min\n"
             << "Seed     = " << run.seed << '\n'
             << "Best it. = " << run.bestIteration << '\n';

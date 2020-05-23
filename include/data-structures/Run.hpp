@@ -14,20 +14,22 @@
 class Run
 {
 public:
-  Solution     solution;
+  Solution     best;
   double       elapsedMinutes;
   unsigned int seed;
   int          bestIteration;
+  double       bestAlpha;
 
  /**
   * @brief Default constructor.
   *
-  * @param solution         Solution.
+  * @param best             Best solution found in the run.
   * @param elapsedMinutes   Time in minutes spent in the run to achieve the Solution.
   * @param seed             Seed used in the Random engine.
   * @param bestIteration    Iteration in which the best solution was found.
+  * @param bestAlpha        Alpha that led to the best solution.
   */
-  Run(Solution solution, double elapsedMinutes, unsigned int seed, int bestIteration);
+  Run(Solution best, double elapsedMinutes, unsigned int seed, int bestIteration, double bestAlpha);
 
  /**
   * @brief Default destructor.

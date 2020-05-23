@@ -30,6 +30,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
   Solution best;
   int bestIteration;
+  double bestAlpha;
 
   for (int it = 0; it <= iterations; it++) {
     // Reserve a first iteration to go full greedy
@@ -45,6 +46,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
     if (it == 0 || (curr.feasible() && (curr.cost < best.cost || !best.feasible()))) {
       best = curr;
       bestIteration = it;
+      bestAlpha = alpha;
     }
 
     // Remember: first iteration is full greedy, so no need to update alpha info
@@ -58,16 +60,16 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
         updateProbabilities(alphasMap, best.cost);
     }
 
-    // for (std::pair<double, AlphaInfo> pair : alphasMap)
-    //   printf("\nAvg %.2f = %.2f (%.2f)", pair.first, pair.second.avg(), pair.second.probability);
+    // for (auto [alpha, info] : alphasMap)
+    //   printf("\nAvg %.2f = %.2f (%.2f)", alpha, info.avg(), info.probability);
 
     Display::printProgress(best, (double) it/iterations);
   }
 
-  // for (std::pair<double, AlphaInfo> pair : alphasMap)
-  //   printf("%.2f - %d times (%.2f%%)\n", pair.first, pair.second.count, pair.second.probability);
+  // for (auto [alpha, info] : alphasMap)
+  //   printf("%.2f - %d times (%.2f%%)\n", alpha, info.count, info.probability);
 
-  return Run(best, timer.elapsedMinutes(), seed, bestIteration);
+  return Run(best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)

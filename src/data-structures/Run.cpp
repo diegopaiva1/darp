@@ -6,12 +6,13 @@
 
 #include "data-structures/Run.hpp"
 
-Run::Run(Solution solution, double elapsedMinutes, unsigned int seed, int bestIteration)
+Run::Run(Solution best, double elapsedMinutes, unsigned int seed, int bestIteration, double bestAlpha)
 {
-  this->solution       = solution;
+  this->best           = best;
   this->elapsedMinutes = elapsedMinutes;
   this->seed           = seed;
   this->bestIteration  = bestIteration;
+  this->bestAlpha      = bestAlpha;
 }
 
 Run::~Run()
