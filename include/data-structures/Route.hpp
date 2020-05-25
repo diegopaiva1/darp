@@ -18,7 +18,7 @@
 class Route
 {
 public:
-  Vehicle vehicle;
+  Vehicle *vehicle;
   std::vector<Node *> path;
   std::vector<int>    load;
   std::vector<double> arrivalTimes;
@@ -32,6 +32,12 @@ public:
   double travelTime;
   double excessRideTime;
   double cost;
+  double loadViolation;
+  double timeWindowViolation;
+  double maxRideTimeViolation;
+  double finalBatteryViolation;
+  double batteryLevelViolation;
+
 
  /**
   * @brief Default constructor.
@@ -43,15 +49,7 @@ public:
   *
   * @param v A vehicle.
   */
-  Route(Vehicle v);
-
- /**
-  * @brief Constructor with vehicle as argument and a request to be accommodated.
-  *
-  * @param v   A vehicle.
-  * @param req A request.
-  */
-  Route(Vehicle v, Request req);
+  Route(Vehicle *v);
 
  /**
   * @brief Default destructor.
@@ -75,13 +73,18 @@ public:
   bool operator!=(Route &r) const;
 
  /**
-  * @brief Perform eight-step evaluation scheme designed by (Cordeau and Laporte, 2003) to check feasibility.
-  *
-  * @details Updates a lot of variables of the route.
+  * @brief Check route's feasibility.
   *
   * @return True if feasible.
   */
   bool feasible();
+
+ /**
+  * @brief Perform eight-step evaluation scheme to compute costs and violations.
+  *
+  * @details Updates a lot of variables of the route.
+  */
+  void evaluate();
 
  /**
   * @brief The forward time slack at index i in path is the maximum amount of time that the departure

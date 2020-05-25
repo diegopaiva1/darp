@@ -19,28 +19,49 @@ Solution::~Solution()
 
 bool Solution::feasible()
 {
-  return routes.size() <= inst->vehicles.size();
+  for (Route r : routes)
+    if (!r.feasible())
+      return false;
+
+  return true;
 }
 
-void Solution::updateCost()
+void Solution::setRoute(Vehicle *v, Route r)
 {
-  travelTime            = 0.0;
-  excessRideTime        = 0.0;
-  cost                  = 0.0;
-
-  for (Route &r : routes) {
-    travelTime     += r.travelTime;
-    excessRideTime += r.excessRideTime;
-    cost           += r.cost;
-  }
+  routes[v->id - 1] = r;
 }
 
-void Solution::setRoute(Vehicle v, Route r)
+Route Solution::getRoute(Vehicle *v)
 {
-  routes[v.id - 1] = r;
+  return routes[v->id - 1];
 }
 
-Route Solution::getRoute(Vehicle v)
+double Solution::obj()
 {
-  return routes[v.id - 1];
+  double sum = 0.0;
+
+  for (Route r : routes)
+    sum += r.cost;
+
+  return sum;
+}
+
+double Solution::travelTime()
+{
+  double sum = 0.0;
+
+  for (Route r : routes)
+    sum += r.travelTime;
+
+  return sum;
+}
+
+double Solution::excessRideTime()
+{
+  double sum = 0.0;
+
+  for (Route r : routes)
+    sum += r.excessRideTime;
+
+  return sum;
 }

@@ -2,9 +2,7 @@
 #include "utils/Display.hpp"
 #include "utils/Gnuplot.hpp"
 
-#include <iostream>
-
-void Display::printProgress(Solution s, double fraction)
+void Display::printProgress(bool feasibility, double obj, double fraction)
 {
   int percentage  = (int) (fraction * 100);
   int leftLength  = (int) (fraction * progressBar.size());
@@ -12,7 +10,7 @@ void Display::printProgress(Solution s, double fraction)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_WHITE
-            << "\rComputing solution... Best found = " << (s.feasible() ? BOLD_GREEN : BOLD_RED) << s.cost
+            << "\rComputing solution... Best found = " << (feasibility ? BOLD_GREEN : BOLD_RED) << obj
             << BOLD_BLUE
             << " [" << progressBar.substr(0, leftLength) << std::string(rightLength, ' ') << "] " << percentage << "\%"
             << RESET;
@@ -48,7 +46,7 @@ void Display::printRun(Run run)
       double W = r.waitingTimes[i];
       double D = r.departureTimes[i];
       double R = r.rideTimes[i];
-      double Z = (r.batteryLevels[i]/r.vehicle.batteryCapacity) * 100.0; // Battery level to be shown in percentage
+      double Z = (r.batteryLevels[i]/r.vehicle->batteryCapacity) * 100.0; // Battery level to be shown in percentage
       double C = r.chargingTimes[i];
       int    Q = r.load[i];
       double E = r.rideTimeExcesses[i];
@@ -61,12 +59,13 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
-            << "Best     = " << run.best.cost << '\n'
-            << "TT       = " << run.best.travelTime << '\n'
-            << "ERT      = " << run.best.excessRideTime << '\n'
-            << "CPU      = " << run.elapsedMinutes << " min\n"
-            << "Seed     = " << run.seed << '\n'
-            << "Best it. = " << run.bestIteration << '\n';
+            << "Best       = " << run.best.obj() << '\n'
+            << "TT         = " << run.best.travelTime() << '\n'
+            << "ERT        = " << run.best.excessRideTime() << '\n'
+            << "CPU        = " << run.elapsedMinutes << " min\n"
+            << "Seed       = " << run.seed << '\n'
+            << "Best it.   = " << run.bestIteration << '\n'
+            << "Best alpha = " << run.bestAlpha << '\n';
 
   std::cout << RESET << "\nPlots have been saved to " << Gnuplot::getDestinationDir() << " directory\n";
 }

@@ -15,9 +15,6 @@ class Solution
 {
 public:
   std::vector<Route> routes;
-  double travelTime;
-  double excessRideTime;
-  double cost;
 
  /**
   * @brief Default constructor.
@@ -37,17 +34,12 @@ public:
   bool feasible();
 
  /**
-  * @brief Update solution's cost variables.
-  */
-  void updateCost();
-
- /**
   * @brief Set the route traversed by a vehicle.
   *
   * @param v A vehicle.
   * @param r A route.
   */
-  void setRoute(Vehicle v, Route r);
+  void setRoute(Vehicle *v, Route r);
 
  /**
   * @brief Get the route traversed by a given vehicle.
@@ -55,7 +47,13 @@ public:
   * @param v A vehicle.
   * @return  Route traversed by 'v'.
   */
-  Route getRoute(Vehicle v);
+  Route getRoute(Vehicle *v);
+
+  double obj();
+
+  double travelTime();
+
+  double excessRideTime();
 };
 
 #endif // SOLUTION_HPP_INCLUDED

@@ -16,13 +16,14 @@ int main(const int argc, char const *argv[])
   const int argsGiven     = argc - 1;
 
   if (argsGiven < minArgsAmount) {
+
     printf("Error: expected at least %d argument(s) - %d given\n", minArgsAmount, argsGiven);
     return EXIT_FAILURE;
   }
 
   inst->init(argv[1]);
 
-  Run run = ReactiveGrasp::solve(1000, 100, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Run run = ReactiveGrasp::solve(3000, 300, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
 
   Display::printRun(run);
 

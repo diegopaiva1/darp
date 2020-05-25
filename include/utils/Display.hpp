@@ -11,6 +11,8 @@
 
 #include "data-structures/Run.hpp"
 
+#include <iostream>
+
 /**
  * @brief Some ANSI-based text style definitions.
  */
@@ -42,12 +44,13 @@ private:
 
 public:
  /**
-  * @brief Display solution's cost and feasibility and a progress bar.
+  * @brief Display solution's feasibility and obj. value with a progress bar.
   *
-  * @param solution A Solution.
-  * @param fraction Fraction of completed iterations.
+  * @param feasibility Solution's feasibility.
+  * @param obj         Solution's obj. value.
+  * @param fraction    Fraction of completed iterations.
   */
-  static void printProgress(Solution s, double fraction);
+  static void printProgress(bool feasibility, double obj, double fraction);
 
  /**
   * @brief Print all data about a Run object. A schedule table containing all decision

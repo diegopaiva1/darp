@@ -18,9 +18,9 @@ void SolutionFileStorer::saveRun(std::string fileName, Run run)
 
   // Write the actual data
   file << std::fixed << std::setprecision(2)
-       << run.best.travelTime << ';' << run.best.excessRideTime << ';' << run.best.cost     << ';'
-       << run.elapsedMinutes  << ';' << run.best.routes.size()  << ';' << run.bestIteration << ';'
-       << run.bestAlpha       << ';' << run.seed << "\n";
+       << run.best.travelTime() << ';' << run.best.excessRideTime() << ';' << run.best.obj()     << ';'
+       << run.elapsedMinutes    << ';' << run.best.routes.size()    << ';' << run.bestIteration  << ';'
+       << run.bestAlpha         << ';' << run.seed << "\n";
 }
 
 bool SolutionFileStorer::empty(std::fstream &file)

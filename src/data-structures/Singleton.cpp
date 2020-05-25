@@ -47,13 +47,13 @@ void Singleton::init(std::string instanceFileName)
 
     // Add a vehicle for each line that defines a vehicle
     for (int i = 1; i <= vehiclesAmount; i++) {
-      Vehicle vehicle(i);
-      file >> vehicle.capacity;
-      file >> vehicle.batteryCapacity;
-      file >> vehicle.initialBatteryLevel;
-      file >> vehicle.finalMinStateOfCharge;
-      file >> vehicle.dischargingRate;
-      vehicles.push_back(vehicle);
+      Vehicle *v = new Vehicle(i);
+      file >> v->capacity;
+      file >> v->batteryCapacity;
+      file >> v->initialBatteryLevel;
+      file >> v->finalMinStateOfCharge;
+      file >> v->dischargingRate;
+      vehicles.push_back(v);
     }
 
     // This is always the number of nodes for dataset A

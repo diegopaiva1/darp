@@ -38,7 +38,7 @@ public:
   int requestsAmount;
   int stationsAmount;
   std::vector<Node *> nodes;
-  std::vector<Vehicle> vehicles;
+  std::vector<Vehicle *> vehicles;
   std::vector<Request> requests;
   std::vector<std::vector<double>> travelTimes;
   std::vector<std::vector<int>> nearestStations;

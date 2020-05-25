@@ -10,27 +10,17 @@
 #include <cmath>   // MAXFLOAT
 #include <numeric> // std::accumulate
 
+#define TT_WEIGHT  0.75
+#define ERT_WEIGHT 0.25
+
 Route::~Route()
 {
   // Empty destructor
 }
 
-Route::Route(Vehicle v)
+Route::Route(Vehicle *v)
 {
   vehicle = v;
-}
-
-Route::Route(Vehicle v, Request req)
-{
-  vehicle = v;
-
-  path.push_back(inst->getOriginDepot());
-  path.push_back(req.pickup);
-  path.push_back(req.delivery);
-  path.push_back(inst->getDestinationDepot());
-
-  // Route will be definitely feasible, but we call this procedure to update its member variables
-  feasible();
 }
 
 Route::Route()
@@ -40,7 +30,7 @@ Route::Route()
 
 bool Route::operator==(Route &r) const
 {
-  return vehicle.id == r.vehicle.id;
+  return vehicle->id == r.vehicle->id;
 }
 
 bool Route::operator!=(Route &r) const
@@ -48,7 +38,7 @@ bool Route::operator!=(Route &r) const
   return !operator==(r);
 }
 
-bool Route::feasible()
+void Route::evaluate()
 {
   int size = path.size();
 
@@ -80,30 +70,20 @@ bool Route::feasible()
   STEP1:
   departureTimes[0]        = path[0]->arrivalTime;
   serviceBeginningTimes[0] = departureTimes[0];
-  batteryLevels[0]         = vehicle.initialBatteryLevel;
+  batteryLevels[0]         = vehicle->initialBatteryLevel;
 
   STEP2:
   for (int i = 1; i < path.size(); i++) {
     computeLoad(i);
-
-    // Violated vehicle capacity, which is an irreparable violation
-    if (load[i] > vehicle.capacity)
-      goto STEP8;
-
     computeArrivalTime(i);
     computeServiceBeginningTime(i);
-
-    // Violated time window, which is an irreparable violation
-    if (serviceBeginningTimes[i] > path[i]->departureTime)
-      goto STEP8;
-
-    computeWaitingTime(i);
     computeBatteryLevel(i);
 
-    // Violated battery level, which is an irreparable violation
-    if (batteryLevels[i] < 0.0)
-      goto STEP8;
+    // An irreparable violation was found
+    if (load[i] > vehicle->capacity || serviceBeginningTimes[i] > path[i]->departureTime || batteryLevels[i] < 0.0)
+      goto STEP9;
 
+    computeWaitingTime(i);
     computeChargingTime(i);
     computeDepartureTime(i);
   }
@@ -162,19 +142,19 @@ bool Route::feasible()
     }
   }
 
+  STEP8:
   for (int i = 1; i < path.size() - 1; i++)
     if (path[i]->isPickup())
       computeRideTimeExcess(i);
 
-  STEP8:
-  travelTime     = 0.0;
-  excessRideTime = 0.0;
-
-  bool   batteryLevelViolation  = false;
-  int    loadViolation          = 0;
-  double timeWindowViolation    = 0.0;
-  double maxRideTimeViolation   = 0.0;
-  double finalBatteryViolation  = 0.0;
+  STEP9:
+  travelTime             = 0.0;
+  excessRideTime         = 0.0;
+  batteryLevelViolation  = 0.0;
+  loadViolation          = 0;
+  timeWindowViolation    = 0.0;
+  maxRideTimeViolation   = 0.0;
+  finalBatteryViolation  = 0.0;
 
   for (int i = 0; i < path.size(); i++) {
     if (i < path.size() - 1)
@@ -185,17 +165,23 @@ bool Route::feasible()
     if (path[i]->isPickup())
       maxRideTimeViolation += std::max(0.0, rideTimes[i] - path[i]->maxRideTime);
 
-    loadViolation += std::max(0, load[i] - vehicle.capacity);
+    loadViolation += std::max(0, load[i] - vehicle->capacity);
     timeWindowViolation += std::max(0.0, serviceBeginningTimes[i] - path[i]->departureTime);
 
     if (batteryLevels[i] < 0)
-      batteryLevelViolation = true;
+      batteryLevelViolation += 1000;
   }
 
-  finalBatteryViolation += std::max(0.0, vehicle.finalMinStateOfCharge - getStateOfCharge(path.size() - 1));
+  finalBatteryViolation += std::max(0.0, vehicle->finalMinStateOfCharge - getStateOfCharge(path.size() - 1));
 
-  cost = 0.75 * travelTime + 0.25 * excessRideTime;
+  double violationSum = loadViolation + timeWindowViolation + maxRideTimeViolation +
+                        finalBatteryViolation + batteryLevelViolation;
 
+  cost = TT_WEIGHT * travelTime + ERT_WEIGHT * excessRideTime + violationSum;
+}
+
+bool Route::feasible()
+{
   double violationSum = loadViolation + timeWindowViolation + maxRideTimeViolation +
                         finalBatteryViolation + batteryLevelViolation;
 
@@ -270,7 +256,7 @@ void Route::computeRideTime(int i)
 void Route::computeBatteryLevel(int i)
 {
   batteryLevels[i] = batteryLevels[i - 1] + path[i - 1]->rechargingRate * chargingTimes[i - 1] -
-                     vehicle.dischargingRate * inst->getTravelTime(path[i - 1], path[i]);
+                     vehicle->dischargingRate * inst->getTravelTime(path[i - 1], path[i]);
 }
 
 void Route::computeChargingTime(int i)
@@ -285,14 +271,14 @@ void Route::computeRideTimeExcess(int i)
 
 double Route::getStateOfCharge(int i)
 {
-  double battery = vehicle.initialBatteryLevel;
+  double battery = vehicle->initialBatteryLevel;
 
   for (int j = 1; j <= i; j++)
     if (path[j - 1]->isStation())
       battery += path[j - 1]->rechargingRate * chargingTimes[j - 1] -
-                 vehicle.dischargingRate * inst->getTravelTime(path[j - 1], path[j]);
+                 vehicle->dischargingRate * inst->getTravelTime(path[j - 1], path[j]);
     else
-      battery -= vehicle.dischargingRate * inst->getTravelTime(path[j - 1], path[j]);
+      battery -= vehicle->dischargingRate * inst->getTravelTime(path[j - 1], path[j]);
 
-  return battery/vehicle.batteryCapacity;
+  return battery/vehicle->batteryCapacity;
 }
