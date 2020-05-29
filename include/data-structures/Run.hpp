@@ -11,14 +11,17 @@
 
 #include "Solution.hpp"
 
+#include <map>
+
 class Run
 {
 public:
-  Solution     best;
-  double       elapsedMinutes;
+  Solution best;
+  double elapsedMinutes;
   unsigned int seed;
-  int          bestIteration;
-  double       bestAlpha;
+  int bestIteration;
+  double bestAlpha;
+  std::map<double, double> probDistribution;
 
  /**
   * @brief Default constructor.
@@ -28,8 +31,10 @@ public:
   * @param seed             Seed used in the Random engine.
   * @param bestIteration    Iteration in which the best solution was found.
   * @param bestAlpha        Alpha that led to the best solution.
+  * @param probDistribution Alphas probability Distribution.
   */
-  Run(Solution best, double elapsedMinutes, unsigned int seed, int bestIteration, double bestAlpha);
+  Run(Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
+      double bestAlpha, std::map<double, double> probDistribution);
 
  /**
   * @brief Default destructor.

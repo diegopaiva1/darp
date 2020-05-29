@@ -7,8 +7,9 @@
 #ifndef GNUPLOT_HPP_INCLUDED
 #define GNUPLOT_HPP_INCLUDED
 
-#include "data-structures/Solution.hpp"
+#include "data-structures/Run.hpp"
 
+#include <map>
 #include <string>
 
 class Gnuplot
@@ -19,7 +20,7 @@ public:
   *
   * @param s A solution to be ploted.
   */
-  static void plotSolution(Solution s);
+  static void plotRun(Run run);
 
 /**
   * @brief Get directory where plots will be stored.
@@ -31,6 +32,7 @@ public:
 protected:
   static inline const std::string graphScript    = "../extras/scripts/gnuplot/graph.gp";
   static inline const std::string scheduleScript = "../extras/scripts/gnuplot/schedule.gp";
+  static inline const std::string alphaScript    = "../extras/scripts/gnuplot/alphas.gp";
   static inline const std::string destinationDir = "../data/plots/";
 
  /**
@@ -49,6 +51,8 @@ protected:
   * @param output Output file name.
   */
   static void plotSchedule(Route r, std::string output);
+
+  static void plotAlphasProbabilityDistribution(std::map<double, double> alphaWithProbs, std::string output);
 };
 
 #endif // GNUPLOT_HPP_INCLUDED

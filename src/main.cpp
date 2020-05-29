@@ -27,7 +27,7 @@ int main(const int argc, char const *argv[])
 
   Display::printRun(run);
 
-  Gnuplot::plotSolution(run.best);
+  Gnuplot::plotRun(run);
 
   if (argv[2])
     SolutionFileStorer::saveRun(argv[2], run);

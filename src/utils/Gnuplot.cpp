@@ -7,19 +7,22 @@
 #include "utils/Gnuplot.hpp"
 #include "data-structures/Singleton.hpp"
 
-#include <map>     // std::map
 #include <thread>  // std::this_thread
 #include <fstream> // std::ofstream
+#include <algorithm>
+#include <iomanip>
 
-void Gnuplot::plotSolution(Solution s)
+void Gnuplot::plotRun(Run run)
 {
   // Clear destination dir before saving plots
   system(("rm -f " + destinationDir + "*").c_str());
 
-  plotGraph(s.routes, s.obj(), destinationDir + "graph.png");
+  plotGraph(run.best.routes, run.best.obj(), destinationDir + "graph.png");
 
-  for (int k = 0; k < s.routes.size(); k++)
-    plotSchedule(s.routes[k], destinationDir + "schedule" + std::to_string(k + 1) + ".png");
+  for (int k = 0; k < run.best.routes.size(); k++)
+    plotSchedule(run.best.routes[k], destinationDir + "schedule" + std::to_string(k + 1) + ".png");
+
+  plotAlphasProbabilityDistribution(run.probDistribution, destinationDir + "alphas.png");
 
   // Sleep to avoid concurrence issues with gnuplot process
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -137,6 +140,26 @@ void Gnuplot::plotSchedule(Route r, std::string output)
   auto arg3 = std::to_string(r.path.size());
 
   popen(("gnuplot -c " + scheduleScript + " " + arg1 + " " + arg2 + " " + arg3).c_str(), "w");
+}
+
+void Gnuplot::plotAlphasProbabilityDistribution(std::map<double, double> alphaWithProbs, std::string output)
+{
+  // Data to be used in the plot
+  std::string dataFile = destinationDir + "alphas.tmp";
+
+  std::ofstream dataStream(dataFile, std::ofstream::out | std::ofstream::trunc);
+
+  for (auto [alpha, prob] : alphaWithProbs)
+    dataStream << std::fixed << std::setprecision(2) << alpha << " " << prob << '\n';
+
+  // Call gnuplot. '-c' flag allows to send command line args to gnuplot
+  auto arg1 = dataFile;
+  auto arg2 = output;
+  auto arg3 = std::to_string(alphaWithProbs.size());
+  auto arg4 = std::to_string(alphaWithProbs.begin()->first);
+  auto arg5 = std::to_string(alphaWithProbs.rbegin()->first);
+
+  popen(("gnuplot -c " + alphaScript + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4 + " " + arg5).c_str(), "w");
 }
 
 const std::string Gnuplot::getDestinationDir()

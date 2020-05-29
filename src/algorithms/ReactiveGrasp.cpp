@@ -70,10 +70,15 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   for (auto r = best.routes.begin(); r != best.routes.end(); )
     r = (r->empty()) ? best.routes.erase(r) : r + 1;
 
-  // for (auto [alpha, info] : alphasMap)
-  //   printf("%.2f - %d times (%.2f%%)\n", alpha, info.count, info.probability);
+  for (auto [alpha, info] : alphasMap)
+    printf("%.2f - %d times (%.2f%%)\n", alpha, info.count, info.probability);
 
-  return Run(best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha);
+  std::map<double, double> probDistribution;
+
+  for (auto [alpha, info] : alphasMap)
+    probDistribution[alpha] = info.probability;
+
+  return Run(best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha, probDistribution);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)
