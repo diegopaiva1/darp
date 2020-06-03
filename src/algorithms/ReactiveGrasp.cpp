@@ -9,6 +9,8 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
+#include <iomanip>
+
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
   // Starting a clock to count algorithm run time
@@ -177,8 +179,8 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
   bestFeasible.cost   = MAXFLOAT;
   bestInfeasible.cost = MAXFLOAT;
 
-  for (auto node = r.path.begin(); node != r.path.end(); )
-    node = (*node)->isStation() ? r.path.erase(node) : node + 1;
+  if (r.path[r.path.size() - 2]->isStation())
+    r.path.erase(r.path.begin() + r.path.size() - 2);
 
   for (int p = 1; p < r.path.size(); p++) {
     // int lastEmptyPos = 1, load = 0, stationPos1 = -1;
@@ -274,7 +276,7 @@ Solution ReactiveGrasp::reinsert(Solution s)
         curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req.delivery), curr.path.end());
 
         // Reinsert the request
-        curr = getCheapestFeasibleInsertion(req, r);
+        curr = getCheapestFeasibleInsertion(req, curr);
         curr.evaluate();
 
         // Generate neighbor solution
