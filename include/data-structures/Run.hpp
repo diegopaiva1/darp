@@ -40,6 +40,13 @@ public:
   * @brief Default destructor.
   */
   ~Run();
+
+ /**
+  * @brief Persist run info to file.
+  *
+  * @param fileName File Name.
+  */
+  void persist(std::string fileName);
 };
 
 #endif // RUN_H_INCLUDED

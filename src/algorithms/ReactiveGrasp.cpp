@@ -177,9 +177,10 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
   bestFeasible.cost   = MAXFLOAT;
   bestInfeasible.cost = MAXFLOAT;
 
-  for (int p = 1; p < r.path.size(); p++) {
-    r.path.insert(r.path.begin() + p, req.pickup);
+  for (auto node = r.path.begin(); node != r.path.end(); )
+    node = (*node)->isStation() ? r.path.erase(node) : node + 1;
 
+  for (int p = 1; p < r.path.size(); p++) {
     // int lastEmptyPos = 1, load = 0, stationPos1 = -1;
 
     // for (int i = 1; i < p; i++) {
@@ -192,6 +193,8 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
     //     lastEmptyPos = i + 1;
     // }
 
+    r.path.insert(r.path.begin() + p, req.pickup);
+
     // if (r.getStateOfCharge(p) < 0.0) {
     //   Node *station = inst->getNearestStation(r.path[lastEmptyPos - 1], r.path[lastEmptyPos]);
     //   r.path.insert(r.path.begin() + lastEmptyPos, station);
@@ -201,13 +204,13 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
     for (int d = p + 1; d < r.path.size(); d++) {
       r.path.insert(r.path.begin() + d, req.delivery);
 
-      // int stationPos2 = -1;
+      bool stationBeforeDepot = false;
 
-      // if (r.getStateOfCharge(r.path.size() - 1) < r.vehicle.finalMinStateOfCharge) {
-      //   Node *station = inst->getNearestStation(r.path[r.path.size() - 2], r.path[r.path.size() - 1]);
-      //   r.path.insert(r.path.begin() + r.path.size() - 1, station);
-      //   stationPos2 = r.path.size() - 2;
-      // }
+      if (r.getStateOfCharge(r.path.size() - 1) < r.vehicle->finalMinStateOfCharge) {
+        Node *station = inst->getNearestStation(r.path[r.path.size() - 2], r.path[r.path.size() - 1]);
+        r.path.insert(r.path.begin() + r.path.size() - 1, station);
+        stationBeforeDepot = true;
+      }
 
       r.evaluate();
 
@@ -216,8 +219,8 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
       else if (!r.feasible() && r.cost < bestInfeasible.cost)
         bestInfeasible = r;
 
-      // if (stationPos2 != -1)
-      //   r.path.erase(r.path.begin() + stationPos2);
+      if (stationBeforeDepot)
+        r.path.erase(r.path.begin() + r.path.size() - 2);
 
       r.path.erase(r.path.begin() + d);
     }
