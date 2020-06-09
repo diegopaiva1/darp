@@ -16,7 +16,7 @@
 class Run
 {
 public:
-  double initialObj;
+  Solution bestInit;
   Solution best;
   double elapsedMinutes;
   unsigned int seed;
@@ -34,7 +34,7 @@ public:
   * @param bestAlpha        Alpha that led to the best solution.
   * @param probDistribution Alphas probability Distribution.
   */
-  Run(double initialObj, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
+  Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
       double bestAlpha, std::map<double, double> probDistribution);
 
  /**

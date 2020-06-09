@@ -11,8 +11,6 @@
 
 #include "data-structures/Run.hpp"
 
-#include <iostream>
-
 /**
  * @brief Some ANSI-based text style definitions.
  */

@@ -9,13 +9,15 @@
 #include "utils/Gnuplot.hpp"
 #include "utils/Display.hpp"
 
-int main(const int argc, char const *argv[])
+#include <iostream>
+
+int main(const int argc, const char *argv[])
 {
   const int minArgsAmount = 1;
   const int argsGiven     = argc - 1;
 
   if (argsGiven < minArgsAmount) {
-    printf("Error: expected at least %d argument(s) - %d given\n", minArgsAmount, argsGiven);
+    std::cout << "ERROR: expected at least " << minArgsAmount << " arg(s); " << argsGiven << " given" << '\n';
     return EXIT_FAILURE;
   }
 

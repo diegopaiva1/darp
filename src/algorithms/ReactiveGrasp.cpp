@@ -9,8 +9,6 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
-#include <iomanip>
-
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
   // Starting a clock to count algorithm run time
@@ -30,25 +28,25 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // Moves to be used in RVND
   std::vector<Move> moves = {reinsert, swapZeroOne, swapOneOne};
 
+  Solution bestInit;
   Solution best;
   double bestObj = MAXFLOAT;
   double bestAlpha;
-  double initialObj;
   int bestIteration;
 
   for (int it = 0; it <= iterations; it++) {
     // Reserve a first iteration to go full greedy
     double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
 
-    Solution curr = buildGreedyRandomizedSolution(alpha);
-    double init = curr.obj();
-    curr = rvnd(curr, moves);
+    Solution init = buildGreedyRandomizedSolution(alpha);
+    Solution curr = rvnd(init, moves);
+
     double currObj = curr.obj();
 
     if (it == 0 || (curr.feasible() && (currObj < bestObj || !best.feasible()))) {
+      bestInit = init;
       best = curr;
       bestObj = currObj;
-      initialObj = init;
       bestIteration = it;
       bestAlpha = alpha;
     }
@@ -82,7 +80,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   for (auto [alpha, info] : alphasMap)
     probDistribution[alpha] = info.probability;
 
-  return Run(initialObj, best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha, probDistribution);
+  return Run(bestInit, best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha, probDistribution);
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)

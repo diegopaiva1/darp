@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <string>
-#include <unordered_map>
 
 #include "Vehicle.hpp"
 #include "Request.hpp"

@@ -2,6 +2,8 @@
 #include "utils/Display.hpp"
 #include "utils/Gnuplot.hpp"
 
+#include <iostream>
+
 void Display::printProgress(bool feasibility, double obj, double fraction)
 {
   int percentage  = (int) (fraction * 100);
@@ -59,7 +61,7 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
-            << "Initial    = " << run.initialObj << '\n'
+            << "Initial    = " << run.bestInit.obj() << '\n'
             << "Best       = " << run.best.obj() << '\n'
             << "TT         = " << run.best.travelTime() << '\n'
             << "ERT        = " << run.best.excessRideTime() << '\n'

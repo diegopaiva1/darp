@@ -23,7 +23,7 @@ def storeXlsx(filePath):
   worksheet = workbook.add_worksheet()
 
   # Worksheet columns
-  cols = ["#Run", "TT", "ERT", "Cost", "CPU (min)", "Vehicles", "Best iteration", "Best alpha", "Seed", "Feasible"]
+  cols = ["#Run", "TT", "ERT", "Best", "Init", "CPU (min)", "Best iteration", "Best alpha", "Seed", "Feasible"]
 
   # Width of columns 1 to 5 set to 10
   worksheet.set_column(1, 5, 10)
