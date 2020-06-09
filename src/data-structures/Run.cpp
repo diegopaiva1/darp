@@ -9,9 +9,10 @@
 #include <fstream>
 #include <iomanip>
 
-Run::Run(Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
+Run::Run(double initialObj, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
          double bestAlpha, std::map<double, double> probDistribution)
 {
+  this->initialObj       = initialObj;
   this->best             = best;
   this->elapsedMinutes   = elapsedMinutes;
   this->seed             = seed;

@@ -59,6 +59,7 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
+            << "Initial    = " << run.initialObj << '\n'
             << "Best       = " << run.best.obj() << '\n'
             << "TT         = " << run.best.travelTime() << '\n'
             << "ERT        = " << run.best.excessRideTime() << '\n'
