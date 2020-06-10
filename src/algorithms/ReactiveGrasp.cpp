@@ -14,10 +14,6 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // Starting a clock to count algorithm run time
   Timer timer;
 
-  // Use std::random_device to generate seed to Random engine
-  unsigned int seed = std::random_device{}();
-  Random::seed(seed);
-
   // A map to track each alpha performance
   std::map<double, AlphaInfo> alphasMap;
 
@@ -28,13 +24,15 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // Moves to be used in RVND
   std::vector<Move> moves = {reinsert, swapZeroOne, swapOneOne};
 
-  Solution bestInit;
   Solution best;
   double bestObj = MAXFLOAT;
-  double bestAlpha;
-  int bestIteration;
+  Run run;
 
   for (int it = 0; it <= iterations; it++) {
+    // Use std::random_device to generate seed to Random engine
+    unsigned int seed = std::random_device{}();
+    Random::seed(seed);
+
     // Reserve a first iteration to go full greedy
     double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
 
@@ -44,11 +42,12 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
     double currObj = curr.obj();
 
     if (it == 0 || (curr.feasible() && (currObj < bestObj || !best.feasible()))) {
-      bestInit = init;
       best = curr;
       bestObj = currObj;
-      bestIteration = it;
-      bestAlpha = alpha;
+      run.bestAlpha = alpha;
+      run.bestInit = init;
+      run.bestIteration = it;
+      run.bestSeed = seed;
     }
 
     // Remember: first iteration is full greedy, so no need to update alpha info
@@ -75,12 +74,13 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   for (auto [alpha, info] : alphasMap)
     printf("%.2f - %d times (%.2f%%)\n", alpha, info.count, info.probability);
 
-  std::map<double, double> probDistribution;
-
   for (auto [alpha, info] : alphasMap)
-    probDistribution[alpha] = info.probability;
+    run.probDistribution[alpha] = info.probability;
 
-  return Run(bestInit, best, timer.elapsedMinutes(), seed, bestIteration, bestAlpha, probDistribution);
+  run.best = best;
+  run.elapsedMinutes = timer.elapsedMinutes();
+
+  return run;
 }
 
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)

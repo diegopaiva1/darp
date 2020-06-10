@@ -19,22 +19,27 @@ public:
   Solution bestInit;
   Solution best;
   double elapsedMinutes;
-  unsigned int seed;
+  unsigned int bestSeed;
   int bestIteration;
   double bestAlpha;
   std::map<double, double> probDistribution;
 
  /**
   * @brief Default constructor.
+  */
+  Run();
+
+ /**
+  * @brief Constructor with args.
   *
   * @param best             Best solution found in the run.
   * @param elapsedMinutes   Time in minutes spent in the run to achieve the Solution.
-  * @param seed             Seed used in the Random engine.
+  * @param bestSeed         Seed used in the Random engine to get the best Solution.
   * @param bestIteration    Iteration in which the best solution was found.
   * @param bestAlpha        Alpha that led to the best solution.
   * @param probDistribution Alphas probability Distribution.
   */
-  Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
+  Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int bestSeed, int bestIteration,
       double bestAlpha, std::map<double, double> probDistribution);
 
  /**

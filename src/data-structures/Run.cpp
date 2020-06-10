@@ -9,13 +9,18 @@
 #include <fstream>
 #include <iomanip>
 
-Run::Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
+Run::Run()
+{
+  // Empty constructor
+}
+
+Run::Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int bestSeed, int bestIteration,
          double bestAlpha, std::map<double, double> probDistribution)
 {
   this->bestInit = bestInit;
   this->best = best;
   this->elapsedMinutes = elapsedMinutes;
-  this->seed = seed;
+  this->bestSeed = bestSeed;
   this->bestIteration = bestIteration;
   this->bestAlpha = bestAlpha;
   this->probDistribution = probDistribution;
@@ -35,11 +40,11 @@ void Run::persist(std::string fileName)
   // Empty?
   if (file.tellg() == 0)
     // Start writing header first
-    file << "TT;ERT;Best;Init;CPU (min);Best iteration;Best alpha;Seed;Feasible\n";
+    file << "TT;ERT;Best;Init;CPU (min);Best iteration;Best alpha;Best seed;Feasible\n";
 
   // Write the actual data
   file << std::fixed << std::setprecision(2)
        << best.travelTime() << ';' << best.excessRideTime() << ';' << best.obj()      << ';'
        << bestInit.obj()    << ';' << elapsedMinutes        << ';' << bestIteration   << ';'
-       << bestAlpha         << ';' << seed                  << ';' << best.feasible() << "\n";
+       << bestAlpha         << ';' << bestSeed              << ';' << best.feasible() << "\n";
 }
