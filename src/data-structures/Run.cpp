@@ -14,13 +14,13 @@ Run::Run()
   // Empty constructor
 }
 
-Run::Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int bestSeed, int bestIteration,
+Run::Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
          double bestAlpha, std::map<double, double> probDistribution)
 {
   this->bestInit = bestInit;
   this->best = best;
   this->elapsedMinutes = elapsedMinutes;
-  this->bestSeed = bestSeed;
+  this->seed = seed;
   this->bestIteration = bestIteration;
   this->bestAlpha = bestAlpha;
   this->probDistribution = probDistribution;
@@ -46,5 +46,5 @@ void Run::persist(std::string fileName)
   file << std::fixed << std::setprecision(2)
        << best.travelTime() << ';' << best.excessRideTime() << ';' << best.obj()      << ';'
        << bestInit.obj()    << ';' << elapsedMinutes        << ';' << bestIteration   << ';'
-       << bestAlpha         << ';' << bestSeed              << ';' << best.feasible() << "\n";
+       << bestAlpha         << ';' << seed                  << ';' << best.feasible() << "\n";
 }

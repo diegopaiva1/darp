@@ -66,7 +66,7 @@ void Display::printRun(Run run)
             << "TT         = " << run.best.travelTime() << '\n'
             << "ERT        = " << run.best.excessRideTime() << '\n'
             << "CPU        = " << run.elapsedMinutes << " min\n"
-            << "Seed       = " << run.bestSeed << '\n'
+            << "Seed       = " << run.seed << '\n'
             << "Best it.   = " << run.bestIteration << '\n'
             << "Best alpha = " << run.bestAlpha << '\n';
 

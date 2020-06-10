@@ -14,6 +14,10 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // Starting a clock to count algorithm run time
   Timer timer;
 
+  // Use std::random_device to generate seed to Random engine
+  unsigned int seed = std::random_device{}();
+  Random::seed(seed);
+
   // A map to track each alpha performance
   std::map<double, AlphaInfo> alphasMap;
 
@@ -29,9 +33,6 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   Run run;
 
   for (int it = 0; it <= iterations; it++) {
-    // Use std::random_device to generate seed to Random engine
-    unsigned int seed = std::random_device{}();
-    Random::seed(seed);
 
     // Reserve a first iteration to go full greedy
     double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
@@ -47,7 +48,6 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
       run.bestAlpha = alpha;
       run.bestInit = init;
       run.bestIteration = it;
-      run.bestSeed = seed;
     }
 
     // Remember: first iteration is full greedy, so no need to update alpha info
@@ -78,6 +78,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
     run.probDistribution[alpha] = info.probability;
 
   run.best = best;
+  run.seed = seed;
   run.elapsedMinutes = timer.elapsedMinutes();
 
   return run;
