@@ -1,0 +1,11 @@
+		set xlabel 'time to target solution'
+		set size ratio 1
+		set ylabel 'cumulative probability'
+                set yrange [0:1]
+		set key right bottom
+                set grid
+		set title 'input'
+		set terminal postscript color 'Helvetica'
+		set output 'input-exp.ps'
+		plot "input-ee.dat" t "empirical" w points, "input-te.dat" t "theoretical" w lines ls 3
+		quit

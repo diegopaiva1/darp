@@ -19,7 +19,7 @@ if sys.version_info < (3, 0, 0):
 
 def storeXlsx(filePath):
   # Create a workbook and add a worksheet
-  workbook  = xlsxwriter.Workbook(filePath.replace("temp", "xlsx"))
+  workbook = xlsxwriter.Workbook(filePath.replace("temp", "xlsx"))
   worksheet = workbook.add_worksheet()
 
   # Worksheet columns
@@ -44,7 +44,7 @@ def storeXlsx(filePath):
     worksheet.write(row, i, col, workbook.add_format(form))
 
   # Data from the runs that we want to write to the worksheet
-  # Each element from 'runs' list will be a tuple with size = len(cols)
+  # Each element from 'runs' list will be a list with size = len(cols)
   runs = []
 
   # Open the file to read the content of each run
@@ -68,27 +68,31 @@ def storeXlsx(filePath):
     row += 1
 
   # Last rows format
-  topBorderCenter    = {'bold': True, 'align': 'center', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
-  topBorderRight     = {'bold': True, 'align': 'right',  'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
-  bottomBorderCenter = {'bold': True, 'align': 'center', 'border': 2, 'top':    0, 'left': 0, 'right': 0}
-  bottomBorderRight  = {'bold': True, 'align': 'right',  'border': 2, 'top':    0, 'left': 0, 'right': 0}
+  top_border_center    = {'bold': True, 'align': 'center', 'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
+  top_border_right     = {'bold': True, 'align': 'right',  'border': 2, 'bottom': 0, 'left': 0, 'right': 0}
+  bottom_border_center = {'bold': True, 'align': 'center', 'border': 2, 'top':    0, 'left': 0, 'right': 0}
+  bottom_border_right  = {'bold': True, 'align': 'right',  'border': 2, 'top':    0, 'left': 0, 'right': 0}
 
   # Collect the minimum value and the average of all columns except column 0
   for i, col in enumerate(cols):
     if i == 0:
-      worksheet.write(row + 1, 0, 'Min', workbook.add_format(topBorderCenter))
+      worksheet.write(row + 1, 0, 'Min', workbook.add_format(top_border_center))
       worksheet.write(row + 2, 0, 'Max', workbook.add_format({'bold': True, 'align': 'center'}))
       worksheet.write(row + 3, 0, 'Avg', workbook.add_format({'bold': True, 'align': 'center'}))
-      worksheet.write(row + 4, 0, 'SD',  workbook.add_format(bottomBorderCenter))
+      worksheet.write(row + 4, 0, 'SD',  workbook.add_format(bottom_border_center))
     else:
       # Access the letter of the cell and last row that contains a number
       letter = string.ascii_uppercase[i]
-      last   = str(len(runs) + 1)
+      last = str(len(runs) + 1)
 
-      worksheet.write(row + 1, i, '=MIN('     + letter + '2:' + letter + last + ')', workbook.add_format(topBorderRight))
-      worksheet.write(row + 2, i, '=MAX('     + letter + '2:' + letter + last + ')', workbook.add_format({'bold': True, 'align': 'right'}))
-      worksheet.write(row + 3, i, '=AVERAGE(' + letter + '2:' + letter + last + ')', workbook.add_format({'bold': True, 'align': 'right'}))
-      worksheet.write(row + 4, i, '=STDEV('   + letter + '2:' + letter + last + ')', workbook.add_format(bottomBorderRight))
+      worksheet.write(row + 1, i, '=MIN('     + letter + '2:' + letter + last + ')',
+                      workbook.add_format(top_border_right))
+      worksheet.write(row + 2, i, '=MAX('     + letter + '2:' + letter + last + ')',
+                      workbook.add_format({'bold': True, 'align': 'right'}))
+      worksheet.write(row + 3, i, '=AVERAGE(' + letter + '2:' + letter + last + ')',
+                      workbook.add_format({'bold': True, 'align': 'right'}))
+      worksheet.write(row + 4, i, '=STDEV('   + letter + '2:' + letter + last + ')',
+                      workbook.add_format(bottom_border_right))
 
   workbook.close()
 
@@ -132,9 +136,9 @@ if re.match("^[aA]$", option):
 
     instances.append(path)
 else:
-  instancesDir = input("\nEnter instances directory (separe multiple datasets with a space): ").split(" ")
+  instances_dir = input("\nEnter instances directory (separe multiple datasets with a space): ").split(" ")
 
-  for dir in instancesDir:
+  for dir in instances_dir:
     if not os.path.isdir(dir):
       print("\nError: " + dir + " is not a directory")
       exit(1)

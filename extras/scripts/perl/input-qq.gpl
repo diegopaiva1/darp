@@ -1,0 +1,9 @@
+		set xlabel 'exponential quantiles'
+		set size ratio 1
+		set ylabel 'measured times'
+		set key right bottom
+		set title 'input'
+		set terminal postscript color 'Helvetica'
+		set output 'input-qq.ps'
+		plot "input-el.dat" t "empirical" w points, "input-tl.dat" t "estimated" with lines ls 3, "input-ul.dat" t "+1 std dev range" w lines ls 4, "input-ll.dat" t "-1 std dev range" w lines ls 4
+		quit
