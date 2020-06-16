@@ -1,9 +1,6 @@
 [submodule "third-party/libfort"]
 	path = third-party/libfort
 	url = https://github.com/seleznevae/libfort.git
-[submodule "third-party/Catch2"]
-	path = third-party/Catch2
-	url = https://github.com/catchorg/Catch2
 [submodule "third-party/random"]
 	path = third-party/random
 	url = https://github.com/effolkronium/random.git
