@@ -40,7 +40,7 @@ void Display::printRun(Run run)
       table.column(i).set_cell_text_align(fort::text_align::right);
 
     for (int i = 0; i < r.path.size(); i++) {
-      int   id = r.path[i]->id;
+      int id = r.path[i]->id;
       double e = r.path[i]->arrivalTime;
       double l = r.path[i]->departureTime;
       double A = r.arrivalTimes[i];
@@ -50,7 +50,7 @@ void Display::printRun(Run run)
       double R = r.rideTimes[i];
       double Z = (r.batteryLevels[i]/r.vehicle->batteryCapacity) * 100.0; // Battery level to be shown in percentage
       double C = r.chargingTimes[i];
-      int    Q = r.load[i];
+      int Q = r.load[i];
       double E = r.rideTimeExcesses[i];
 
       table << i << id << e << l << A << B << W << D << R << Z << C << Q << E << fort::endr;
@@ -61,8 +61,8 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
-            << "Initial    = " << run.bestInit.obj() << '\n'
-            << "Best       = " << run.best.obj() << '\n'
+            << "Initial    = " << run.bestInit.objFuncValue() << '\n'
+            << "Best       = " << run.best.objFuncValue() << '\n'
             << "TT         = " << run.best.travelTime() << '\n'
             << "ERT        = " << run.best.excessRideTime() << '\n'
             << "CPU        = " << run.elapsedMinutes << " min\n"

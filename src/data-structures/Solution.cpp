@@ -36,7 +36,7 @@ Route Solution::getRoute(Vehicle *v)
   return routes[v->id - 1];
 }
 
-double Solution::obj()
+double Solution::objFuncValue()
 {
   double sum = 0.0;
 

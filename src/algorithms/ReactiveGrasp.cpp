@@ -11,8 +11,10 @@
 
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
-  // Starting a clock to count algorithm run time
-  Timer timer;
+  Timer timer; // Starting a clock to count algorithm's run time
+  Solution best;
+  double bestObj = MAXFLOAT;
+  Run run;
 
   // Use std::random_device to generate seed to Random engine
   unsigned int seed = std::random_device{}();
@@ -28,19 +30,16 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
   // Moves to be used in RVND
   std::vector<Move> moves = {reinsert, swapZeroOne, swapOneOne};
 
-  Solution best;
-  double bestObj = MAXFLOAT;
-  Run run;
+  int noImprovementIt = 0;
 
   for (int it = 0; it <= iterations; it++) {
-
     // Reserve a first iteration to go full greedy
     double alpha = it == 0 ? 0.0 : getRandomAlpha(alphasMap);
 
     Solution init = buildGreedyRandomizedSolution(alpha);
     Solution curr = rvnd(init, moves);
 
-    double currObj = curr.obj();
+    double currObj = curr.objFuncValue();
 
     if (it == 0 || (curr.feasible() && (currObj < bestObj || !best.feasible()))) {
       best = curr;
@@ -48,7 +47,14 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
       run.bestAlpha = alpha;
       run.bestInit = init;
       run.bestIteration = it;
+      noImprovementIt = 0;
     }
+    else {
+      noImprovementIt++;
+    }
+
+    if (noImprovementIt == 500)
+      break;
 
     // Remember: first iteration is full greedy, so no need to update alpha info
     if (it != 0) {
@@ -61,18 +67,12 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
         updateProbabilities(alphasMap, bestObj);
     }
 
-    // for (auto [alpha, info] : alphasMap)
-    //   printf("\nAvg %.2f = %.2f (%.2f)", alpha, info.avg(), info.probability);
-
     Display::printProgress(best.feasible(), bestObj, (double) it/iterations);
   }
 
   // Erase any route without requests from best
   for (auto r = best.routes.begin(); r != best.routes.end(); )
     r = (r->empty()) ? best.routes.erase(r) : r + 1;
-
-  for (auto [alpha, info] : alphasMap)
-    printf("%.2f - %d times (%.2f%%)\n", alpha, info.count, info.probability);
 
   for (auto [alpha, info] : alphasMap)
     run.probDistribution[alpha] = info.probability;
@@ -87,7 +87,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 double ReactiveGrasp::getRandomAlpha(std::map<double, AlphaInfo> alphasMap)
 {
   double rand = Random::get(0.0, 1.0);
-  double sum  = 0.0;
+  double sum = 0.0;
 
   for (auto [alpha, info] : alphasMap) {
     sum += info.probability;
@@ -113,7 +113,7 @@ Solution ReactiveGrasp::buildGreedyRandomizedSolution(double alpha)
 
   struct Candidate
   {
-    Route   route;
+    Route route;
     Request request;
   };
 
@@ -152,7 +152,7 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Solution s)
   Route bestFeasible;
   Route bestInfeasible;
 
-  bestFeasible.cost   = MAXFLOAT;
+  bestFeasible.cost = MAXFLOAT;
   bestInfeasible.cost = MAXFLOAT;
 
   for (Route r : s.routes) {
@@ -174,10 +174,10 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Solution s)
 Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
 {
   // Best insertion starts with infinity cost, we will update it during the search
-  Route bestFeasible   = r;
+  Route bestFeasible = r;
   Route bestInfeasible = r;
 
-  bestFeasible.cost   = MAXFLOAT;
+  bestFeasible.cost = MAXFLOAT;
   bestInfeasible.cost = MAXFLOAT;
 
   if (r.path[r.path.size() - 2]->isStation())
@@ -249,7 +249,7 @@ Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
     auto move = Random::get(rvndMoves); // Get an iterator to a random move
     Solution neighbor = (*move)(s);
 
-    if (neighbor.obj() < s.obj()) {
+    if (neighbor.objFuncValue() < s.objFuncValue()) {
       s = neighbor;
       rvndMoves = moves;
     }
@@ -264,7 +264,7 @@ Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
 Solution ReactiveGrasp::reinsert(Solution s)
 {
   Solution best = s;
-  double bestObj = best.obj();
+  double bestObj = best.objFuncValue();
 
   for (Route r : s.routes) {
     for (Node *node : r.path) {
@@ -283,7 +283,7 @@ Solution ReactiveGrasp::reinsert(Solution s)
         // Generate neighbor solution
         Solution neighbor = s;
         neighbor.setRoute(curr.vehicle, curr);
-        double neighborObj = neighbor.obj();
+        double neighborObj = neighbor.objFuncValue();
 
         if (neighbor.feasible() && neighborObj < bestObj) {
           best = neighbor;
@@ -299,13 +299,13 @@ Solution ReactiveGrasp::reinsert(Solution s)
 Solution ReactiveGrasp::swapZeroOne(Solution s)
 {
   Solution best = s;
-  double bestObj = best.obj();
+  double bestObj = best.objFuncValue();
 
   for (Route r1 : s.routes) {
     for (Node *node : r1.path) {
       if (node->isPickup()) {
-        Request req   = inst->getRequest(node);
-        Route   curr1 = r1;
+        Request req = inst->getRequest(node);
+        Route curr1 = r1;
 
         // Erase request by value
         curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.pickup),   curr1.path.end());
@@ -323,9 +323,9 @@ Solution ReactiveGrasp::swapZeroOne(Solution s)
             Solution neighbor = s;
             neighbor.setRoute(curr1.vehicle, curr1);
             neighbor.setRoute(curr2.vehicle, curr2);
-            double neighborObj = neighbor.obj();
+            double neighborObj = neighbor.objFuncValue();
 
-            if (neighbor.feasible() && neighborObj < best.obj()) {
+            if (neighbor.feasible() && neighborObj < best.objFuncValue()) {
               best = neighbor;
               bestObj = neighborObj;
             }
@@ -388,7 +388,7 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
     neighbor.setRoute(r1.vehicle, r1);
     neighbor.setRoute(r2.vehicle, r2);
 
-    if (neighbor.feasible() && neighbor.obj() < s.obj()) {
+    if (neighbor.feasible() && neighbor.objFuncValue() < s.objFuncValue()) {
       s = neighbor;
       goto START;
     }

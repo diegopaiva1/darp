@@ -20,7 +20,7 @@ class Route
 public:
   Vehicle *vehicle;
   std::vector<Node *> path;
-  std::vector<int>    load;
+  std::vector<int> load;
   std::vector<double> arrivalTimes;
   std::vector<double> serviceBeginningTimes;
   std::vector<double> departureTimes;
@@ -37,7 +37,6 @@ public:
   double maxRideTimeViolation;
   double finalBatteryViolation;
   double batteryLevelViolation;
-
 
  /**
   * @brief Default constructor.

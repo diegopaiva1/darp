@@ -68,9 +68,9 @@ void Route::evaluate()
   double forwardTimeSlackAtBeginning;
 
   STEP1:
-  departureTimes[0]        = path[0]->arrivalTime;
+  departureTimes[0] = path[0]->arrivalTime;
   serviceBeginningTimes[0] = departureTimes[0];
-  batteryLevels[0]         = vehicle->initialBatteryLevel;
+  batteryLevels[0] = vehicle->initialBatteryLevel;
 
   STEP2:
   for (int i = 1; i < path.size(); i++) {
@@ -123,8 +123,8 @@ void Route::evaluate()
         forwardTimeSlack, std::accumulate(waitingTimes.begin() + j + 1, waitingTimes.end(), 0.0)
       );
 
-        serviceBeginningTimes[j] = arrivalTimes[j] + waitingTimes[j];
-        departureTimes[j] = serviceBeginningTimes[j] + path[j]->serviceTime;
+      serviceBeginningTimes[j] = arrivalTimes[j] + waitingTimes[j];
+      departureTimes[j] = serviceBeginningTimes[j] + path[j]->serviceTime;
 
       STEP7c:
       for (int i = j + 1; i < path.size(); i++) {
@@ -148,13 +148,13 @@ void Route::evaluate()
       computeRideTimeExcess(i);
 
   STEP9:
-  travelTime             = 0.0;
-  excessRideTime         = 0.0;
-  batteryLevelViolation  = 0.0;
-  loadViolation          = 0;
-  timeWindowViolation    = 0.0;
-  maxRideTimeViolation   = 0.0;
-  finalBatteryViolation  = 0.0;
+  travelTime = 0.0;
+  excessRideTime = 0.0;
+  batteryLevelViolation = 0.0;
+  loadViolation = 0;
+  timeWindowViolation = 0.0;
+  maxRideTimeViolation = 0.0;
+  finalBatteryViolation = 0.0;
 
   for (int i = 0; i < path.size(); i++) {
     if (i < path.size() - 1)
@@ -190,7 +190,7 @@ bool Route::feasible()
 
 double Route::getForwardTimeSlack(int i)
 {
-  double forwardTimeSlack = MAXFLOAT;
+  double minTimeSlack = MAXFLOAT;
 
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;
@@ -201,11 +201,11 @@ double Route::getForwardTimeSlack(int i)
     double timeSlack = std::accumulate(waitingTimes.begin() + i + 1, waitingTimes.begin() + j + 1, 0.0) +
                        std::max(0.0, std::min(path[j]->departureTime - serviceBeginningTimes[j], 30.0 - pj));
 
-    if (timeSlack < forwardTimeSlack)
-      forwardTimeSlack = timeSlack;
+    if (timeSlack < minTimeSlack)
+      minTimeSlack = timeSlack;
   }
 
-  return forwardTimeSlack;
+  return minTimeSlack;
 }
 
 bool Route::empty()
@@ -265,6 +265,7 @@ void Route::computeChargingTime(int i)
       sum += inst->getTravelTime(path[j - 1], path[j]);
 
     chargingTimes[i] = path[i]->departureTime - serviceBeginningTimes[i] - sum;
+    // chargingTimes[i] = getForwardTimeSlack(i);
   }
   else {
     chargingTimes[i] = 0.0;

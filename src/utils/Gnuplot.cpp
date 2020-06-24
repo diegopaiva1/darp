@@ -17,8 +17,8 @@ void Gnuplot::plotRun(Run run)
   // Clear destination dir before saving plots
   system(("rm -f " + destinationDir + "*").c_str());
 
-  plotGraph(run.bestInit.routes, run.bestInit.obj(), destinationDir + "init.png");
-  plotGraph(run.best.routes, run.best.obj(), destinationDir + "best.png");
+  plotGraph(run.bestInit.routes, run.bestInit.objFuncValue(), destinationDir + "init.png");
+  plotGraph(run.best.routes, run.best.objFuncValue(), destinationDir + "best.png");
 
   for (int k = 0; k < run.best.routes.size(); k++)
     plotSchedule(run.best.routes[k], destinationDir + "schedule" + std::to_string(k + 1) + ".png");

@@ -49,7 +49,7 @@ public:
   */
   Route getRoute(Vehicle *v);
 
-  double obj();
+  double objFuncValue();
 
   double travelTime();
 

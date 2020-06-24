@@ -5,25 +5,15 @@
  */
 
 #include "data-structures/Run.hpp"
+#include "data-structures/Singleton.hpp"
 
 #include <fstream>
 #include <iomanip>
+#include <thread>
 
 Run::Run()
 {
   // Empty constructor
-}
-
-Run::Run(Solution bestInit, Solution best, double elapsedMinutes, unsigned int seed, int bestIteration,
-         double bestAlpha, std::map<double, double> probDistribution)
-{
-  this->bestInit = bestInit;
-  this->best = best;
-  this->elapsedMinutes = elapsedMinutes;
-  this->seed = seed;
-  this->bestIteration = bestIteration;
-  this->bestAlpha = bestAlpha;
-  this->probDistribution = probDistribution;
 }
 
 Run::~Run()
@@ -34,7 +24,6 @@ Run::~Run()
 void Run::persist(std::string fileName)
 {
   std::fstream file(fileName, std::fstream::in | std::fstream::out | std::fstream::app);
-
   file.seekg(0, std::ios::end);
 
   // Empty?
@@ -44,7 +33,7 @@ void Run::persist(std::string fileName)
 
   // Write the actual data
   file << std::fixed << std::setprecision(2)
-       << best.travelTime() << ';' << best.excessRideTime() << ';' << best.obj()      << ';'
-       << bestInit.obj()    << ';' << elapsedMinutes        << ';' << bestIteration   << ';'
-       << bestAlpha         << ';' << seed                  << ';' << best.feasible() << "\n";
+       << best.travelTime() << ';' << best.excessRideTime() << ';' << best.objFuncValue() << ';'
+       << bestInit.objFuncValue() << ';' << elapsedMinutes << ';' << bestIteration << ';'
+       << bestAlpha << ';' << seed << ';' << best.feasible() << "\n";
 }
