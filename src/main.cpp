@@ -23,7 +23,7 @@ int main(const int argc, const char *argv[])
 
   inst->init(argv[1]);
 
-  Run run = ReactiveGrasp::solve(2000, 200, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
+  Run run = ReactiveGrasp::solve(2000, 250, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
 
   Gnuplot::plotRun(run);
   Display::printRun(run);
