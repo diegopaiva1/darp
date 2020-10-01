@@ -88,6 +88,15 @@ void Route::evaluate()
     computeDepartureTime(i);
   }
 
+  // for (int i = 1; i < path.size(); i++) {
+  //   computeChargingTime(i);
+  //   computeBatteryLevel(i);
+
+  //   // An irreparable violation was found
+  //   if (batteryLevels[i] < 0)
+  //     goto STEP9;
+  // }
+
   STEP3:
   forwardTimeSlackAtBeginning = getForwardTimeSlack(0);
 
@@ -254,18 +263,25 @@ void Route::computeBatteryLevel(int i)
 {
   batteryLevels[i] = batteryLevels[i - 1] + path[i - 1]->rechargingRate * chargingTimes[i - 1] -
                      vehicle->dischargingRate * inst->getTravelTime(path[i - 1], path[i]);
+
+  if (batteryLevels[i] > vehicle->batteryCapacity)
+    batteryLevels[i] = vehicle->batteryCapacity;
 }
 
 void Route::computeChargingTime(int i)
 {
   if (path[i]->isStation()) {
-    double sum = 0.0;
+    if (i == path.size() - 1) {
+      double sum = 0.0;
 
-    for (int j = i + 1; j < path.size(); j++)
-      sum += inst->getTravelTime(path[j - 1], path[j]);
+      for (int j = i + 1; j < path.size(); j++)
+        sum += inst->getTravelTime(path[j - 1], path[j]);
 
-    chargingTimes[i] = path[i]->departureTime - serviceBeginningTimes[i] - sum;
-    // chargingTimes[i] = getForwardTimeSlack(i);
+      chargingTimes[i] = path[i]->departureTime - serviceBeginningTimes[i] - sum;
+    }
+    else {
+      chargingTimes[i] = getForwardTimeSlack(i);
+    }
   }
   else {
     chargingTimes[i] = 0.0;

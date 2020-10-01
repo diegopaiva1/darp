@@ -9,6 +9,8 @@
 #include "utils/Timer.hpp"
 #include "utils/Display.hpp"
 
+#include <iostream>
+
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
   Timer timer; // Starting a clock to count algorithm's run time
@@ -28,7 +30,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
     alphasMap[alphas[i]] = {1.0/alphas.size(), 0.0, 0};
 
   // Moves to be used in RVND
-  std::vector<Move> moves = {reinsert, swapZeroOne, swapOneOne};
+  std::vector<Move> moves = {swapZeroOne, swapOneOne, reinsert};
 
   int noImprovementIt = 0;
 
@@ -38,6 +40,8 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
     Solution init = buildGreedyRandomizedSolution(alpha);
     Solution curr = rvnd(init, moves);
+
+    allocateStations(curr);
 
     double currObj = curr.objFuncValue();
 
@@ -53,8 +57,8 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
       noImprovementIt++;
     }
 
-    if (noImprovementIt == 500)
-      break;
+    // if (noImprovementIt == 500)
+    //   break;
 
     // Remember: first iteration is full greedy, so no need to update alpha info
     if (it != 0) {
@@ -180,8 +184,8 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
   bestFeasible.cost = MAXFLOAT;
   bestInfeasible.cost = MAXFLOAT;
 
-  if (r.path[r.path.size() - 2]->isStation())
-    r.path.erase(r.path.begin() + r.path.size() - 2);
+  // if (r.path[r.path.size() - 2]->isStation())
+  //   r.path.erase(r.path.begin() + r.path.size() - 2);
 
   for (int p = 1; p < r.path.size(); p++) {
     // int lastEmptyPos = 1, load = 0, stationPos1 = -1;
@@ -198,22 +202,27 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
 
     r.path.insert(r.path.begin() + p, req.pickup);
 
-    // if (r.getStateOfCharge(p) < 0.0) {
+    // r.evaluate();
+
+    // if (r.getStateOfCharge(p) < r.vehicle->finalMinStateOfCharge) {
     //   Node *station = inst->getNearestStation(r.path[lastEmptyPos - 1], r.path[lastEmptyPos]);
     //   r.path.insert(r.path.begin() + lastEmptyPos, station);
     //   stationPos1 = lastEmptyPos;
+    //   p++;
     // }
 
     for (int d = p + 1; d < r.path.size(); d++) {
       r.path.insert(r.path.begin() + d, req.delivery);
 
-      bool stationBeforeDepot = false;
+      // bool stationBeforeDepot = false;
 
-      if (r.getStateOfCharge(r.path.size() - 1) < r.vehicle->finalMinStateOfCharge) {
-        Node *station = inst->getNearestStation(r.path[r.path.size() - 2], r.path[r.path.size() - 1]);
-        r.path.insert(r.path.begin() + r.path.size() - 1, station);
-        stationBeforeDepot = true;
-      }
+      // r.evaluate();
+
+      // if (r.getStateOfCharge(r.path.size() - 1) < r.vehicle->finalMinStateOfCharge) {
+      //   Node *station = inst->getNearestStation(r.path[r.path.size() - 2], r.path[r.path.size() - 1]);
+      //   r.path.insert(r.path.begin() + r.path.size() - 1, station);
+      //   stationBeforeDepot = true;
+      // }
 
       r.evaluate();
 
@@ -222,8 +231,8 @@ Route ReactiveGrasp::getCheapestFeasibleInsertion(Request req, Route r)
       else if (!r.feasible() && r.cost < bestInfeasible.cost)
         bestInfeasible = r;
 
-      if (stationBeforeDepot)
-        r.path.erase(r.path.begin() + r.path.size() - 2);
+      // if (stationBeforeDepot)
+      //   r.path.erase(r.path.begin() + r.path.size() - 2);
 
       r.path.erase(r.path.begin() + d);
     }
@@ -397,41 +406,78 @@ Solution ReactiveGrasp::swapOneOne(Solution s)
   return s;
 }
 
-// Solution ReactiveGrasp::removeStation(Solution s)
-// {
-//   Solution best = s;
+Solution ReactiveGrasp::removeStation(Solution s)
+{
+  Solution best = s;
 
-//   for (Route r : s.routes) {
-//     for (auto nodeIt = r.path.begin(); nodeIt != r.path.end(); nodeIt++) {
-//       if ((*nodeIt)->isStation()) {
-//         Node *predecessor = *(nodeIt - 1);
-//         Node *successor   = *(nodeIt + 1);
+  int c = 0;
 
-//         int index = nodeIt - r.path.begin();
+  for (Route r : s.routes)
+    for (Node *n : r.path)
+      if (n->isStation())
+        c++;
 
-//         double preToSuc = r.batteryLevels[index - 1] - r.vehicle.dischargingRate * inst->getTravelTime(predecessor, successor);
+  std::cout << "Stations = " << c << '\n';
 
-//         // We have enough battery to go from predecessor to sucessor
-//         if (!successor->isDepot() && preToSuc > 0.0) {
-//           Route curr = r;
-//           curr.path.erase(curr.path.begin() + index);
+  for (Route r : s.routes) {
+    for (int i = 1; i < r.path.size(); i++) {
+      if (r.path[i]->isStation()) {
+        Node *predecessor = r.path[i - 1];
+        Node *successor = r.path[i + 1];
 
-//           if (curr.feasible()) {
-//             // Generate neighbor solution
-//             Solution neighbor = s;
-//             neighbor.setRoute(curr.vehicle, curr);
-//             neighbor.updateCost();
+        double preToSuc = r.batteryLevels[i - 1] - r.vehicle->dischargingRate * inst->getTravelTime(predecessor, successor);
 
-//             if (neighbor.cost < best.cost)
-//               best = neighbor;
-//           }
-//         }
-//       }
-//     }
-//   }
+        // We have enough battery to go from predecessor to sucessor
+        if (preToSuc/r.vehicle->batteryCapacity >= r.vehicle->finalMinStateOfCharge) {
+          Route curr = r;
+          curr.path.erase(curr.path.begin() + i);
+          curr.evaluate();
 
-//   return best;
-// }
+          if (curr.feasible()) {
+            // Generate neighbor solution
+            Solution neighbor = s;
+            neighbor.setRoute(curr.vehicle, curr);
+            double neighborObj = neighbor.objFuncValue();
+
+            if (neighborObj < best.objFuncValue()) {
+              std::cout << "yo" << '\n';
+              best = neighbor;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return best;
+}
+
+void ReactiveGrasp::allocateStations(Solution &s)
+{
+  for (Route &r : s.routes) {
+    r.evaluate();
+
+    if (!r.feasible()) {
+      int p = -1;
+
+      for (int i = 0; i < r.path.size(); i++) {
+        if (r.load[i] == 0 && r.getForwardTimeSlack(i) > 0) {
+          p = i;
+          // printf("\n(%d, %d) = %.2f", r.vehicle->id, i, r.getForwardTimeSlack(i));
+        }
+      }
+
+      if (p != -1) {
+        if (p == r.path.size() - 1)
+          r.path.insert(r.path.begin() + p, inst->getNearestStation(r.path[p], r.path[p - 1]));
+        else
+          r.path.insert(r.path.begin() + p + 1, inst->getNearestStation(r.path[p], r.path[p + 1]));
+
+        r.evaluate();
+      }
+    }
+  }
+}
 
 void ReactiveGrasp::updateProbabilities(std::map<double, AlphaInfo> &alphasMap, double bestCost)
 {

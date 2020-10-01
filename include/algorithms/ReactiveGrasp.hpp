@@ -81,6 +81,7 @@ private:
   */
   static Route getCheapestFeasibleInsertion(Request req, Solution s);
 
+public:
  /**
   * @brief For a given request and a given route, return the route configuration (with the request inserted,
   *        if feasible) which results in the least increase in the objective function.
@@ -141,6 +142,8 @@ private:
   * @param bestCost  Cost of best solution found at the moment.
   */
   static void updateProbabilities(std::map<double, AlphaInfo> &alphasMap, double bestCost);
+
+  static void allocateStations(Solution &s);
 };
 
 #endif // REACTIVEGRASP_HPP_INCLUDED
