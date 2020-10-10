@@ -28,7 +28,7 @@ void Display::printRun(Run run)
     fort::char_table table;
 
     table << fort::header << k + 1 << "ROUTE SCHEDULE" << fort::endr
-          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Z (%)" << "C" << "Q" << "E" << fort::endr
+          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << fort::endr
           << fort::separator;
 
     table[0][1].set_cell_span(12);
@@ -41,19 +41,16 @@ void Display::printRun(Run run)
 
     for (int i = 0; i < r.path.size(); i++) {
       int id = r.path[i]->id;
-      double e = r.path[i]->arrivalTime;
-      double l = r.path[i]->departureTime;
-      double A = r.arrivalTimes[i];
-      double B = r.serviceBeginningTimes[i];
-      double W = r.waitingTimes[i];
-      double D = r.departureTimes[i];
-      double R = r.rideTimes[i];
-      double Z = (r.batteryLevels[i]/r.vehicle->batteryCapacity) * 100.0; // Battery level to be shown in percentage
-      double C = r.chargingTimes[i];
+      double e = r.path[i]->arrival_time;
+      double l = r.path[i]->departure_time;
+      double A = r.arrival_times[i];
+      double B = r.service_beginning_times[i];
+      double W = r.waiting_times[i];
+      double D = r.departure_times[i];
+      double R = r.ride_times[i];
       int Q = r.load[i];
-      double E = r.rideTimeExcesses[i];
 
-      table << i << id << e << l << A << B << W << D << R << Z << C << Q << E << fort::endr;
+      table << i << id << e << l << A << B << W << D << R << Q << fort::endr;
     }
 
     std::cout << '\n' << table.to_string() << '\n';
@@ -61,14 +58,12 @@ void Display::printRun(Run run)
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
-            << "Initial    = " << run.bestInit.objFuncValue() << '\n'
-            << "Best       = " << run.best.objFuncValue() << '\n'
-            << "TT         = " << run.best.travelTime() << '\n'
-            << "ERT        = " << run.best.excessRideTime() << '\n'
-            << "CPU        = " << run.elapsedMinutes << " min\n"
+            << "Initial    = " << run.best_init.obj_func_value() << '\n'
+            << "Best       = " << run.best.obj_func_value() << '\n'
+            << "CPU        = " << run.elapsed_minutes << " min\n"
             << "Seed       = " << run.seed << '\n'
-            << "Best it.   = " << run.bestIteration << '\n'
-            << "Best alpha = " << run.bestAlpha << '\n';
+            << "Best it.   = " << run.best_iteration << '\n'
+            << "Best alpha = " << run.best_alpha << '\n';
 
   std::cout << RESET << "\nPlots have been saved to " << Gnuplot::getDestinationDir() << " directory\n";
 }

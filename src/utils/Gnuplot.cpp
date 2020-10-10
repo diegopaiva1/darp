@@ -5,7 +5,7 @@
  */
 
 #include "utils/Gnuplot.hpp"
-#include "data-structures/Singleton.hpp"
+#include "data-structures/instance.hpp"
 
 #include <thread>  // std::this_thread
 #include <fstream> // std::ofstream
@@ -17,13 +17,13 @@ void Gnuplot::plotRun(Run run)
   // Clear destination dir before saving plots
   system(("rm -f " + destinationDir + "*").c_str());
 
-  plotGraph(run.bestInit.routes, run.bestInit.objFuncValue(), destinationDir + "init.png");
-  plotGraph(run.best.routes, run.best.objFuncValue(), destinationDir + "best.png");
+  plotGraph(run.best_init.routes, run.best_init.obj_func_value(), destinationDir + "init.png");
+  plotGraph(run.best.routes, run.best.obj_func_value(), destinationDir + "best.png");
 
   for (int k = 0; k < run.best.routes.size(); k++)
     plotSchedule(run.best.routes[k], destinationDir + "schedule" + std::to_string(k + 1) + ".png");
 
-  plotAlphasProbabilityDistribution(run.probDistribution, destinationDir + "alphas.png");
+  plotAlphasProbabilityDistribution(run.alphas_prob_distribution, destinationDir + "alphas.png");
 
   // Sleep to avoid concurrence issues with gnuplot process
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -41,14 +41,14 @@ void Gnuplot::plotGraph(std::vector<Route> routes, double cost, std::string outp
 
   // Header metadata
   dataStream << "# Instance name, Solution cost, Number of routes, Number of requests, Number of stations" << "\n";
-  dataStream << inst->name << ' ' << cost << ' ' << routes.size() << ' ' <<  inst->requestsAmount << ' '
-             << inst->stationsAmount << "\n";
+  dataStream << inst.name << ' ' << cost << ' ' << routes.size() << ' ' <<  inst.requests_num << ' '
+             /* << inst.stationsAmount TODO: APAGAR stationsAmount*/ <<   "\n";
 
   // Each datablock must be separated by two line breaks
   dataStream << "\n\n";
 
   dataStream << "# Id, Latitude, Longitude" << "\n";
-  for (Node *node : inst->nodes)
+  for (Node *node : inst.nodes)
     dataStream << node->id << " " << node->latitude << " " << node->longitude << '\n';
 
   dataStream << "\n\n";
@@ -87,12 +87,12 @@ void Gnuplot::plotSchedule(Route r, std::string output)
 
   // Define the color for each point
   for (int i = 0, color = 0; i < r.path.size(); i++) {
-    if (r.path[i]->isPickup()) {
+    if (r.path[i]->is_pickup()) {
       colors[r.path[i]->id] = color;
       color++;
     }
-    else if (r.path[i]->isDelivery()) {
-      colors[r.path[i]->id] = colors[r.path[i]->id - inst->requestsAmount];
+    else if (r.path[i]->is_delivery()) {
+      colors[r.path[i]->id] = colors[r.path[i]->id - inst.requests_num];
     }
     else {
       colors[r.path[i]->id] = 0;
@@ -101,29 +101,29 @@ void Gnuplot::plotSchedule(Route r, std::string output)
   }
 
   dataStream << "# A_i, i, color" << '\n';
-  for (int i = 0; i < r.arrivalTimes.size(); i++)
-    dataStream << r.arrivalTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+  for (int i = 0; i < r.arrival_times.size(); i++)
+    dataStream << r.arrival_times[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
 
   // Remember that each datablock must be separed by two line breaks
   dataStream << "\n\n";
 
   dataStream << "# B_i, i, color" << '\n';
-  for (int i = 0; i < r.serviceBeginningTimes.size(); i++)
-    dataStream << r.serviceBeginningTimes[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+  for (int i = 0; i < r.service_beginning_times.size(); i++)
+    dataStream << r.service_beginning_times[i] << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
 
   dataStream << "\n\n";
 
   dataStream << "# D_i, i, color" << '\n';
-  for (int i = 0; i < r.departureTimes.size() - 1; i++)
-    dataStream << r.departureTimes[i]   << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
+  for (int i = 0; i < r.departure_times.size() - 1; i++)
+    dataStream << r.departure_times[i]   << ' ' << i << ' ' << colors[r.path[i]->id] << '\n';
 
   dataStream << "\n\n";
 
   dataStream << "# D_i,   i" << '\n';
   dataStream << "# A_i+1, i" << '\n';
-  for (int i = 0; i < r.departureTimes.size() - 1; i++) {
-    dataStream << r.departureTimes[i]   << ' ' << i     << '\n';
-    dataStream << r.arrivalTimes[i + 1] << ' ' << i + 1 << '\n';
+  for (int i = 0; i < r.departure_times.size() - 1; i++) {
+    dataStream << r.departure_times[i]   << ' ' << i     << '\n';
+    dataStream << r.arrival_times[i + 1] << ' ' << i + 1 << '\n';
   }
 
   dataStream << "\n\n";
@@ -131,8 +131,8 @@ void Gnuplot::plotSchedule(Route r, std::string output)
   dataStream << "# e_i, i" << '\n';
   dataStream << "# l_i, i" << '\n';
   for (int i = 0; i < r.path.size(); i++) {
-    dataStream << r.path[i]->arrivalTime   << ' ' << i << '\n';
-    dataStream << r.path[i]->departureTime << ' ' << i << '\n';
+    dataStream << r.path[i]->arrival_time   << ' ' << i << '\n';
+    dataStream << r.path[i]->departure_time << ' ' << i << '\n';
   }
 
   // Call gnuplot. '-c' flag allows to send command line args to gnuplot

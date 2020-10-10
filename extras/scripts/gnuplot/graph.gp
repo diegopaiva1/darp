@@ -13,8 +13,8 @@ set term pngcairo size 1920, 1080 enhanced font "Verdana, 12"
 set output ARG2
 
 # Define ranges for both axis
-set xrange[-10.5:10.5]
-set yrange[-10.5:10.5]
+set xrange[-11:11]
+set yrange[-11:11]
 
 # We collect all the important file info to use in our plot
 set table $Header

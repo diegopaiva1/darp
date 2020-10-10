@@ -2,7 +2,7 @@
 cmake_minimum_required (VERSION 2.6)
 
 # Project's name
-project (e-adarp)
+project (darp)
 
 # Set the target name
 set (TARGET ${PROJECT_NAME})
@@ -12,14 +12,14 @@ include_directories ("include")
 
 # Manually add the sources (*.cpp) using the set command as follows
 set (SOURCES src/main.cpp
-             src/algorithms/ReactiveGrasp.cpp
-             src/data-structures/Node.cpp
-             src/data-structures/Request.cpp
-             src/data-structures/Route.cpp
-             src/data-structures/Run.cpp
-             src/data-structures/Singleton.cpp
-             src/data-structures/Solution.cpp
-             src/data-structures/Vehicle.cpp
+             src/algorithms/reactive_grasp.cpp
+             src/data-structures/node.cpp
+             src/data-structures/request.cpp
+             src/data-structures/route.cpp
+             src/data-structures/run.cpp
+             src/data-structures/instance.cpp
+             src/data-structures/solution.cpp
+             src/data-structures/vehicle.cpp
              src/utils/Display.cpp
              src/utils/Gnuplot.cpp
              src/utils/Timer.cpp)

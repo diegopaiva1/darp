@@ -7,7 +7,7 @@
 #ifndef GNUPLOT_HPP_INCLUDED
 #define GNUPLOT_HPP_INCLUDED
 
-#include "data-structures/Run.hpp"
+#include "data-structures/run.hpp"
 
 #include <map>
 #include <string>

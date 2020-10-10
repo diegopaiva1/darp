@@ -17,19 +17,19 @@ if sys.version_info < (3, 0, 0):
   sys.stderr.write("You need python 3.0.0 or later to run this script\n")
   exit(1)
 
-def storeXlsx(filePath):
+def store_xlsx(file_path):
   # Create a workbook and add a worksheet
-  workbook = xlsxwriter.Workbook(filePath.replace("temp", "xlsx"))
+  workbook = xlsxwriter.Workbook(file_path.replace("temp", "xlsx"))
   worksheet = workbook.add_worksheet()
 
   # Worksheet columns
-  cols = ["#Run", "TT", "ERT", "Best", "Init", "CPU (min)", "Best iteration", "Best alpha", "Seed", "Feasible"]
+  cols = ["#Run", "Best", "Init", "CPU (min)", "Best iteration", "Best alpha", "Seed", "Feasible"]
 
-  # Width of columns 1 to 5 set to 10
-  worksheet.set_column(1, 5, 10)
+  # Width of columns 1 to 3 set to 10
+  worksheet.set_column(1, 3, 10)
 
-  # Width of columns 6 to 8 set to 12
-  worksheet.set_column(6, 8, 12)
+  # Width of columns 4 to 6 set to 12
+  worksheet.set_column(4, 6, 12)
 
   # Start from the first cell (rows and columns are zero indexed)
   row = 0
@@ -48,7 +48,7 @@ def storeXlsx(filePath):
   runs = []
 
   # Open the file to read the content of each run
-  file = open(filePath, 'r')
+  file = open(file_path, 'r')
 
   # Append all lines from file in 'runs' list except the first one (the header)
   for i, line in enumerate(file):
@@ -163,8 +163,8 @@ for instance in instances:
   path = re.sub('instances', 'results', instance) + os.popen("date '+%Y-%m-%d_%H:%M:%S.temp'").read().replace("\n", "")
 
   for i in range(runs):
-    os.system("build/e-adarp " + instance + " " + path)
+    os.system("build/darp " + instance + " " + path)
 
   # Write the results to xlsx file and then remove the temp file
-  storeXlsx(path)
+  store_xlsx(path)
   os.system("rm -f " + path)

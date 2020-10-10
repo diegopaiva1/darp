@@ -9,7 +9,7 @@
 #ifndef DISPLAY_HPP_INCLUDED
 #define DISPLAY_HPP_INCLUDED
 
-#include "data-structures/Run.hpp"
+#include "data-structures/run.hpp"
 
 /**
  * @brief Some ANSI-based text style definitions.
