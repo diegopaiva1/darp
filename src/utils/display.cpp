@@ -1,42 +1,39 @@
 #include "fort.hpp"
-#include "utils/Display.hpp"
-#include "utils/Gnuplot.hpp"
+#include "utils/display.hpp"
 
-#include <iostream>
+#include <iostream> // std::cout
 
-void Display::printProgress(bool feasibility, double obj, double fraction)
+void Display::show_progress(bool feasibility, double obj_func_value, double fraction)
 {
-  int percentage  = (int) (fraction * 100);
-  int leftLength  = (int) (fraction * progressBar.size());
-  int rightLength = progressBar.size() - leftLength;
+  int percentage = (int) (fraction * 100);
+  int left_length = (int) (fraction * progress_bar.size());
+  int right_length = progress_bar.size() - left_length;
 
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_WHITE
-            << "\rComputing solution... Best found = " << (feasibility ? BOLD_GREEN : BOLD_RED) << obj
+            << "\rComputing solution... Best found = " << (feasibility ? BOLD_GREEN : BOLD_RED) << obj_func_value
             << BOLD_BLUE
-            << " [" << progressBar.substr(0, leftLength) << std::string(rightLength, ' ') << "] " << percentage << "\%"
+            << " [" << progress_bar.substr(0, left_length) << std::string(right_length, ' ') << "] " << percentage << "\%"
             << RESET;
-
   fflush(stdout);
 }
 
-void Display::printRun(Run run)
+void Display::show_run(Run run)
 {
-  for (int k = 0; k < run.best.routes.size(); k++) {
-    Route r = run.best.routes[k];
-
+  // Show schedule of every route
+  for (Route &r : run.best.routes) {
     fort::char_table table;
+    int cols = 10;
 
-    table << fort::header << k + 1 << "ROUTE SCHEDULE" << fort::endr
-          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << fort::endr
-          << fort::separator;
+    // Decision variables
+    table << fort::header << r.vehicle->id << "ROUTE SCHEDULE" << fort::endr
+          << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Q" << fort::endr << fort::separator;
 
-    table[0][1].set_cell_span(12);
+    table[0][1].set_cell_span(cols - 1);
     table[0][1].set_cell_text_align(fort::text_align::center);
-
     table << std::fixed << std::setprecision(2);
 
-    for (int i = 0; i < 13; i++)
+    for (int i = 0; i < cols; i++)
       table.column(i).set_cell_text_align(fort::text_align::right);
 
     for (int i = 0; i < r.path.size(); i++) {
@@ -56,6 +53,7 @@ void Display::printRun(Run run)
     std::cout << '\n' << table.to_string() << '\n';
   }
 
+  // Show run info
   std::cout << std::fixed << std::setprecision(2)
             << BOLD_GREEN
             << "Initial    = " << run.best_init.obj_func_value() << '\n'
@@ -64,6 +62,4 @@ void Display::printRun(Run run)
             << "Seed       = " << run.seed << '\n'
             << "Best it.   = " << run.best_iteration << '\n'
             << "Best alpha = " << run.best_alpha << '\n';
-
-  std::cout << RESET << "\nPlots have been saved to " << Gnuplot::getDestinationDir() << " directory\n";
 }
