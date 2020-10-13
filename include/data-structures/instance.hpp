@@ -32,13 +32,18 @@ private:
   */
   Instance() {};
 
+ /**
+  * Pre-processing step.
+  * Compute the distance between every pair of nodes and store it in the distance matrix.
+  */
+  void init_distance_matrix();
+
 public:
   std::string name;
-  int requests_num;
   std::vector<Node*> nodes;
   std::vector<Vehicle*> vehicles;
   std::vector<Request> requests;
-  std::vector<std::vector<double>> travel_times;
+  std::vector<std::vector<double>> dist_matrix;
 
  /**
   * Instances should not be cloneable.

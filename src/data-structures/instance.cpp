@@ -6,37 +6,27 @@
 
 #include "data-structures/instance.hpp"
 
-#include <iostream> // std::cout
+#include <iostream> // std::cerr
 #include <fstream>  // std::ifstream
 #include <cmath>    // sqrt, pow
-
-Instance& Instance::get_unique()
-{
-  static Instance unique;
-  return unique;
-}
 
 void Instance::init(std::string instance_file_name)
 {
   std::ifstream file(instance_file_name);
 
   if (!file.is_open()) {
-    std::cout << "Failed to read file '" << instance_file_name << '\'' << std::endl;
+    std::cerr << "Failed to read file '" << instance_file_name << '\'' << std::endl;
     exit(1);
   }
 
   name = instance_file_name;
 
   // Header metadata
-  int vehicles_num;
-  int nodes_num;
-  double max_route_duration;
-  int vehicle_capacity;
-  double max_ride_time;
+  int vehicles_num, nodes_num, vehicle_capacity;
+  double max_route_duration, max_ride_time;
 
   file >> vehicles_num;
   file >> nodes_num;
-  this->requests_num = nodes_num/2;
   file >> max_route_duration;
   file >> vehicle_capacity;
   file >> max_ride_time;
@@ -48,6 +38,7 @@ void Instance::init(std::string instance_file_name)
   // Build all nodes
   for (int id = 0; file >> id; ) {
     Node *node = new Node(id);
+    node->max_ride_time = max_ride_time;
 
     file >> node->latitude;
     file >> node->longitude;
@@ -55,7 +46,6 @@ void Instance::init(std::string instance_file_name)
     file >> node->load;
     file >> node->arrival_time;
     file >> node->departure_time;
-    node->max_ride_time = max_ride_time;
 
     // Add type of node
     if (node->load > 0)
@@ -68,36 +58,46 @@ void Instance::init(std::string instance_file_name)
     nodes.push_back(node);
   }
 
-  // Below code initializes the travel time matrix
-  travel_times.resize(nodes.size());
+  init_distance_matrix();
 
-  for (int i = 0; i < travel_times.size(); i++) {
-    travel_times[i].resize(nodes.size());
-    Node *n1 = nodes.at(i);
-
-    for (int j = 0; j < travel_times.size(); j++) {
-      Node *n2 = nodes.at(j);
-      travel_times[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
-    }
-  }
-
-  // Add all the requests
-  for (int i = 1; i <= requests_num; i++)
+  // Add all requests
+  for (int i = 1, requests_num = nodes.size()/2; i <= requests_num; i++)
     // Request is a pair (i, n + i)
     requests.push_back(Request(nodes.at(i), nodes.at(requests_num + i)));
 }
 
+void Instance::init_distance_matrix()
+{
+  dist_matrix.resize(nodes.size());
+
+  for (int i = 0; i < dist_matrix.size(); i++) {
+    dist_matrix[i].resize(nodes.size());
+    Node *n1 = nodes.at(i);
+
+    for (int j = 0; j < dist_matrix.size(); j++) {
+      Node *n2 = nodes.at(j);
+      dist_matrix[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
+    }
+  }
+}
+
+Instance& Instance::get_unique()
+{
+  static Instance unique;
+  return unique;
+}
+
 Request Instance::get_request(Node *node)
 {
-  return node->is_pickup() ? requests.at(node->id - 1) : requests.at(node->id - requests_num - 1);
+  return node->is_pickup() ? requests[node->id - 1] : requests[node->id - requests.size() - 1];
 }
 
 Node* Instance::get_depot()
 {
-  return nodes.at(0);
+  return nodes[0];
 }
 
 double Instance::get_travel_time(Node *n1, Node *n2)
 {
-  return travel_times[n1->id][n2->id];
+  return dist_matrix[n1->id][n2->id];
 }
