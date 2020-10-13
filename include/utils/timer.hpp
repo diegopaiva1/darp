@@ -1,10 +1,10 @@
 /**
- * @file   Timer.hpp
+ * @file   timer.hpp
  * @author Diego Paiva
  * @date   21/05/2019
  *
  * This class is a utility that allows the computation of elapsed time since it's instatiation.
- * Implementation was based in the following article: https://www.learncpp.com/cpp-tutorial/8-16-timing-your-code/
+ * Implementation based in the article https://www.learncpp.com/cpp-tutorial/8-16-timing-your-code/
  */
 
 #ifndef TIMER_HPP_INCLUDED
@@ -13,8 +13,8 @@
 #include <chrono>
 
 typedef std::chrono::high_resolution_clock Time;
-typedef std::chrono::duration<double, std::ratio<1>>    Seconds;
-typedef std::chrono::duration<double, std::ratio<60>>   Minutes;
+typedef std::chrono::duration<double, std::ratio<1>> Seconds;
+typedef std::chrono::duration<double, std::ratio<60>> Minutes;
 typedef std::chrono::duration<double, std::ratio<3600>> Hours;
 
 class Timer
@@ -25,15 +25,15 @@ private:
 public:
   Timer();
 
-  ~Timer();
+  ~Timer() {};
 
   void reset();
 
-	double elapsedSeconds() const;
+	double elapsed_seconds() const;
 
-  double elapsedMinutes() const;
+  double elapsed_minutes() const;
 
-  double elapsedHours() const;
+  double elapsed_hours() const;
 };
 
 #endif // TIMER_HPP_INCLUDED
