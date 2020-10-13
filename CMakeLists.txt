@@ -20,9 +20,9 @@ set (SOURCES src/main.cpp
              src/data-structures/instance.cpp
              src/data-structures/solution.cpp
              src/data-structures/vehicle.cpp
-             src/utils/Display.cpp
+             src/utils/display.cpp
              src/utils/Gnuplot.cpp
-             src/utils/Timer.cpp)
+             src/utils/timer.cpp)
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++1z -Wall -O3")
