@@ -53,7 +53,7 @@ public:
  /**
   * Get the instance.
   *
-  * @return The unique instance, which is a Instance.
+  * @return The unique instance.
   */
   static Instance& get_unique();
 
@@ -65,18 +65,11 @@ public:
   void init(std::string instance_file_name);
 
  /**
-  * Get the origin depot node.
+  * Get depot node.
   *
-  * @return The origin depot node.
+  * @return Depot node.
   */
-  Node* get_origin_depot();
-
- /**
-  * Get the destination depot node.
-  *
-  * @return The destination depot node.
-  */
-  Node* get_destination_depot();
+  Node* get_depot();
 
  /**
   * Get the request associated with a node.

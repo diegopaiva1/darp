@@ -111,8 +111,8 @@ Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
     solution.routes.push_back(Route(v));
 
   for (Route &route : solution.routes) {
-    route.path.push_back(inst.get_origin_depot());
-    route.path.push_back(inst.get_destination_depot());
+    route.path.push_back(inst.get_depot());
+    route.path.push_back(inst.get_depot());
   }
 
   struct Candidate

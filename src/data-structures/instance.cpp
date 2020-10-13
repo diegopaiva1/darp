@@ -92,12 +92,7 @@ Request Instance::get_request(Node *node)
   return node->is_pickup() ? requests.at(node->id - 1) : requests.at(node->id - requests_num - 1);
 }
 
-Node* Instance::get_origin_depot()
-{
-  return nodes.at(0);
-}
-
-Node* Instance::get_destination_depot()
+Node* Instance::get_depot()
 {
   return nodes.at(0);
 }
