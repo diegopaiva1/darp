@@ -6,8 +6,8 @@
 
 #include "data-structures/instance.hpp"
 #include "algorithms/reactive_grasp.hpp"
-#include "utils/Timer.hpp"
-#include "utils/Display.hpp"
+#include "utils/timer.hpp"
+#include "utils/display.hpp"
 
 #include <iostream>
 
@@ -71,7 +71,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
         update_probs(alphas_map, best_obj);
     }
 
-    Display::printProgress(best.feasible(), best_obj, (double) it/iterations);
+    Display::show_progress(best.feasible(), best_obj, (double) it/iterations);
   }
 
   // Erase any route without requests from best
@@ -83,7 +83,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
   run.best = best;
   run.seed = seed;
-  run.elapsed_minutes = timer.elapsedMinutes();
+  run.elapsed_minutes = timer.elapsed_minutes();
 
   return run;
 }
