@@ -32,15 +32,8 @@
 #define BOLD_CYAN    "\033[1m\033[36m"
 #define BOLD_WHITE   "\033[1m\033[37m"
 
-class Display
+namespace display
 {
-private:
- /**
-  * Create a styled progress bar string of fixed width.
-  */
-  static inline const std::string progress_bar = std::string(60, '#');
-
-public:
  /**
   * Show solution's feasibility and obj. value within a progress bar.
   *
@@ -48,7 +41,7 @@ public:
   * @param obj_func_value Solution's obj. func. value.
   * @param fraction       Fraction of completed iterations.
   */
-  static void show_progress(bool feasibility, double obj_func_value, double fraction);
+  void show_progress(bool feasibility, double obj_func_value, double fraction);
 
  /**
   * Show all info regarding a Run object. A schedule table containing all decision
@@ -56,7 +49,7 @@ public:
   *
   * @param run A Run object.
   */
-  static void show_run(Run run);
-};
+  void show_run(Run run);
+}
 
 #endif // DISPLAY_HPP_INCLUDED

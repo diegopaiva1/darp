@@ -21,7 +21,7 @@ set (SOURCES src/main.cpp
              src/data-structures/solution.cpp
              src/data-structures/vehicle.cpp
              src/utils/display.cpp
-             src/utils/Gnuplot.cpp
+             src/utils/gnuplot.cpp
              src/utils/timer.cpp)
 
 # Set compiler options

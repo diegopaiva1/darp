@@ -71,7 +71,7 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
         update_probs(alphas_map, best_obj);
     }
 
-    Display::show_progress(best.feasible(), best_obj, (double) it/iterations);
+    display::show_progress(best.feasible(), best_obj, (double) it/iterations);
   }
 
   // Erase any route without requests from best

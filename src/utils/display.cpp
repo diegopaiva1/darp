@@ -3,8 +3,9 @@
 
 #include <iostream> // std::cout
 
-void Display::show_progress(bool feasibility, double obj_func_value, double fraction)
+void display::show_progress(bool feasibility, double obj_func_value, double fraction)
 {
+  std::string progress_bar = std::string(60, '#');
   int percentage = (int) (fraction * 100);
   int left_length = (int) (fraction * progress_bar.size());
   int right_length = progress_bar.size() - left_length;
@@ -18,7 +19,7 @@ void Display::show_progress(bool feasibility, double obj_func_value, double frac
   fflush(stdout);
 }
 
-void Display::show_run(Run run)
+void display::show_run(Run run)
 {
   // Show schedule of every route
   for (Route &r : run.best.routes) {
