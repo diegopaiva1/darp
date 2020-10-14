@@ -9,8 +9,6 @@
 #include "utils/timer.hpp"
 #include "utils/display.hpp"
 
-#include <iostream>
-
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
   // Starting a clock to count algorithm's run time
