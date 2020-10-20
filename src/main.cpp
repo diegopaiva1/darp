@@ -9,15 +9,16 @@
 #include "utils/gnuplot.hpp"
 #include "utils/display.hpp"
 
-#include <iostream>
+#include <iostream> // std::cerr
 
-int main(const int argc, const char *argv[])
+int main(const int argc, const char* argv[])
 {
   const int min_args = 1;
+  const int max_args = 2;
   const int args_given = argc - 1;
 
-  if (args_given < min_args) {
-    std::cout << "ERROR: expected at least " << min_args << " arg(s); " << args_given << " given" << '\n';
+  if (args_given < min_args || args_given > max_args) {
+    std::cerr << "Usage: " << argv[0] << " <instance> <save_file (optional)>\n";
     return EXIT_FAILURE;
   }
 
