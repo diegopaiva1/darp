@@ -13,10 +13,11 @@ namespace gnuplot
 {
  /**
   * Generate plots of a Run object. Plots are:
-  * 1. Initial solution graph;
-  * 2. Best solution graph;
-  * 3. Schedule for every route in best solution;
-  * 4. Alphas probability distribution.
+  *
+  *   1. Initial solution graph;
+  *   2. Best solution graph;
+  *   3. Schedule for every route in best solution;
+  *   4. Alphas probability distribution.
   *
   * @param run Run object.
   * @param dir Directory where generated plots will be stored.
