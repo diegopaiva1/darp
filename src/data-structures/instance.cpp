@@ -49,11 +49,11 @@ void Instance::init(std::string instance_file_name)
 
     // Add type of node
     if (node->load > 0)
-      node->type = Type::PICKUP;
+      node->type = Node::Type::PICKUP;
     else if (node->load < 0)
-      node->type = Type::DELIVERY;
+      node->type = Node::Type::DELIVERY;
     else
-      node->type = Type::DEPOT;
+      node->type = Node::Type::DEPOT;
 
     nodes.push_back(node);
   }

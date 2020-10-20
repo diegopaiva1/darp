@@ -9,14 +9,14 @@
 #ifndef NODE_HPP_INCLUDED
 #define NODE_HPP_INCLUDED
 
-/**
- * Enumeration of possible node types.
- */
-enum class Type {DEPOT, PICKUP, DELIVERY};
-
 class Node
 {
 public:
+ /**
+  * Enumeration of possible node types.
+  */
+  enum class Type {DEPOT, PICKUP, DELIVERY};
+
   int id;
   double latitude;
   double longitude;
