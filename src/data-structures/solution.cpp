@@ -30,3 +30,13 @@ double Solution::obj_func_value()
 
   return sum;
 }
+
+std::string Solution::to_string()
+{
+  std::string s;
+
+  for (Route &r : routes)
+    s.append('\n' + r.to_string());
+
+  return s;
+}

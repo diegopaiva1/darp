@@ -13,6 +13,7 @@
 #include "request.hpp"
 
 #include <vector>
+#include <string>
 
 class Route
 {
@@ -91,6 +92,11 @@ public:
   * @return duration value.
   */
   double duration();
+
+ /**
+  * Convert Route to string representation.
+  */
+  std::string to_string();
 
 private:
  /**

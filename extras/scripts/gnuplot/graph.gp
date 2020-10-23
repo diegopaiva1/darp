@@ -27,7 +27,7 @@ set title sprintf("%s - Cost = %.2f", INSTANCE_NAME, COST);
 # Let GNUPLOT choose the plot color for each route
 set colorsequence classic
 
-plot ARG1 i 1 every ::0::0 u 2:3 w points ls 5 ps 2 lc rgb "orange" title sprintf("Depot"), \
+plot ARG1 i 1 every ::0::0 u 2:3 w points ls 5 ps 2 lc rgb "black" title sprintf("Depot"), \
 	 ARG1 i 1 every ::1::(REQUESTS) u 2:3 w points ls 7 ps 2.5 lc rgb "blue" title sprintf("Pickup"), \
 	 ARG1 i 1 every ::(REQUESTS + 1)::(REQUESTS * 2) u 2:3 w points ls 7 ps 2.5 lc rgb "red" title sprintf("Delivery"), \
 	 ARG1 i 1 u 2:3:1 w labels font "2,0" offset char 1.0,1.0 notitle, \

@@ -40,6 +40,11 @@ public:
   * @param file_name File name.
   */
   void persist(std::string file_name);
+
+ /**
+  * Convert Run to string representation.
+  */
+  std::string to_string();
 };
 
 #endif // RUN_H_INCLUDED

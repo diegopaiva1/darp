@@ -7,15 +7,12 @@
 #include "data-structures/instance.hpp"
 #include "algorithms/reactive_grasp.hpp"
 #include "utils/gnuplot.hpp"
-#include "utils/display.hpp"
 
-#include <iostream> // std::cerr
+#include <iostream> // std::cerr, std::cout
 
 int main(const int argc, const char* argv[])
 {
-  const int min_args = 1;
-  const int max_args = 2;
-  const int args_given = argc - 1;
+  const int min_args = 1, max_args = 3, args_given = argc - 1;
 
   if (args_given < min_args || args_given > max_args) {
     std::cerr << "Usage: " << argv[0] << " <instance> <save_file (optional)>\n";
@@ -26,7 +23,7 @@ int main(const int argc, const char* argv[])
 
   Run run = ReactiveGrasp::solve(3000, 300, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0});
 
-  display::show_run(run);
+  std::cout << run.to_string();
   gnuplot::plot_run(run, "../data/plots/");
 
   if (argv[2])

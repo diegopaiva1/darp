@@ -20,12 +20,11 @@ set (SOURCES src/main.cpp
              src/data-structures/instance.cpp
              src/data-structures/solution.cpp
              src/data-structures/vehicle.cpp
-             src/utils/display.cpp
              src/utils/gnuplot.cpp
              src/utils/timer.cpp)
 
 # Set compiler options
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -std=c++1z -O3")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fopenmp -std=c++1z -O3")
 
 # Generate the binary
 add_executable (${TARGET} ${SOURCES})

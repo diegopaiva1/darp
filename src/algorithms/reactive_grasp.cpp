@@ -7,7 +7,9 @@
 #include "data-structures/instance.hpp"
 #include "algorithms/reactive_grasp.hpp"
 #include "utils/timer.hpp"
-#include "utils/display.hpp"
+
+#include <iostream> // std::cout
+#include <iomanip>  // std::setprecision
 
 Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 {
@@ -24,23 +26,17 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
   // A map to track each alpha performance
   std::map<double, AlphaInfo> alphas_map;
-
-  // Initialize alphas map
   for (int i = 0; i < alphas.size(); i++)
     alphas_map[alphas[i]] = {1.0/alphas.size(), 0.0, 0};
 
-  // Moves to be used in RVND
+  // Moves to be used within RVND
   std::vector<Move> moves = {swap_0_1, swap_1_1, reinsert};
 
   int no_improve_its = 0;
-
-  for (int it = 0; it <= iterations; it++) {
-    // Reserve a first iteration to go full greedy
-    double alpha = it == 0 ? 0.0 : get_random_alpha(alphas_map);
-
+  for (int it = 0; it < iterations; it++) {
+    double alpha = get_random_alpha(alphas_map);
     Solution init = build_greedy_randomized_solution(alpha);
     Solution curr = rvnd(init, moves);
-
     double curr_obj = curr.obj_func_value();
 
     if (it == 0 || (curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
@@ -58,18 +54,15 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
     // if (no_improve_its == 500)
     //   break;
 
-    // Remember: first iteration is full greedy, so no need to update alpha info
-    if (it != 0) {
-      int penalty = !curr.feasible() ? 10 : 1; // Penalize alphas that generated infeasible solutions
+    int penalty = !curr.feasible() ? 10 : 1; // Penalize alphas that generated infeasible solutions
 
-      alphas_map[alpha].count++;
-      alphas_map[alpha].sum += curr_obj * penalty;
+    alphas_map[alpha].count++;
+    alphas_map[alpha].sum += curr_obj * penalty;
 
-      if (it % blocks == 0)
-        update_probs(alphas_map, best_obj);
-    }
+    if (it > 0 && it % blocks == 0)
+      update_probs(alphas_map, best_obj);
 
-    display::show_progress(best.feasible(), best_obj, (double) it/iterations);
+    show_progress(best.feasible(), best_obj, (double) it/iterations);
   }
 
   // Erase any route without requests from best
@@ -359,4 +352,28 @@ void ReactiveGrasp::update_probs(std::map<double, AlphaInfo> &alphas_map, double
 
   for (auto &[alpha, info] : alphas_map)
     info.probability = (best_cost/info.avg())/q_sum;
+}
+
+void ReactiveGrasp::show_progress(bool feasibility, double obj_func_value, double fraction)
+{
+  // Some ANSI-based text style definitions
+  std::string bold_red = "\033[1m\033[31m";
+  std::string bold_green = "\033[1m\033[32m";
+  std::string bold_blue = "\033[1m\033[34m";
+  std::string bold_white = "\033[1m\033[37m";
+  std::string reset = "\033[0m";
+
+  std::string progress_bar = std::string(60, '#');
+  int percentage = (int) (fraction * 100);
+  int left_length = (int) (fraction * progress_bar.size());
+  int right_length = progress_bar.size() - left_length;
+
+  std::cout << std::fixed << std::setprecision(2)
+            << bold_white
+            << "\rComputing solution... Best found = " << (feasibility ? bold_green : bold_red) << obj_func_value
+            << bold_blue
+            << " [" << progress_bar.substr(0, left_length) << std::string(right_length, ' ') << "] " << percentage << "\%"
+            << reset;
+
+  fflush(stdout);
 }

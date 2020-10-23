@@ -7,6 +7,8 @@
 #include "data-structures/route.hpp"
 #include "data-structures/instance.hpp"
 
+#include "fort.hpp"
+
 #include <cmath>   // MAXFLOAT
 #include <numeric> // std::accumulate
 
@@ -212,4 +214,37 @@ void Route::compute_ride_time(int i)
 double Route::duration()
 {
   return service_beginning_times.back() - service_beginning_times.front();
+}
+
+std::string Route::to_string()
+{
+  fort::char_table table;
+  int cols = 10;
+
+  // Decision variables
+  table << std::fixed << std::setprecision(2)
+        << fort::header << vehicle->id << cost << "ROUTE SCHEDULE" << fort::endr
+        << "#" << "ID" << "e" << "l" << "A" << "B" << "W" << "D" << "R" << "Q" << fort::endr << fort::separator;
+
+  table[0][2].set_cell_span(cols - 2);
+  table[0][2].set_cell_text_align(fort::text_align::center);
+
+  for (int i = 0; i < cols; i++)
+    table.column(i).set_cell_text_align(fort::text_align::right);
+
+  for (int i = 0; i < path.size(); i++) {
+    int id = path[i]->id;
+    double e = path[i]->arrival_time;
+    double l = path[i]->departure_time;
+    double A = arrival_times[i];
+    double B = service_beginning_times[i];
+    double W = waiting_times[i];
+    double D = departure_times[i];
+    double R = ride_times[i];
+    int Q = load[i];
+
+    table << i << id << e << l << A << B << W << D << R << Q << fort::endr;
+  }
+
+  return table.to_string();
 }
