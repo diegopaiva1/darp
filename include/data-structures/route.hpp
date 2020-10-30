@@ -149,6 +149,8 @@ private:
   * @param i Index.
   */
   void compute_ride_time(int i);
+
+  int get_index(Node *node);
 };
 
 #endif // ROUTE_HPP_INCLUDED

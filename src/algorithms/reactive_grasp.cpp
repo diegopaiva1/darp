@@ -6,16 +6,13 @@
 
 #include "data-structures/instance.hpp"
 #include "algorithms/reactive_grasp.hpp"
-#include "utils/timer.hpp"
 
 #include <iostream> // std::cout
 #include <iomanip>  // std::setprecision
+#include <omp.h>
 
-Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
+Run reactive_grasp::solve(int iterations, int blocks, std::vector<double> alphas, int threads)
 {
-  // Starting a clock to count algorithm's run time
-  Timer timer;
-
   // Use std::random_device to generate seed to Random engine
   unsigned int seed = std::random_device{}();
   Random::seed(seed);
@@ -26,44 +23,53 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
   // A map to track each alpha performance
   std::map<double, AlphaInfo> alphas_map;
-  for (int i = 0; i < alphas.size(); i++)
-    alphas_map[alphas[i]] = {1.0/alphas.size(), 0.0, 0};
+
+  for (double a : alphas)
+    alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
   // Moves to be used within RVND
   std::vector<Move> moves = {swap_0_1, swap_1_1, reinsert};
 
-  int no_improve_its = 0;
+  if (threads < 1 || threads > omp_get_max_threads())
+    threads = omp_get_max_threads();
+
+  double start = omp_get_wtime();
+
+  #pragma omp parallel for num_threads(threads)
   for (int it = 0; it < iterations; it++) {
     double alpha = get_random_alpha(alphas_map);
     Solution init = build_greedy_randomized_solution(alpha);
     Solution curr = rvnd(init, moves);
     double curr_obj = curr.obj_func_value();
 
-    if (it == 0 || (curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
-      best = curr;
-      best_obj = curr_obj;
-      run.best_alpha = alpha;
-      run.best_init = init;
-      run.best_iteration = it;
-      no_improve_its = 0;
+    if ((curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
+      #pragma omp critical
+      {
+        best = curr;
+        best_obj = curr_obj;
+        run.best_alpha = alpha;
+        run.best_init = init;
+        run.best_iteration = it;
+      }
     }
-    else {
-      no_improve_its++;
+
+    // Penalize alphas that generated infeasible solutions
+    int penalty = !curr.feasible() ? 10 : 1;
+
+    #pragma omp critical
+    {
+      alphas_map[alpha].count++;
+      alphas_map[alpha].sum += curr_obj * penalty;
+
+      if (it > 0 && it % blocks == 0)
+        update_probs(alphas_map, best_obj);
     }
 
-    // if (no_improve_its == 500)
-    //   break;
-
-    int penalty = !curr.feasible() ? 10 : 1; // Penalize alphas that generated infeasible solutions
-
-    alphas_map[alpha].count++;
-    alphas_map[alpha].sum += curr_obj * penalty;
-
-    if (it > 0 && it % blocks == 0)
-      update_probs(alphas_map, best_obj);
-
-    show_progress(best.feasible(), best_obj, (double) it/iterations);
+    if (omp_get_thread_num() == 0)
+      show_progress(best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
   }
+
+  double finish = omp_get_wtime();
 
   // Erase any route without requests from best
   for (auto r = best.routes.begin(); r != best.routes.end(); )
@@ -74,12 +80,12 @@ Run ReactiveGrasp::solve(int iterations, int blocks, std::vector<double> alphas)
 
   run.best = best;
   run.seed = seed;
-  run.elapsed_minutes = timer.elapsed_minutes();
+  run.elapsed_minutes = (finish - start)/60;
 
   return run;
 }
 
-double ReactiveGrasp::get_random_alpha(std::map<double, AlphaInfo> alphas_map)
+double reactive_grasp::get_random_alpha(std::map<double, AlphaInfo> alphas_map)
 {
   double rand = Random::get(0.0, 1.0);
   double sum = 0.0;
@@ -94,11 +100,11 @@ double ReactiveGrasp::get_random_alpha(std::map<double, AlphaInfo> alphas_map)
   return 0;
 }
 
-Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
+Solution reactive_grasp::build_greedy_randomized_solution(double alpha)
 {
   Solution solution;
 
-  for (Vehicle *v : inst.vehicles)
+  for (Vehicle *&v : inst.vehicles)
     solution.routes.push_back(Route(v));
 
   for (Route &route : solution.routes) {
@@ -106,8 +112,7 @@ Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
     route.path.push_back(inst.get_depot());
   }
 
-  struct Candidate
-  {
+  struct Candidate {
     Route route;
     Request request;
   };
@@ -115,7 +120,7 @@ Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
   std::vector<Candidate> candidates;
 
   // Initialize candidates
-  for (Request req : inst.requests)
+  for (Request &req : inst.requests)
     candidates.push_back({get_cheapest_feasible_insertion(req, solution), req});
 
   while (!candidates.empty()) {
@@ -123,14 +128,9 @@ Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
       return c1.route.cost < c2.route.cost;
     });
 
-    // Get an iterator to a random candidate in restricted range
     auto candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
-
     solution.set_route(candidate->route.vehicle, candidate->route);
-
-    // Save route to optimize the update of candidates
-    Route selected = candidate->route;
-
+    Route selected = candidate->route; // Save route to optimize the update of candidates
     candidates.erase(candidate);
 
     // Update candidates
@@ -142,7 +142,7 @@ Solution ReactiveGrasp::build_greedy_randomized_solution(double alpha)
   return solution;
 }
 
-Route ReactiveGrasp::get_cheapest_feasible_insertion(Request req, Solution s)
+Route reactive_grasp::get_cheapest_feasible_insertion(Request req, Solution s)
 {
   Route best_feasible;
   Route best_infeasible;
@@ -162,7 +162,7 @@ Route ReactiveGrasp::get_cheapest_feasible_insertion(Request req, Solution s)
   return best_feasible.cost != MAXFLOAT ? best_feasible : best_infeasible;
 }
 
-Route ReactiveGrasp::get_cheapest_feasible_insertion(Request req, Route r)
+Route reactive_grasp::get_cheapest_feasible_insertion(Request req, Route r)
 {
   // Best insertion starts with infinity cost, we will update it during the search
   Route best_feasible = r;
@@ -192,7 +192,7 @@ Route ReactiveGrasp::get_cheapest_feasible_insertion(Request req, Route r)
   return best_feasible.cost != MAXFLOAT ? best_feasible : best_infeasible;
 }
 
-Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
+Solution reactive_grasp::rvnd(Solution s, std::vector<Move> moves)
 {
   std::vector<Move> rvnd_moves = moves;
 
@@ -212,7 +212,7 @@ Solution ReactiveGrasp::rvnd(Solution s, std::vector<Move> moves)
   return s;
 }
 
-Solution ReactiveGrasp::reinsert(Solution s)
+Solution reactive_grasp::reinsert(Solution s)
 {
   Solution best = s;
   double best_obj = best.obj_func_value();
@@ -247,7 +247,7 @@ Solution ReactiveGrasp::reinsert(Solution s)
   return best;
 }
 
-Solution ReactiveGrasp::swap_0_1(Solution s)
+Solution reactive_grasp::swap_0_1(Solution s)
 {
   Solution best = s;
   double best_obj = best.obj_func_value();
@@ -261,13 +261,13 @@ Solution ReactiveGrasp::swap_0_1(Solution s)
         // Erase request by value
         curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.pickup),   curr1.path.end());
         curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.delivery), curr1.path.end());
-
         curr1.evaluate();
 
         for (Route r2 : s.routes) {
           if (r1 != r2) {
             // Insert req in the new route
             Route curr2 = get_cheapest_feasible_insertion(req, r2);
+
             curr2.evaluate();
 
             // Generate neighbor solution;
@@ -276,7 +276,7 @@ Solution ReactiveGrasp::swap_0_1(Solution s)
             neighbor.set_route(curr2.vehicle, curr2);
             double neighbor_obj = neighbor.obj_func_value();
 
-            if (neighbor.feasible() && neighbor_obj < best.obj_func_value()) {
+            if (neighbor.feasible() && neighbor_obj < best_obj) {
               best = neighbor;
               best_obj = neighbor_obj;
             }
@@ -289,7 +289,7 @@ Solution ReactiveGrasp::swap_0_1(Solution s)
   return best;
 }
 
-Solution ReactiveGrasp::swap_1_1(Solution s)
+Solution reactive_grasp::swap_1_1(Solution s)
 {
   START:
   std::vector<Route> possible_routes;
@@ -342,7 +342,7 @@ Solution ReactiveGrasp::swap_1_1(Solution s)
   return s;
 }
 
-void ReactiveGrasp::update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost)
+void reactive_grasp::update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost)
 {
   double q_sum = 0.0;
 
@@ -354,7 +354,7 @@ void ReactiveGrasp::update_probs(std::map<double, AlphaInfo> &alphas_map, double
     info.probability = (best_cost/info.avg())/q_sum;
 }
 
-void ReactiveGrasp::show_progress(bool feasibility, double obj_func_value, double fraction)
+void reactive_grasp::show_progress(bool feasibility, double obj_func_value, double fraction)
 {
   // Some ANSI-based text style definitions
   std::string bold_red = "\033[1m\033[31m";

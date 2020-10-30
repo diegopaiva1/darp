@@ -20,8 +20,7 @@ set (SOURCES src/main.cpp
              src/data-structures/instance.cpp
              src/data-structures/solution.cpp
              src/data-structures/vehicle.cpp
-             src/utils/gnuplot.cpp
-             src/utils/timer.cpp)
+             src/utils/gnuplot.cpp)
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fopenmp -std=c++1z -O3")

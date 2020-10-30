@@ -7,13 +7,15 @@
 #include "data-structures/solution.hpp"
 #include "data-structures/instance.hpp"
 
+#include <cmath>
+
 bool Solution::feasible()
 {
   for (Route r : routes)
     if (!r.feasible())
       return false;
 
-  return true;
+  return !routes.empty() ? true : false;
 }
 
 void Solution::set_route(Vehicle *&v, Route r)
@@ -23,9 +25,12 @@ void Solution::set_route(Vehicle *&v, Route r)
 
 double Solution::obj_func_value()
 {
+  if (routes.empty())
+    return MAXFLOAT;
+
   double sum = 0.0;
 
-  for (Route r : routes)
+  for (Route &r : routes)
     sum += r.cost;
 
   return sum;

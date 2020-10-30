@@ -25,7 +25,6 @@ public:
   double arrival_time;
   double departure_time;
   Type type;
-  int index;
   double max_ride_time;
 
  /**
