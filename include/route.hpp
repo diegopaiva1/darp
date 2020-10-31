@@ -150,7 +150,7 @@ private:
   */
   void compute_ride_time(int i);
 
-  int get_index(Node *node);
+  int get_index(Node *node, int start);
 };
 
 #endif // ROUTE_HPP_INCLUDED

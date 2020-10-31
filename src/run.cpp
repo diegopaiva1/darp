@@ -4,8 +4,8 @@
  * @date    02/05/2020
  */
 
-#include "data-structures/run.hpp"
-#include "data-structures/instance.hpp"
+#include "run.hpp"
+#include "instance.hpp"
 
 #include <fstream>
 #include <iomanip>

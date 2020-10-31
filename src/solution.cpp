@@ -4,8 +4,8 @@
  * @date   26/09/2019
  */
 
-#include "data-structures/solution.hpp"
-#include "data-structures/instance.hpp"
+#include "solution.hpp"
+#include "instance.hpp"
 
 #include <cmath>
 

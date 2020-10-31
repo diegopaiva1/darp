@@ -13,14 +13,14 @@ include_directories ("include")
 # Manually add the sources (*.cpp) using the set command as follows
 set (SOURCES src/main.cpp
              src/algorithms/reactive_grasp.cpp
-             src/data-structures/node.cpp
-             src/data-structures/request.cpp
-             src/data-structures/route.cpp
-             src/data-structures/run.cpp
-             src/data-structures/instance.cpp
-             src/data-structures/solution.cpp
-             src/data-structures/vehicle.cpp
-             src/utils/gnuplot.cpp)
+             src/node.cpp
+             src/request.cpp
+             src/route.cpp
+             src/run.cpp
+             src/instance.cpp
+             src/solution.cpp
+             src/vehicle.cpp
+             src/gnuplot.cpp)
 
 # Set compiler options
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fopenmp -std=c++1z -O3")

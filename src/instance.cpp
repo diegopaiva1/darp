@@ -4,7 +4,7 @@
  * @date    25/09/2019
  */
 
-#include "data-structures/instance.hpp"
+#include "instance.hpp"
 
 #include <iostream> // std::cerr
 #include <fstream>  // std::ifstream

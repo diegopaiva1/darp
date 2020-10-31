@@ -4,8 +4,8 @@
  * @date    23/10/2019
  */
 
-#include "utils/gnuplot.hpp"
-#include "data-structures/instance.hpp"
+#include "gnuplot.hpp"
+#include "instance.hpp"
 
 #include <thread>   // std::this_thread
 #include <fstream>  // std::ofstream

@@ -4,8 +4,8 @@
  * @date    06/10/2019
  */
 
-#include "data-structures/route.hpp"
-#include "data-structures/instance.hpp"
+#include "route.hpp"
+#include "instance.hpp"
 
 #include "fort.hpp"
 
@@ -117,7 +117,7 @@ void Route::evaluate()
       STEP7d:
       for (int i = j + 1; i < path.size() - 1; i++)
         if (path[i]->is_delivery())
-          compute_ride_time(get_index(inst.get_request(path[i]).pickup));
+          compute_ride_time(get_index(inst.get_request(path[i]).pickup, i));
     }
   }
 
@@ -155,8 +155,8 @@ double Route::get_forward_time_slack(int i)
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;
 
-    if (path[j]->is_delivery() && get_index(inst.get_request(path[j]).pickup) < i)
-      pj = ride_times[get_index(inst.get_request(path[j]).pickup)];
+    if (path[j]->is_delivery() && get_index(inst.get_request(path[j]).pickup, j) < i)
+      pj = ride_times[get_index(inst.get_request(path[j]).pickup, j)];
 
     double time_slack = std::accumulate(waiting_times.begin() + i + 1, waiting_times.begin() + j + 1, 0.0) +
                         std::max(0.0, std::min(path[j]->departure_time - service_beginning_times[j], 90.0 - pj));
@@ -204,7 +204,7 @@ void Route::compute_departure_time(int i)
 
 void Route::compute_ride_time(int i)
 {
-  ride_times[i] = service_beginning_times[get_index(inst.get_request(path[i]).delivery)] - departure_times[i];
+  ride_times[i] = service_beginning_times[get_index(inst.get_request(path[i]).delivery, i)] - departure_times[i];
 }
 
 double Route::duration()
@@ -245,11 +245,20 @@ std::string Route::to_string()
   return table.to_string();
 }
 
-int Route::get_index(Node *node)
+int Route::get_index(Node *node, int start)
 {
-  for (int i = 1; i < path.size() - 1; i++)
-    if (path[i] == node)
-      return i;
+  if (node->is_delivery()) {
+    // We want to find the delivery, so we must perform a forward loop
+    for (int i = start; i < path.size() - 1; i++)
+      if (path[i] == node)
+        return i;
+  }
+  else {
+    // Perform the loop backwards for pickups
+    for (int i = start; i >= 0; i--)
+      if (path[i] == node)
+        return i;
+  }
 
   throw "error";
 }

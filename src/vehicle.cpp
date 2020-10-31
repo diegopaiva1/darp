@@ -4,7 +4,7 @@
  * @date   26/09/2019
  */
 
-#include "data-structures/vehicle.hpp"
+#include "vehicle.hpp"
 
 Vehicle::Vehicle(int id, int capacity, double max_route_duration)
 {

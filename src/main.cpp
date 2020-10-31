@@ -4,9 +4,8 @@
  * @date    24/09/2019
  */
 
-#include "data-structures/instance.hpp"
+#include "instance.hpp"
 #include "algorithms/reactive_grasp.hpp"
-#include "utils/gnuplot.hpp"
 
 #include <iostream> // std::cerr, std::cout
 
@@ -21,10 +20,11 @@ int main(const int argc, const char* argv[])
 
   inst.init(argv[1]);
 
-  Run run = reactive_grasp::solve(4096, 128, {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}, std::stoi(argv[2]));
+  Run run = algorithms::reactive_grasp(
+    4096, 96, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[2])
+  );
 
   std::cout << run.to_string();
-  gnuplot::plot_run(run, "../data/plots/");
 
   if (argv[3])
     run.persist(argv[3]);
