@@ -18,10 +18,6 @@ namespace algorithms
   {
     using namespace reactive_grasp_impl;
 
-    // Use std::random_device to generate seed to Random engine
-    unsigned int seed = std::random_device{}();
-    Random::seed(seed);
-
     Solution best;
     double best_obj = MAXFLOAT;
     Run run;
@@ -40,38 +36,43 @@ namespace algorithms
 
     double start = omp_get_wtime();
 
-    #pragma omp parallel for num_threads(threads)
-    for (int it = 0; it < iterations; it++) {
-      double alpha = get_random_alpha(alphas_map);
-      Solution init = build_greedy_randomized_solution(alpha);
-      Solution curr = rvnd(init, moves);
-      double curr_obj = curr.obj_func_value();
+    #pragma omp parallel num_threads(threads)
+    {
+      // Use std::random_device to generate seed to Random engine to each thread
+      unsigned int seed = std::random_device{}();
+      Random::seed(seed);
 
-      if ((curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
+      #pragma omp for
+      for (int it = 0; it < iterations; it++) {
+        double alpha = get_random_alpha(alphas_map);
+        Solution init = build_greedy_randomized_solution(alpha);
+        Solution curr = rvnd(init, moves);
+        double curr_obj = curr.obj_func_value();
+
         #pragma omp critical
-        {
+        if ((curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
           best = curr;
           best_obj = curr_obj;
           run.best_alpha = alpha;
           run.best_init = init;
           run.best_iteration = it;
         }
+
+        // Penalize alphas that generated infeasible solutions
+        int penalty = !curr.feasible() ? 10 : 1;
+
+        #pragma omp critical
+        {
+          alphas_map[alpha].count++;
+          alphas_map[alpha].sum += curr_obj * penalty;
+
+          if (it > 0 && it % blocks == 0)
+            update_probs(alphas_map, best_obj);
+        }
+
+        if (omp_get_thread_num() == 0)
+          show_progress(best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
       }
-
-      // Penalize alphas that generated infeasible solutions
-      int penalty = !curr.feasible() ? 10 : 1;
-
-      #pragma omp critical
-      {
-        alphas_map[alpha].count++;
-        alphas_map[alpha].sum += curr_obj * penalty;
-
-        if (it > 0 && it % blocks == 0)
-          update_probs(alphas_map, best_obj);
-      }
-
-      if (omp_get_thread_num() == 0)
-        show_progress(best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
     }
 
     double finish = omp_get_wtime();
@@ -84,7 +85,7 @@ namespace algorithms
       run.alphas_prob_distribution[alpha] = info.probability;
 
     run.best = best;
-    run.seed = seed;
+    run.seed = 0;
     run.elapsed_minutes = (finish - start)/60;
 
     gnuplot::plot_run(run, "../data/plots/");

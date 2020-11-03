@@ -30,7 +30,7 @@ namespace algorithms
    /**
     * Get base random alias.
     */
-    typedef effolkronium::random_static Random;
+    typedef effolkronium::random_thread_local Random;
 
    /**
     * Define as "Move" a method that receives a Solution and returns another Solution.
