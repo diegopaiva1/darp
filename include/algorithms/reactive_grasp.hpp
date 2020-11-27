@@ -112,20 +112,20 @@ namespace algorithms
     Solution reinsert(Solution s);
 
    /**
-    * Update a given solution by performing the "swap 0-1" movement.
+    * Update a given solution by performing the "shift(1,0)" movement.
     *
     * @param s A solution to be updated.
     * @return  Updated solution.
     */
-    Solution swap_0_1(Solution s);
+    Solution shift_1_0(Solution s);
 
    /**
-    * Update a given solution by performing the "swap 1-1" movement.
+    * Update a given solution by performing the "2-opt*" movement.
     *
     * @param s A solution to be updated.
     * @return  Updated solution.
     */
-    Solution swap_1_1(Solution s);
+    Solution two_opt_star(Solution s);
 
    /**
     * Update probability of each random alpha based in the best solution found so far.

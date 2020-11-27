@@ -29,7 +29,7 @@ namespace algorithms
       alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
     // Moves to be used within RVND
-    std::vector<Move> moves = {swap_0_1, swap_1_1, reinsert};
+    std::vector<Move> moves = {two_opt_star, reinsert, shift_1_0};
 
     if (threads < 1 || threads > omp_get_max_threads())
       threads = omp_get_max_threads();
@@ -260,7 +260,70 @@ namespace algorithms
       return best;
     }
 
-    Solution swap_0_1(Solution s)
+    Solution two_opt_star(Solution s)
+    {
+      Solution best = s;
+      double best_obj = best.obj_func_value();
+
+      for (Route r1 : s.routes) {
+        int r1_load = 0;
+
+        for (int i = 1; i < r1.path.size() - 2; i++) {
+          r1_load += r1.path[i]->load;
+
+          if (r1_load == 0) {
+            for (Route r2 : s.routes) {
+              if (r1 != r2) {
+                int r2_load = 0;
+
+                for (int j = 1; j < r2.path.size() - 2; j++) {
+                  r2_load += r2.path[j]->load;
+
+                  if (r2_load == 0) {
+                    Route new_r1(r1.vehicle);
+                    Route new_r2(r2.vehicle);
+
+                    // Add first segment of r1 to new_r1
+                    for (int k = 0; k <= i; k++)
+                      new_r1.path.push_back(r1.path[k]);
+
+                    // Add first segment of r2 to new_r2
+                    for (int k = 0; k <= j; k++)
+                      new_r2.path.push_back(r2.path[k]);
+
+                    // Add second segment of r2 to new_r1
+                    for (int k = j + 1; k < r2.path.size(); k++)
+                      new_r1.path.push_back(r2.path[k]);
+
+                    // Add second segment of r1 to new_r2
+                    for (int k = i + 1; k < r1.path.size(); k++)
+                      new_r2.path.push_back(r1.path[k]);
+
+                    new_r1.evaluate();
+                    new_r2.evaluate();
+
+                    // Generate neighbor solution
+                    Solution neighbor = s;
+                    neighbor.set_route(new_r1.vehicle, new_r1);
+                    neighbor.set_route(new_r2.vehicle, new_r2);
+                    double neighbor_obj = neighbor.obj_func_value();
+
+                    if (neighbor.feasible() && neighbor_obj < best_obj) {
+                      best = neighbor;
+                      best_obj = neighbor_obj;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return best;
+    }
+
+    Solution shift_1_0(Solution s)
     {
       Solution best = s;
       double best_obj = best.obj_func_value();
@@ -300,59 +363,6 @@ namespace algorithms
       }
 
       return best;
-    }
-
-    Solution swap_1_1(Solution s)
-    {
-      START:
-      std::vector<Route> possible_routes;
-
-      // Only routes with at least one request accommodated are eligible
-      for (Route r : s.routes)
-        if (!r.empty())
-          possible_routes.push_back(r);
-
-      // To perform the move, there must be at least two routes with requests to be swapped
-      if (possible_routes.size() >= 2) {
-        // Select two distinct random routes
-        Route r1 = *Random::get(possible_routes);
-        Route r2 = *Random::get(possible_routes);
-
-        while (r2 == r1)
-          r2 = *Random::get(possible_routes);
-
-        // Select a random request in each route
-        Node *n1 = *Random::get(r1.path.begin() + 1, r1.path.end() - 1);
-        Node *n2 = *Random::get(r2.path.begin() + 1, r2.path.end() - 1);
-
-        Request req1 = inst.get_request(n1);
-        Request req2 = inst.get_request(n2);
-
-        // Remove (by value) req1 from r1 and req2 from r2
-        r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.pickup),   r1.path.end());
-        r1.path.erase(std::remove(r1.path.begin(), r1.path.end(), req1.delivery), r1.path.end());
-
-        r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.pickup),   r2.path.end());
-        r2.path.erase(std::remove(r2.path.begin(), r2.path.end(), req2.delivery), r2.path.end());
-
-        // Insert req2 in r1 and req1 in r2
-        r1 = get_cheapest_feasible_insertion(req2, r1);
-        r1.evaluate();
-
-        r2 = get_cheapest_feasible_insertion(req1, r2);
-        r2.evaluate();
-
-        Solution neighbor = s;
-        neighbor.set_route(r1.vehicle, r1);
-        neighbor.set_route(r2.vehicle, r2);
-
-        if (neighbor.feasible() && neighbor.obj_func_value() < s.obj_func_value()) {
-          s = neighbor;
-          goto START;
-        }
-      }
-
-      return s;
     }
 
     void update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost)
