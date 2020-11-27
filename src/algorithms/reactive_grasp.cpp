@@ -87,9 +87,7 @@ namespace algorithms
     run.best = best;
     run.seed = 0;
     run.elapsed_minutes = (finish - start)/60;
-
     gnuplot::plot_run(run, "../data/plots/");
-
     return run;
   }
 
