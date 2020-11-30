@@ -10,7 +10,7 @@
 
 #include <iostream> // std::cout
 #include <iomanip>  // std::setprecision
-#include <omp.h>
+#include <omp.h>    // OpenMP
 
 namespace algorithms
 {

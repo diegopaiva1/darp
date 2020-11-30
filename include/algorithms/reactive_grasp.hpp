@@ -15,7 +15,7 @@
 namespace algorithms
 {
  /**
-  * Solve the instance.
+  * Use reactive GRASP to solve the instance.
   *
   * @param iterations Total number of iterations.
   * @param blocks     Frequency of iterations on which probabilities are updated.
