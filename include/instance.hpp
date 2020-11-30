@@ -43,7 +43,7 @@ public:
   std::vector<Node*> nodes;
   std::vector<Vehicle*> vehicles;
   std::vector<Request> requests;
-  std::vector<std::vector<double>> dist_matrix;
+  std::vector<std::vector<double>> distance_matrix;
 
  /**
   * Instances should not be cloneable.

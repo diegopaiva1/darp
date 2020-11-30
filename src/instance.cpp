@@ -68,15 +68,15 @@ void Instance::init(std::string instance_file_name)
 
 void Instance::init_distance_matrix()
 {
-  dist_matrix.resize(nodes.size());
+  distance_matrix.resize(nodes.size());
 
-  for (int i = 0; i < dist_matrix.size(); i++) {
-    dist_matrix[i].resize(nodes.size());
+  for (int i = 0; i < distance_matrix.size(); i++) {
+    distance_matrix[i].resize(nodes.size());
     Node *n1 = nodes.at(i);
 
-    for (int j = 0; j < dist_matrix.size(); j++) {
+    for (int j = 0; j < distance_matrix.size(); j++) {
       Node *n2 = nodes.at(j);
-      dist_matrix[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
+      distance_matrix[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
     }
   }
 }
@@ -99,5 +99,5 @@ Node* Instance::get_depot()
 
 double Instance::get_travel_time(Node *n1, Node *n2)
 {
-  return dist_matrix[n1->id][n2->id];
+  return distance_matrix[n1->id][n2->id];
 }
