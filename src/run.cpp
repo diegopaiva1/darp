@@ -24,7 +24,7 @@ void Run::persist(std::string file_name)
   // Write the actual data
   file << std::fixed << std::setprecision(2)
        << best.obj_func_value() << ';' << best_init.obj_func_value() << ';' << elapsed_minutes << ';'
-       << best_iteration << ';' << best_alpha << ';' << seed << ';' << best.feasible() << "\n";
+       << best_iteration << ';' << best_alpha << ';' << seed << ';' << best.is_feasible << "\n";
 }
 
 std::string Run::to_string()

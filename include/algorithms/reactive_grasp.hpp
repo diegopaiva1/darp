@@ -11,6 +11,7 @@
 #include "effolkronium/random.hpp"
 
 #include <map>
+#include <memory>
 
 namespace algorithms
 {
@@ -70,7 +71,7 @@ namespace algorithms
     * @param alpha A random factor to allow restricted selection from the list of candidates.
     * @return      A Solution.
     */
-    Solution build_greedy_randomized_solution(double alpha);
+    std::shared_ptr<Solution> build_greedy_randomized_solution(double alpha);
 
    /**
     * For a given request and a given solution, return the route (with the request inserted, if feasible)
@@ -80,7 +81,7 @@ namespace algorithms
     * @param s   A solution.
     * @return    A route with the request inserted (if resulting route is feasible).
     */
-    Route get_cheapest_feasible_insertion(Request req, Solution s);
+    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Solution s);
 
    /**
     * For a given request and a given route, return the route configuration (with the request inserted,
@@ -92,16 +93,17 @@ namespace algorithms
     * @param r   A route.
     * @return    A route with the request inserted (if resulting route is feasible).
     */
-    Route get_cheapest_feasible_insertion(Request req, Route r);
+    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Route r);
 
    /**
-    * Implementation of Random Variable Neighborhood Descent procedure.
+    * Implementation of Variable Neighborhood Descent procedure.
     *
-    * @param s     A solution to be updated.
-    * @param moves A vector containing move methods.
+    * @param s              A solution to be updated.
+    * @param moves          A vector containing move methods.
+    * @param use_randomness Set to RVND (moves will be chosen randomly rather than order in the vector).
     * @return      Updated solution.
     */
-    Solution rvnd(Solution s, std::vector<Move> moves);
+    Solution vnd(Solution s, std::vector<Move> moves, bool use_randomness = false);
 
    /**
     * Update a given solution by performing the "reinsert" movement.

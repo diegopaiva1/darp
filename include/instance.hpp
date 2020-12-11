@@ -42,7 +42,7 @@ public:
   std::string name;
   std::vector<Node*> nodes;
   std::vector<Vehicle*> vehicles;
-  std::vector<Request> requests;
+  std::vector<Request*> requests;
   std::vector<std::vector<double>> distance_matrix;
 
  /**
@@ -82,7 +82,7 @@ public:
   * @param node The node.
   * @return     The request associated to the node.
   */
-  Request get_request(Node *node);
+  Request* get_request(Node *node);
 
  /**
   * Get the travel time between two nodes.

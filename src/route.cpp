@@ -117,7 +117,7 @@ void Route::evaluate()
       STEP7d:
       for (int i = j + 1; i < path.size() - 1; i++)
         if (path[i]->is_delivery())
-          compute_ride_time(get_index(inst.get_request(path[i]).pickup, i));
+          compute_ride_time(get_index(inst.get_request(path[i])->pickup, i));
     }
   }
 
@@ -127,25 +127,23 @@ void Route::evaluate()
   time_window_violation = 0.0;
   max_ride_time_violation = 0.0;
 
-  for (int i = 0; i < path.size(); i++) {
-    if (i < path.size() - 1)
-      cost += inst.get_travel_time(path[i], path[i + 1]);
-
-    if (path[i]->is_pickup())
-      max_ride_time_violation += std::max(0.0, ride_times[i] - path[i]->max_ride_time);
-
+  for (int i = 1; i < path.size(); i++) {
+    cost += inst.get_travel_time(path[i - 1], path[i]);
     load_violation += std::max(0, load[i] - vehicle->capacity);
     time_window_violation += std::max(0.0, service_beginning_times[i] - path[i]->departure_time);
     max_route_duration_violation = std::max(0.0, duration() - vehicle->max_route_duration);
+
+    if (path[i]->is_pickup())
+      max_ride_time_violation += std::max(0.0, ride_times[i] - path[i]->max_ride_time);
   }
 
-  cost += load_violation + time_window_violation + max_ride_time_violation + max_ride_time_violation;
+  cost += load_violation + time_window_violation + max_ride_time_violation + max_route_duration_violation;
 }
 
 bool Route::feasible()
 {
-  double violationSum = load_violation + time_window_violation + max_ride_time_violation + max_route_duration_violation;
-  return std::fpclassify(violationSum) == FP_ZERO;
+  double violation_sum = load_violation + time_window_violation + max_ride_time_violation + max_route_duration_violation;
+  return std::fpclassify(violation_sum) == FP_ZERO;
 }
 
 double Route::get_forward_time_slack(int i)
@@ -155,8 +153,8 @@ double Route::get_forward_time_slack(int i)
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;
 
-    if (path[j]->is_delivery() && get_index(inst.get_request(path[j]).pickup, j) < i)
-      pj = ride_times[get_index(inst.get_request(path[j]).pickup, j)];
+    if (path[j]->is_delivery() && get_index(inst.get_request(path[j])->pickup, j) < i)
+      pj = ride_times[get_index(inst.get_request(path[j])->pickup, j)];
 
     double time_slack = std::accumulate(waiting_times.begin() + i + 1, waiting_times.begin() + j + 1, 0.0) +
                         std::max(0.0, std::min(path[j]->departure_time - service_beginning_times[j], 90.0 - pj));
@@ -204,7 +202,7 @@ void Route::compute_departure_time(int i)
 
 void Route::compute_ride_time(int i)
 {
-  ride_times[i] = service_beginning_times[get_index(inst.get_request(path[i]).delivery, i)] - departure_times[i];
+  ride_times[i] = service_beginning_times[get_index(inst.get_request(path[i])->delivery, i)] - departure_times[i];
 }
 
 double Route::duration()
@@ -261,4 +259,14 @@ int Route::get_index(Node *node, int start)
   }
 
   throw "error";
+}
+
+double Route::get_total_distance()
+{
+  double total_distance = 0.0;
+
+  for (int i = 1; i < path.size(); i++)
+    total_distance += inst.get_travel_time(path[i - 1], path[i]);
+
+  return total_distance;
 }

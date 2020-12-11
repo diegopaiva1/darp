@@ -86,6 +86,9 @@ public:
   */
   bool empty();
 
+
+  double get_total_distance();
+
  /**
   * Get Route's total duration.
   *

@@ -29,7 +29,7 @@ namespace algorithms
       alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
     // Moves to be used within RVND
-    std::vector<Move> moves = {two_opt_star, reinsert, shift_1_0};
+    std::vector<Move> moves = {};
 
     if (threads < 1 || threads > omp_get_max_threads())
       threads = omp_get_max_threads();
@@ -40,38 +40,42 @@ namespace algorithms
     {
       // Use std::random_device to generate seed to Random engine to each thread
       unsigned int seed = std::random_device{}();
-      Random::seed(seed);
+      Random::seed(1935);
 
       #pragma omp for
       for (int it = 0; it < iterations; it++) {
         double alpha = get_random_alpha(alphas_map);
-        Solution init = build_greedy_randomized_solution(alpha);
-        Solution curr = rvnd(init, moves);
-        double curr_obj = curr.obj_func_value();
+        auto init = build_greedy_randomized_solution(alpha);
+        bool is_feasible = init != nullptr ? true : false;
+        // Solution curr = vnd(*init, moves);
 
         #pragma omp critical
-        if ((curr.feasible() && (curr_obj < best_obj || !best.feasible()))) {
-          best = curr;
-          best_obj = curr_obj;
+        if (is_feasible && init->obj_func_value() < best_obj) {
+          best = *init;
+          best_obj = init->obj_func_value();
           run.best_alpha = alpha;
-          run.best_init = init;
+          run.best_init = *init;
           run.best_iteration = it;
         }
 
         // Penalize alphas that generated infeasible solutions
-        int penalty = !curr.feasible() ? 10 : 1;
+        int penalty = !is_feasible ? 10 : 1;
 
         #pragma omp critical
         {
           alphas_map[alpha].count++;
-          alphas_map[alpha].sum += curr_obj * penalty;
+
+          if (is_feasible)
+            alphas_map[alpha].sum += init->obj_func_value();
+          else
+            alphas_map[alpha].sum += 2500; // todo: revisar essa constante
 
           if (it > 0 && it % blocks == 0)
             update_probs(alphas_map, best_obj);
         }
 
         if (omp_get_thread_num() == 0)
-          show_progress(best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
+          show_progress(is_feasible, best_obj, (double) it/(iterations/omp_get_num_threads()));
       }
     }
 
@@ -79,7 +83,7 @@ namespace algorithms
 
     // Erase any route without requests from best
     for (auto r = best.routes.begin(); r != best.routes.end(); )
-      r = (r->empty()) ? best.routes.erase(r) : r + 1;
+      r = r->empty() ? best.routes.erase(r) : r + 1;
 
     for (auto [alpha, info] : alphas_map)
       run.alphas_prob_distribution[alpha] = info.probability;
@@ -111,112 +115,171 @@ namespace algorithms
       return 0;
     }
 
-    Solution build_greedy_randomized_solution(double alpha)
+    std::shared_ptr<Solution> build_greedy_randomized_solution(double alpha)
     {
-      Solution solution;
+      auto solution = std::make_shared<Solution>();
 
       for (Vehicle *&v : inst.vehicles)
-        solution.routes.push_back(Route(v));
+        solution->routes.push_back(Route(v));
 
-      for (Route &route : solution.routes) {
+      for (Route &route : solution->routes) {
         route.path.push_back(inst.get_depot());
         route.path.push_back(inst.get_depot());
       }
 
       struct Candidate {
-        Route route;
-        Request request;
+        std::shared_ptr<Route> route;
+        Request *request;
       };
 
       std::vector<Candidate> candidates;
 
       // Initialize candidates
-      for (Request &req : inst.requests)
-        candidates.push_back({get_cheapest_feasible_insertion(req, solution), req});
+      for (Request *req : inst.requests)
+        candidates.push_back({get_cheapest_feasible_insertion(req, *solution), req});
 
       while (!candidates.empty()) {
         std::sort(candidates.begin(), candidates.end(), [] (Candidate &c1, Candidate &c2) {
-          return c1.route.cost < c2.route.cost;
+          return c1.route->cost < c2.route->cost;
         });
 
         auto candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
-        solution.set_route(candidate->route.vehicle, candidate->route);
-        Route selected = candidate->route; // Save route to optimize the update of candidates
+        solution->set_route(candidate->route->vehicle, *candidate->route);
+        auto selected = candidate->route; // Save route to optimize the update of candidates
         candidates.erase(candidate);
 
         // Update candidates
-        for (Candidate &c : candidates)
-          if (c.route == selected)
-            c = {get_cheapest_feasible_insertion(c.request, solution), c.request};
+        for (Candidate &c : candidates) {
+          if (*c.route == *selected) {
+            c.route = get_cheapest_feasible_insertion(c.request, *solution);
+
+            if (c.route == nullptr)
+              return nullptr;
+          }
+        }
       }
 
       return solution;
     }
 
-    Route get_cheapest_feasible_insertion(Request req, Solution s)
+    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Solution s)
     {
-      Route best_feasible;
-      Route best_infeasible;
-
-      best_feasible.cost = MAXFLOAT;
-      best_infeasible.cost = MAXFLOAT;
+      std::shared_ptr<Route> best(nullptr);
+      double best_cost = MAXFLOAT;
 
       for (Route r : s.routes) {
-        Route curr = get_cheapest_feasible_insertion(req, r);
+        std::shared_ptr<Route> curr = get_cheapest_feasible_insertion(req, r);
 
-        if (curr.feasible() && curr.cost < best_feasible.cost)
-          best_feasible = curr;
-        else if (!curr.feasible() && curr.cost < best_infeasible.cost)
-          best_infeasible = curr;
+        if (curr != nullptr && curr->cost < best_cost) {
+          best = curr;
+          best_cost = curr->cost;
+        }
       }
 
-      return best_feasible.cost != MAXFLOAT ? best_feasible : best_infeasible;
+      return best;
     }
 
-    Route get_cheapest_feasible_insertion(Request req, Route r)
+    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Route r)
     {
       // Best insertion starts with infinity cost, we will update it during the search
-      Route best_feasible = r;
-      Route best_infeasible = r;
+      std::shared_ptr<Route> best(nullptr);
+      double best_cost = MAXFLOAT;
 
-      best_feasible.cost = MAXFLOAT;
-      best_infeasible.cost = MAXFLOAT;
+      // Variables to optimize and "prune" insertion procedure
+      double curr_time = r.path[0]->arrival_time;
+      int curr_load = r.path[0]->load;
 
       for (int p = 1; p < r.path.size(); p++) {
-        r.path.insert(r.path.begin() + p, req.pickup);
+        Node *pre = r.path[p - 1];
+        Node *suc = r.path[p];
 
-        for (int d = p + 1; d < r.path.size(); d++) {
-          r.path.insert(r.path.begin() + d, req.delivery);
-          r.evaluate();
+        double earliest_pickup_time = std::max(
+          req->pickup->arrival_time, curr_time + pre->service_time + inst.get_travel_time(pre, req->pickup)
+        );
 
-          if (r.feasible() && r.cost < best_feasible.cost)
-            best_feasible = r;
-          else if (!r.feasible() && r.cost < best_infeasible.cost)
-            best_infeasible = r;
+        if (earliest_pickup_time < req->pickup->departure_time && curr_load + req->pickup->load <= r.vehicle->capacity) {
+          r.path.insert(r.path.begin() + p, req->pickup);
 
-          r.path.erase(r.path.begin() + d);
+          for (int d = p + 1; d < r.path.size(); d++) {
+            r.path.insert(r.path.begin() + d, req->delivery);
+
+            // // Inserting right after the pickup vertex
+            // if (d == p + 1) {
+            //   if (r.get_total_distance() < best_feasible.cost) {
+            //     double earliest_d = std::max(req->delivery->arrival_time, earliest_p + req->pickup->service_time + inst.get_travel_time(req->pickup, req->delivery));
+            //     double earliest_suc = std::max(suc->arrival_time, earliest_d + req->delivery->service_time + inst.get_travel_time(req->delivery, suc));
+
+            //     if (earliest_d > req->delivery->departure_time && earliest_suc > suc->departure_time) {
+            //       r.path.erase(r.path.begin() + d);
+            //       continue;
+            //     }
+            //   }
+            //   else {
+            //     r.path.erase(r.path.begin() + d);
+            //     continue;
+            //   }
+            // }
+            // else {
+            //   bool flag = false;
+            //   double last_earliest = earliest_p;
+
+            //   for (int k = p + 1; k <= d; k++) {
+            //     Node *nk = r.path[k];
+            //     Node *pre_nk = r.path[k - 1];
+
+            //     double earliest_k = std::max(nk->arrival_time, last_earliest + pre_nk->service_time + inst.get_travel_time(pre_nk, nk));
+
+            //     if (earliest_k > nk->departure_time)
+            //       flag = true;
+            //   }
+
+            //   if (flag || last_earliest - req->delivery->departure_time - req->delivery->service_time > 90.0) {
+            //     r.path.erase(r.path.begin() + d);
+            //     break;
+            //   }
+
+            //   double earliest_after_d = std::max(r.path[d + 1]->arrival_time, last_earliest + req->delivery->service_time + inst.get_travel_time(req->delivery, r.path[d + 1]));
+
+            //   if (earliest_after_d > r.path[d + 1]->departure_time) {
+            //     r.path.erase(r.path.begin() + d);
+            //     break;
+            //   }
+            // }
+
+            r.evaluate();
+
+            if (r.feasible() && r.cost < best_cost) {
+              best = std::make_shared<Route>(r);
+              best_cost = r.cost;
+            }
+
+            r.path.erase(r.path.begin() + d);
+          }
+
+          r.path.erase(r.path.begin() + p);
         }
 
-        r.path.erase(r.path.begin() + p);
+        curr_time = std::max(suc->arrival_time, curr_time + pre->service_time + inst.get_travel_time(pre, suc));
+        curr_load += suc->load;
       }
 
-      return best_feasible.cost != MAXFLOAT ? best_feasible : best_infeasible;
+      return best;
     }
 
-    Solution rvnd(Solution s, std::vector<Move> moves)
+    Solution vnd(Solution s, std::vector<Move> moves, bool use_randomness)
     {
-      std::vector<Move> rvnd_moves = moves;
+      std::vector<Move> vnd_moves = moves;
 
-      while (!rvnd_moves.empty()) {
-        auto move = Random::get(rvnd_moves); // Get an iterator to a random move
+      while (!vnd_moves.empty()) {
+        auto move = use_randomness ? Random::get(vnd_moves) : vnd_moves.begin();
         Solution neighbor = (*move)(s);
 
         if (neighbor.obj_func_value() < s.obj_func_value()) {
           s = neighbor;
-          rvnd_moves = moves;
+          vnd_moves = moves;
         }
         else {
-          rvnd_moves.erase(move);
+          vnd_moves.erase(move);
         }
       }
 
@@ -231,25 +294,26 @@ namespace algorithms
       for (Route r : s.routes) {
         for (Node *node : r.path) {
           if (node->is_pickup()) {
-            Request req = inst.get_request(node);
-            Route curr = r;
+            Request *req = inst.get_request(node);
+            auto curr = std::make_shared<Route>(r);
 
             // Erase request by value
-            curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req.pickup),   curr.path.end());
-            curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req.delivery), curr.path.end());
+            curr->path.erase(std::remove(curr->path.begin(), curr->path.end(), req->pickup),   curr->path.end());
+            curr->path.erase(std::remove(curr->path.begin(), curr->path.end(), req->delivery), curr->path.end());
 
             // Reinsert the request
-            curr = get_cheapest_feasible_insertion(req, curr);
-            curr.evaluate();
+            curr = get_cheapest_feasible_insertion(req, *curr);
 
-            // Generate neighbor solution
-            Solution neighbor = s;
-            neighbor.set_route(curr.vehicle, curr);
-            double neighbor_obj = neighbor.obj_func_value();
+            if (curr != nullptr) {
+              // Generate neighbor solution
+              Solution neighbor = s;
+              neighbor.set_route(curr->vehicle, *curr);
+              double neighbor_obj = neighbor.obj_func_value();
 
-            if (neighbor.feasible() && neighbor_obj < best_obj) {
-              best = neighbor;
-              best_obj = neighbor_obj;
+              if (neighbor.is_feasible && neighbor_obj < best_obj) {
+                best = neighbor;
+                best_obj = neighbor_obj;
+              }
             }
           }
         }
@@ -306,7 +370,7 @@ namespace algorithms
                     neighbor.set_route(new_r2.vehicle, new_r2);
                     double neighbor_obj = neighbor.obj_func_value();
 
-                    if (neighbor.feasible() && neighbor_obj < best_obj) {
+                    if (neighbor.is_feasible && neighbor_obj < best_obj) {
                       best = neighbor;
                       best_obj = neighbor_obj;
                     }
@@ -329,30 +393,32 @@ namespace algorithms
       for (Route r1 : s.routes) {
         for (Node *node : r1.path) {
           if (node->is_pickup()) {
-            Request req = inst.get_request(node);
-            Route curr1 = r1;
+            Request *req = inst.get_request(node);
+            auto curr1 = std::make_shared<Route>(r1);
 
             // Erase request by value
-            curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.pickup),   curr1.path.end());
-            curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req.delivery), curr1.path.end());
-            curr1.evaluate();
+            curr1->path.erase(std::remove(curr1->path.begin(), curr1->path.end(), req->pickup),   curr1->path.end());
+            curr1->path.erase(std::remove(curr1->path.begin(), curr1->path.end(), req->delivery), curr1->path.end());
 
             for (Route r2 : s.routes) {
               if (r1 != r2) {
                 // Insert req in the new route
-                Route curr2 = get_cheapest_feasible_insertion(req, r2);
+                auto curr2 = get_cheapest_feasible_insertion(req, r2);
 
-                curr2.evaluate();
+                if (curr2 != nullptr) {
+                  curr1->evaluate();
+                  curr2->evaluate();
 
-                // Generate neighbor solution;
-                Solution neighbor = s;
-                neighbor.set_route(curr1.vehicle, curr1);
-                neighbor.set_route(curr2.vehicle, curr2);
-                double neighbor_obj = neighbor.obj_func_value();
+                  // Generate neighbor solution;
+                  Solution neighbor = s;
+                  neighbor.set_route(curr1->vehicle, *curr1);
+                  neighbor.set_route(curr2->vehicle, *curr2);
+                  double neighbor_obj = neighbor.obj_func_value();
 
-                if (neighbor.feasible() && neighbor_obj < best_obj) {
-                  best = neighbor;
-                  best_obj = neighbor_obj;
+                  if (neighbor.is_feasible && neighbor_obj < best_obj) {
+                    best = neighbor;
+                    best_obj = neighbor_obj;
+                  }
                 }
               }
             }

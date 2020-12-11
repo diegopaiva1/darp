@@ -15,6 +15,7 @@ class Solution
 {
 public:
   std::vector<Route> routes;
+  bool is_feasible;
 
  /**
   * Default constructor.
@@ -26,12 +27,12 @@ public:
   */
   ~Solution() {};
 
- /**
-  * Check if solution is feasible.
-  *
-  * @return `true` if feasible.
-  */
-  bool feasible();
+//  /**
+//   * Check if solution is feasible.
+//   *
+//   * @return `true` if feasible.
+//   */
+//   bool feasible();
 
  /**
   * Set the route traversed by a vehicle.

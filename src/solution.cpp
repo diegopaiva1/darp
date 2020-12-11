@@ -9,14 +9,14 @@
 
 #include <cmath>
 
-bool Solution::feasible()
-{
-  for (Route r : routes)
-    if (!r.feasible())
-      return false;
+// bool Solution::feasible()
+// {
+//   for (Route r : routes)
+//     if (!r.feasible())
+//       return false;
 
-  return !routes.empty() ? true : false;
-}
+//   return !routes.empty() ? true : false;
+// }
 
 void Solution::set_route(Vehicle *&v, Route r)
 {

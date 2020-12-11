@@ -63,7 +63,7 @@ void Instance::init(std::string instance_file_name)
   // Add all requests
   for (int i = 1, requests_num = nodes.size()/2; i <= requests_num; i++)
     // Request is a pair (i, n + i)
-    requests.push_back(Request(nodes.at(i), nodes.at(requests_num + i)));
+    requests.push_back(new Request(nodes.at(i), nodes.at(requests_num + i)));
 }
 
 void Instance::init_distance_matrix()
@@ -87,7 +87,7 @@ Instance& Instance::get_unique()
   return unique;
 }
 
-Request Instance::get_request(Node *node)
+Request* Instance::get_request(Node *node)
 {
   return node->is_pickup() ? requests[node->id - 1] : requests[node->id - requests.size() - 1];
 }
