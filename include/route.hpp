@@ -31,6 +31,7 @@ public:
   double time_window_violation;
   double max_ride_time_violation;
   double max_route_duration_violation;
+  bool is_feasible;
 
  /**
   * Default constructor.
@@ -66,18 +67,13 @@ public:
   bool operator!=(Route &r) const;
 
  /**
-  * Check route's feasibility.
-  *
-  * @return True if feasible.
-  */
-  bool feasible();
-
- /**
-  * Perform eight-step evaluation scheme to compute costs and violations.
+  * Perform eight-step evaluation scheme to compute route cost and feasibility.
   *
   * @details Updates a lot of variables of the route.
+  *
+  * @return `true` if feasible.
   */
-  void evaluate();
+  bool evaluate();
 
  /**
   * Check if route has no requests accommodated.

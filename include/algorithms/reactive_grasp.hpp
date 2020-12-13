@@ -71,7 +71,7 @@ namespace algorithms
     * @param alpha A random factor to allow restricted selection from the list of candidates.
     * @return      A Solution.
     */
-    std::shared_ptr<Solution> build_greedy_randomized_solution(double alpha);
+    Solution build_greedy_randomized_solution(double alpha);
 
    /**
     * For a given request and a given solution, return the route (with the request inserted, if feasible)
@@ -81,7 +81,7 @@ namespace algorithms
     * @param s   A solution.
     * @return    A route with the request inserted (if resulting route is feasible).
     */
-    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Solution s);
+    Route get_cheapest_insertion(Request *req, Solution s);
 
    /**
     * For a given request and a given route, return the route configuration (with the request inserted,
@@ -93,7 +93,7 @@ namespace algorithms
     * @param r   A route.
     * @return    A route with the request inserted (if resulting route is feasible).
     */
-    std::shared_ptr<Route> get_cheapest_feasible_insertion(Request *req, Route r);
+    Route get_cheapest_insertion(Request *req, Route r);
 
    /**
     * Implementation of Variable Neighborhood Descent procedure.

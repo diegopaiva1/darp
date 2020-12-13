@@ -10,6 +10,18 @@
 #include <fstream>  // std::ifstream
 #include <cmath>    // sqrt, pow
 
+Instance::~Instance()
+{
+  for (Node *node : nodes)
+    delete node;
+
+  for (Vehicle *v : vehicles)
+    delete v;
+
+  for (Request *req : requests)
+    delete req;
+}
+
 void Instance::init(std::string instance_file_name)
 {
   std::ifstream file(instance_file_name);

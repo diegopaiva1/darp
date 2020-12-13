@@ -27,7 +27,7 @@ bool Route::operator!=(Route &r) const
   return !operator==(r);
 }
 
-void Route::evaluate()
+bool Route::evaluate()
 {
   int size = path.size();
 
@@ -137,13 +137,9 @@ void Route::evaluate()
       max_ride_time_violation += std::max(0.0, ride_times[i] - path[i]->max_ride_time);
   }
 
-  cost += load_violation + time_window_violation + max_ride_time_violation + max_route_duration_violation;
-}
-
-bool Route::feasible()
-{
-  double violation_sum = load_violation + time_window_violation + max_ride_time_violation + max_route_duration_violation;
-  return std::fpclassify(violation_sum) == FP_ZERO;
+  // Feasible if and only there are no violations
+  return load_violation == 0 && time_window_violation == 0.0 &&
+         max_ride_time_violation == 0.0 && max_route_duration_violation == 0.0;
 }
 
 double Route::get_forward_time_slack(int i)
@@ -168,11 +164,8 @@ double Route::get_forward_time_slack(int i)
 
 bool Route::empty()
 {
-  for (auto it = path.begin() + 1; it != path.end() - 1; it++)
-    if ((*it)->is_pickup())
-      return false;
-
-  return true;
+  // Empty only if both origin and destination depots are present or if there are no nodes at all
+  return path.size() <= 2;
 }
 
 void Route::compute_load(int i)

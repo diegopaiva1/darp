@@ -46,6 +46,11 @@ public:
   std::vector<std::vector<double>> distance_matrix;
 
  /**
+  * Default destructor.
+  */
+  ~Instance();
+
+ /**
   * Instances should not be cloneable.
   */
   Instance(const Instance &) = delete;

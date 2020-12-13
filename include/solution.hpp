@@ -27,20 +27,18 @@ public:
   */
   ~Solution() {};
 
-//  /**
-//   * Check if solution is feasible.
-//   *
-//   * @return `true` if feasible.
-//   */
-//   bool feasible();
-
  /**
   * Set the route traversed by a vehicle.
   *
   * @param v A vehicle.
   * @param r A route.
   */
-  void set_route(Vehicle *&v, Route r);
+  void set_route(Vehicle *v, Route r);
+
+ /**
+  * Delete routes without requests accomodated.
+  */
+  void delete_empty_routes();
 
  /**
   * Get Solution's objective function value.

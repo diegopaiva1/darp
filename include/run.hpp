@@ -12,6 +12,7 @@
 #include "solution.hpp"
 
 #include <map>
+#include <memory>
 
 class Run
 {
@@ -19,9 +20,6 @@ public:
   Solution best_init;
   Solution best;
   double elapsed_minutes;
-  double best_alpha;
-  int best_iteration;
-  unsigned int seed;
   std::map<double, double> alphas_prob_distribution;
 
  /**
