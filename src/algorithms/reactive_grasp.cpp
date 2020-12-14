@@ -46,10 +46,11 @@ namespace algorithms
         double alpha = get_random_alpha(alphas_map);
         Solution init = build_greedy_randomized_solution(alpha);
         Solution curr = vnd(init, moves, true);
+        double curr_obj = curr.obj_func_value();
 
         #pragma omp critical
-        if (curr.is_feasible && curr.obj_func_value() < best_obj) {
-          best_obj = curr.obj_func_value();
+        if (curr.is_feasible && curr_obj < best_obj) {
+          best_obj = curr_obj;
           run.best_init = init;
           run.best = curr;
         }
@@ -57,7 +58,7 @@ namespace algorithms
         #pragma omp critical
         {
           alphas_map[alpha].count++;
-          double increase = init.is_feasible ? init.obj_func_value() : 3000; // todo: revisar essa constante
+          double increase = init.is_feasible ? init.obj_func_value() : 2500; // todo: revisar essa constante
           alphas_map[alpha].sum += increase;
         }
 
@@ -179,80 +180,44 @@ namespace algorithms
       best.is_feasible = false;
       best.cost = MAXFLOAT;
 
-      // Variables to optimize insertion procedure
-      double curr_time = r.path[0]->arrival_time;
-      int curr_load = r.path[0]->load;
-
       for (int p = 1; p < r.path.size(); p++) {
-        Node *pre = r.path[p - 1];
-        Node *suc = r.path[p];
+        r.path.insert(r.path.begin() + p, req->pickup);
 
-        double earliest_pickup_time = std::max(
-          req->pickup->arrival_time, curr_time + pre->service_time + inst.get_travel_time(pre, req->pickup)
-        );
+        for (int i = p - 1; i < r.path.size(); i++) {
+          r.compute_earliest_time(i);
+          r.compute_load(i);
+        }
 
-        if ((earliest_pickup_time < req->pickup->departure_time) && (curr_load + req->pickup->load <= r.vehicle->capacity)) {
-          r.path.insert(r.path.begin() + p, req->pickup);
-
+        if ((r.earliest_times[p] < r.path[p]->departure_time) && (r.load[p - 1] + r.path[p]->load <= r.vehicle->capacity)) {
           for (int d = p + 1; d < r.path.size(); d++) {
             r.path.insert(r.path.begin() + d, req->delivery);
 
-            // // Inserting right after the pickup vertex
-            // if (d == p + 1) {
-            //   if (r.get_total_distance() < best_feasible.cost) {
-            //     double earliest_d = std::max(req->delivery->arrival_time, earliest_p + req->pickup->service_time + inst.get_travel_time(req->pickup, req->delivery));
-            //     double earliest_suc = std::max(suc->arrival_time, earliest_d + req->delivery->service_time + inst.get_travel_time(req->delivery, suc));
+            for (int i = d - 1; i < r.path.size(); i++) {
+              r.compute_earliest_time(i);
+              r.compute_load(i);
+            }
 
-            //     if (earliest_d > req->delivery->departure_time && earliest_suc > suc->departure_time) {
-            //       r.path.erase(r.path.begin() + d);
-            //       continue;
-            //     }
-            //   }
-            //   else {
-            //     r.path.erase(r.path.begin() + d);
-            //     continue;
-            //   }
-            // }
-            // else {
-            //   bool flag = false;
-            //   double last_earliest = earliest_p;
+            // TODO: Otimizar para O(1)
+            if (r.get_total_distance() < best.cost) {
+              for (int i = p + 1; i <= d + 1; i++) {
+                if ((r.earliest_times[i] > r.path[i]->departure_time) || (r.load[i - 1] + r.path[i]->load > r.vehicle->capacity))
+                  // Violation found
+                  break;
+              }
 
-            //   for (int k = p + 1; k <= d; k++) {
-            //     Node *nk = r.path[k];
-            //     Node *pre_nk = r.path[k - 1];
+              double time_gap_between_pickup_delivery = r.earliest_times[d] - r.path[p]->departure_time - r.path[p]->service_time;
 
-            //     double earliest_k = std::max(nk->arrival_time, last_earliest + pre_nk->service_time + inst.get_travel_time(pre_nk, nk));
-
-            //     if (earliest_k > nk->departure_time)
-            //       flag = true;
-            //   }
-
-            //   if (flag || last_earliest - req->delivery->departure_time - req->delivery->service_time > 90.0) {
-            //     r.path.erase(r.path.begin() + d);
-            //     break;
-            //   }
-
-            //   double earliest_after_d = std::max(r.path[d + 1]->arrival_time, last_earliest + req->delivery->service_time + inst.get_travel_time(req->delivery, r.path[d + 1]));
-
-            //   if (earliest_after_d > r.path[d + 1]->departure_time) {
-            //     r.path.erase(r.path.begin() + d);
-            //     break;
-            //   }
-            // }
-
-            if (r.evaluate() && r.cost < best.cost) {
-              best = r;
-              best.is_feasible = true;
+              if (time_gap_between_pickup_delivery <= r.path[p]->max_ride_time && r.evaluate()) {
+                best = r;
+                best.is_feasible = true;
+              }
             }
 
             r.path.erase(r.path.begin() + d);
           }
-
-          r.path.erase(r.path.begin() + p);
         }
 
-        curr_time = std::max(suc->arrival_time, curr_time + pre->service_time + inst.get_travel_time(pre, suc));
-        curr_load += suc->load;
+        r.path.erase(r.path.begin() + p);
       }
 
       return best;

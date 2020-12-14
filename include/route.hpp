@@ -26,6 +26,8 @@ public:
   std::vector<double> departure_times;
   std::vector<double> waiting_times;
   std::vector<double> ride_times;
+  std::vector<double> earliest_times;
+  std::vector<double> latest_times;
   double cost;
   double load_violation;
   double time_window_violation;
@@ -82,6 +84,9 @@ public:
   */
   bool empty();
 
+  void compute_earliest_time(int i);
+
+  void compute_latest_time(int i);
 
   double get_total_distance();
 
@@ -97,7 +102,6 @@ public:
   */
   std::string to_string();
 
-private:
  /**
   * The forward time slack at index i in path is the maximum amount of time that the departure
   * from i can be delayed without violating time constraints for the later nodes.

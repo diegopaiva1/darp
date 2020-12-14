@@ -34,9 +34,9 @@ std::string Run::to_string()
   s << std::fixed;
 
   s << best.to_string() << '\n';
-  s << "-> Initial    = " << best_init.obj_func_value() << '\n';
-  s << "-> Best       = " << best.obj_func_value() << '\n';
-  s << "-> CPU        = " << elapsed_minutes << " min\n";
+  s << "-> Initial = " << best_init.obj_func_value() << '\n';
+  s << "-> Best    = " << best.obj_func_value() << '\n';
+  s << "-> CPU     = " << elapsed_minutes << " min\n";
 
   return s.str();
 }

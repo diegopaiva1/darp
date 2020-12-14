@@ -27,6 +27,32 @@ bool Route::operator!=(Route &r) const
   return !operator==(r);
 }
 
+void Route::compute_earliest_time(int i)
+{
+  earliest_times.resize(path.size());
+
+  if (i == 0)
+    earliest_times[i] = path[i]->arrival_time;
+  else
+    earliest_times[i] = std::max(
+      path[i]->arrival_time,
+      earliest_times[i - 1] + path[i - 1]->service_time + inst.get_travel_time(path[i - 1], path[i])
+    );
+}
+
+void Route::compute_latest_time(int i)
+{
+  latest_times.resize(path.size());
+
+  if (i == path.size() - 1)
+    latest_times[i] = path[i]->departure_time;
+  else
+    latest_times[i] = std::min(
+      path[i]->departure_time,
+      latest_times[i + 1] - inst.get_travel_time(path[i], path[i + 1]) - path[i]->service_time
+    );
+}
+
 bool Route::evaluate()
 {
   int size = path.size();
@@ -170,7 +196,12 @@ bool Route::empty()
 
 void Route::compute_load(int i)
 {
-  load[i] = load[i - 1] + path[i]->load;
+  load.resize(path.size());
+
+  if (i == 0)
+    load[i] = 0;
+  else
+    load[i] = load[i - 1] + path[i]->load;
 }
 
 void Route::compute_arrival_time(int i)
