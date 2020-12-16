@@ -37,7 +37,7 @@ public:
  /**
   * Default constructor.
   */
-  Route() {};
+  Route();
 
  /**
   * Constructor with vehicle.

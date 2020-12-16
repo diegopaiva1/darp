@@ -16,10 +16,10 @@
 class Solution
 {
 public:
-  // std::unordered_map<Vehicle*, Route> routes;
-  std::vector<Route> routes;
+  std::unordered_map<Vehicle*, Route> routes;
+  // std::vector<Route> routes;
 
-  void add_tour(Vehicle *v, Route r);
+  void add_route(Vehicle *v, Route r);
 
  /**
   * Default constructor.
@@ -38,13 +38,13 @@ public:
   */
   bool feasible();
 
- /**
-  * Set the route traversed by a vehicle.
-  *
-  * @param v A vehicle.
-  * @param r A route.
-  */
-  void set_route(Vehicle *v, Route r);
+//  /**
+//   * Set the route traversed by a vehicle.
+//   *
+//   * @param v A vehicle.
+//   * @param r A route.
+//   */
+//   void set_route(Vehicle *v, Route r);
 
  /**
   * Delete routes without requests accomodated.

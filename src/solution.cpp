@@ -9,15 +9,15 @@
 
 #include <cmath>
 
-// void Solution::add_tour(Vehicle *v, Route r)
-// {
-//   routes[v] = r;
-// }
-
-void Solution::set_route(Vehicle *v, Route r)
+void Solution::add_route(Vehicle *v, Route r)
 {
-  routes[v->id - 1] = r;
+  routes[v] = r;
 }
+
+// void Solution::set_route(Vehicle *v, Route r)
+// {
+//   routes[v->id - 1] = r;
+// }
 
 bool Solution::feasible()
 {
@@ -26,16 +26,19 @@ bool Solution::feasible()
 
 void Solution::delete_empty_routes()
 {
-  for (auto r = routes.begin(); r != routes.end(); )
-    r = r->empty() ? routes.erase(r) : r + 1;
+  for (auto it = routes.begin(); it != routes.end(); )
+    if (it->second.empty())
+      it = routes.erase(it);
+    else
+      ++it;
 }
 
 double Solution::obj_func_value()
 {
   double sum = 0.0;
 
-  for (Route &r : routes)
-    sum += r.cost;
+  for (auto [vehicle, route] : routes)
+    sum += route.cost;
 
   return sum;
 }
@@ -44,8 +47,8 @@ std::string Solution::to_string()
 {
   std::string s;
 
-  for (Route &r : routes)
-    s.append('\n' + r.to_string());
+  for (auto [vehicle, route] : routes)
+    s.append('\n' + route.to_string());
 
   return s;
 }

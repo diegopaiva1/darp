@@ -12,10 +12,19 @@
 #include <cmath>   // MAXFLOAT
 #include <numeric> // std::accumulate
 
+Route::Route()
+{
+  this->path.push_back(inst.get_depot());
+  this->path.push_back(inst.get_depot());
+  this->cost = 0.0;
+}
+
 Route::Route(Vehicle *vehicle)
 {
-  this->cost = 0.0;
   this->vehicle = vehicle;
+  this->path.push_back(inst.get_depot());
+  this->path.push_back(inst.get_depot());
+  this->cost = 0.0;
 }
 
 bool Route::operator==(Route &r) const

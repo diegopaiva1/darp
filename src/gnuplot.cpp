@@ -21,7 +21,7 @@ void gnuplot::plot_run(Run run, std::string dir)
   details::plot_solution_graph(run.best_init, dir + "init.png");
   details::plot_solution_graph(run.best, dir + "best.png");
 
-  for (Route r : run.best.routes)
+  for (auto [v, r] : run.best.routes)
     details::plot_schedule(r, dir + "schedule" + std::to_string(r.vehicle->id) + ".png");
 
   details::plot_alphas_probs(run.alphas_prob_distribution, dir + "alphas.png");
@@ -66,7 +66,7 @@ void gnuplot::details::plot_solution_graph(Solution s, std::string output)
 
   data_stream << "\n\n";
 
-  for (Route r : s.routes) {
+  for (auto [v, r] : s.routes) {
     data_stream << "# x1, y1, x2 - x1, y2 - y1" << "\n";
 
     for (int i = 0; i < r.path.size() - 1; i++) {
