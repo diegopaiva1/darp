@@ -11,11 +11,15 @@
 
 #include "route.hpp"
 
+#include <unordered_map>
+
 class Solution
 {
 public:
+  // std::unordered_map<Vehicle*, Route> routes;
   std::vector<Route> routes;
-  bool is_feasible;
+
+  void add_tour(Vehicle *v, Route r);
 
  /**
   * Default constructor.
@@ -26,6 +30,13 @@ public:
   * Default destructor.
   */
   ~Solution() {};
+
+ /**
+  * Check if solution is feasible.
+  *
+  * @return `true` if feasible.
+  */
+  bool feasible();
 
  /**
   * Set the route traversed by a vehicle.

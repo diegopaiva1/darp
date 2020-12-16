@@ -129,6 +129,8 @@ namespace algorithms
     */
     Solution two_opt_star(Solution s);
 
+    Solution repair(Solution s);
+
    /**
     * Update probability of each random alpha based in the best solution found so far.
     *

@@ -8,7 +8,7 @@ set term pngcairo enhanced font "Verdana, 12"
 set output ARG2
 
 # Title of the plot
-set title "Alphas probability distribution"
+set title "{/Symbol a} probability distribution"
 
 set xlabel "{/Symbol a}"
 set ylabel "Probability"

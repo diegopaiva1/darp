@@ -33,7 +33,6 @@ public:
   double time_window_violation;
   double max_ride_time_violation;
   double max_route_duration_violation;
-  bool is_feasible;
 
  /**
   * Default constructor.
@@ -51,6 +50,13 @@ public:
   * Default destructor.
   */
   ~Route() {};
+
+ /**
+  * Check if route is feasible.
+  *
+  * @return `true` if feasible.
+  */
+  bool feasible();
 
  /**
   * Overload of '==' operator.

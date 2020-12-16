@@ -28,7 +28,7 @@ namespace algorithms
       alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
     // Moves to be used within RVND
-    std::vector<Move> moves = {reinsert, shift_1_0, two_opt_star};
+    std::vector<Move> moves = {/* reinsert, shift_1_0, two_opt_star */};
 
     if (threads < 1 || threads > omp_get_max_threads())
       threads = omp_get_max_threads();
@@ -39,27 +39,32 @@ namespace algorithms
     {
       // Use std::random_device to generate seed to Random engine to each thread
       unsigned int seed = std::random_device{}();
-      Random::seed(seed);
+      Random::seed(1935);
 
       #pragma omp for
       for (int it = 0; it < iterations; it++) {
         double alpha = get_random_alpha(alphas_map);
         Solution init = build_greedy_randomized_solution(alpha);
+
+        if (!init.feasible())
+          init = repair(init);
+
         Solution curr = vnd(init, moves, true);
         double curr_obj = curr.obj_func_value();
 
         #pragma omp critical
-        if (curr.is_feasible && curr_obj < best_obj) {
+        if (curr.feasible() && curr_obj < best_obj) {
           best_obj = curr_obj;
           run.best_init = init;
           run.best = curr;
         }
 
+        int penalty = init.feasible() ? 1 : init.routes.size();
+
         #pragma omp critical
         {
           alphas_map[alpha].count++;
-          double increase = init.is_feasible ? init.obj_func_value() : 2500; // todo: revisar essa constante
-          alphas_map[alpha].sum += increase;
+          alphas_map[alpha].sum += init.obj_func_value() * penalty;
         }
 
         if (it > 0 && it % blocks == 0) {
@@ -68,7 +73,7 @@ namespace algorithms
         }
 
         if (omp_get_thread_num() == 0)
-          show_progress(run.best.is_feasible, best_obj, (double) it/(iterations/omp_get_num_threads()));
+          show_progress(run.best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
       }
     }
 
@@ -109,7 +114,6 @@ namespace algorithms
     Solution build_greedy_randomized_solution(double alpha)
     {
       Solution solution;
-      solution.is_feasible = true;
 
       for (Vehicle *v : inst.vehicles)
         solution.routes.push_back(Route(v));
@@ -135,24 +139,33 @@ namespace algorithms
           return c1.route.cost < c2.route.cost;
         });
 
-        auto selected = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
-        solution.set_route(selected->route.vehicle, selected->route);
+        auto chosen_candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
 
-        // Save route pointed by iterator before erasing it, so we can use it to optimize candidates update
-        auto selected_route = selected->route;
-        candidates.erase(selected);
+        if (chosen_candidate->route.feasible()) {
+          solution.set_route(chosen_candidate->route.vehicle, chosen_candidate->route);
+        }
+        else {
+          // Need to activate new vehicle to accomodate the request (thus solution will be infeasible)
+          Route new_route = Route(
+            new Vehicle(solution.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration)
+          );
+
+          new_route.path.push_back(inst.get_depot());
+          new_route.path.push_back(chosen_candidate->request->pickup);
+          new_route.path.push_back(chosen_candidate->request->delivery);
+          new_route.path.push_back(inst.get_depot());
+          new_route.cost = inst.get_travel_time(inst.get_depot(), chosen_candidate->request->pickup) +
+                           inst.get_travel_time(chosen_candidate->request->pickup, chosen_candidate->request->delivery) +
+                           inst.get_travel_time(chosen_candidate->request->delivery, inst.get_depot());
+
+          solution.routes.push_back(new_route);
+        }
+
+        candidates.erase(chosen_candidate);
 
         // Update candidates
-        for (Candidate &c : candidates) {
-          if (c.route == selected_route) {
-            c.route = get_cheapest_insertion(c.request, solution);
-
-            if (!c.route.is_feasible) {
-              solution.is_feasible = false;
-              return solution;
-            }
-          }
-        }
+        for (Candidate &c : candidates)
+          c.route = get_cheapest_insertion(c.request, solution);
       }
 
       return solution;
@@ -161,14 +174,15 @@ namespace algorithms
     Route get_cheapest_insertion(Request *req, Solution s)
     {
       Route best;
-      best.is_feasible = false;
-      best.cost = MAXFLOAT;
+      double delta = best.cost = MAXFLOAT;
 
       for (Route r : s.routes) {
         Route curr = get_cheapest_insertion(req, r);
 
-        if (curr.is_feasible && curr.cost < best.cost)
+        if (curr.feasible() && curr.cost - r.cost < delta) {
+          delta = curr.cost - r.cost;
           best = curr;
+        }
       }
 
       return best;
@@ -177,7 +191,6 @@ namespace algorithms
     Route get_cheapest_insertion(Request *req, Route r)
     {
       Route best;
-      best.is_feasible = false;
       best.cost = MAXFLOAT;
 
       for (int p = 1; p < r.path.size(); p++) {
@@ -207,10 +220,8 @@ namespace algorithms
 
               double time_gap_between_pickup_delivery = r.earliest_times[d] - r.path[p]->departure_time - r.path[p]->service_time;
 
-              if (time_gap_between_pickup_delivery <= r.path[p]->max_ride_time && r.evaluate()) {
+              if (time_gap_between_pickup_delivery <= r.path[p]->max_ride_time && r.evaluate())
                 best = r;
-                best.is_feasible = true;
-              }
             }
 
             r.path.erase(r.path.begin() + d);
@@ -228,7 +239,7 @@ namespace algorithms
       std::vector<Move> vnd_moves = moves;
 
       // Only feasible solutions are allowed
-      if (!s.is_feasible)
+      if (!s.feasible())
         return s;
 
       while (!vnd_moves.empty()) {
@@ -265,7 +276,7 @@ namespace algorithms
             // Reinsert the request
             curr = get_cheapest_insertion(req, curr);
 
-            if (curr.is_feasible) {
+            if (curr.feasible()) {
               Solution neighbor = s;
               neighbor.set_route(curr.vehicle, curr);
               double neighbor_obj = neighbor.obj_func_value();
@@ -280,6 +291,106 @@ namespace algorithms
       }
 
       return best;
+    }
+
+    Solution repair(Solution s)
+    {
+      std::vector<Request*> unplanned;
+      int extra_vehicles = s.routes.size() - inst.vehicles.size();
+
+      for (int i = 0; i < extra_vehicles; i++) {
+        auto random_route = Random::get(s.routes);
+
+        for (Node *node : random_route->path)
+          if (node->is_pickup())
+            unplanned.push_back(inst.get_request(node));
+
+        s.routes.erase(random_route);
+      }
+
+      printf("\nRequests to be reinserted:\n");
+      for (Request *req : unplanned)
+        printf("(%d, %d)\n", req->pickup->id, req->delivery->id);
+
+      // printf("\nRoutes selected for destruction: { ");
+      // for (auto dr : destroyable_routes)
+      //   printf("%d ", dr.vehicle->id);
+      // printf("}\n");
+
+      while (!unplanned.empty()) {
+        auto request = Random::get(unplanned);
+        Route best;
+        double delta = MAXFLOAT;
+        printf("\n\tTo remove request (%d, %d):\n", (*request)->pickup->id, (*request)->delivery->id);
+
+        for (Route r : s.routes) {
+          Route trial = get_cheapest_insertion(*request, r);
+          printf("\t\tInserting in route %d - Δf = %f\n", r.vehicle->id, trial.cost - r.cost);
+
+          if (trial.feasible() && trial.cost - r.cost < delta) {
+            delta = trial.cost - r.cost;
+            best = trial;
+          }
+        }
+
+        if (delta == MAXFLOAT) {
+          s.routes.push_back(Route());
+          return s;
+        }
+
+        printf("\tSelected route is %d with Δf = %f\n", best.vehicle->id, delta);
+        s.set_route(best.vehicle, best);
+        unplanned.erase(request);
+      }
+
+      // for (Route dr : destroyable_routes) {
+      //   for (Route r : s.routes)
+      //     printf("(%d) -> %d\n", r.vehicle->id, r.path.size());
+
+      //   for (Node *node : dr.path) {
+      //     if (node->is_pickup()) {
+      //       Request *req = inst.get_request(node);
+      //       Route best;
+      //       double delta = MAXFLOAT;
+
+      //       printf("\n\tTo remove request (%d, %d) from route %d:\n", req->pickup->id, req->delivery->id, dr.vehicle->id);
+
+      //       for (Route remaining : s.routes) {
+      //         bool flag = false;
+
+      //         for (Route t : destroyable_routes)
+      //           if (remaining.vehicle == t.vehicle)
+      //             flag = true;
+
+      //         if (!flag) {
+      //           Route trial = get_cheapest_insertion(req, remaining);
+      //           printf("\t\tInserting in route %d - Δf = %f\n", remaining.vehicle->id, trial.cost - remaining.cost);
+
+      //           if (trial.feasible() && trial.cost - remaining.cost < delta) {
+      //             delta = trial.cost - remaining.cost;
+      //             s.set_route(trial.vehicle, trial);
+      //           }
+      //         }
+      //       }
+
+      //       if (delta == MAXFLOAT)
+      //         return s;
+
+      //       // printf("\tSelected route is %d with Δf = %f\n", best.vehicle->id, delta);
+      //       // s.set_route(best.vehicle, best);
+      //     }
+      //   }
+
+      //   for (Route r : s.routes)
+      //     printf("(%d) -> %d\n", r.vehicle->id, r.path.size());
+
+      //   s.routes.erase(s.routes.begin() + dr.vehicle->id - 1);
+
+      //   printf("\nRoute %d destroyed successfuly\n", dr.vehicle->id);
+      // }
+
+      printf("\nSolution cost then = (%d, %f)\n", s.routes.size(), s.obj_func_value());
+      return s;
     }
 
     Solution two_opt_star(Solution s)
@@ -364,7 +475,7 @@ namespace algorithms
                 // Insert req in the new route
                 Route curr2 = get_cheapest_insertion(req, r2);
 
-                if (curr2.is_feasible) {
+                if (curr2.feasible()) {
                   // TODO: Optimize.
                   // Call evaluate to update cost and schedule even though this route is feasible at this point
                   curr1.evaluate();

@@ -14,6 +14,7 @@
 
 Route::Route(Vehicle *vehicle)
 {
+  this->cost = 0.0;
   this->vehicle = vehicle;
 }
 
@@ -25,6 +26,11 @@ bool Route::operator==(Route &r) const
 bool Route::operator!=(Route &r) const
 {
   return !operator==(r);
+}
+
+bool Route::feasible()
+{
+  return cost < MAXFLOAT;
 }
 
 void Route::compute_earliest_time(int i)
