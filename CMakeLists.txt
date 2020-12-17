@@ -4,6 +4,8 @@ cmake_minimum_required (VERSION 2.6)
 # Project's name
 project (darp)
 
+message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+
 # Set the target name
 set (TARGET ${PROJECT_NAME})
 
@@ -23,7 +25,8 @@ set (SOURCES src/main.cpp
              src/gnuplot.cpp)
 
 # Set compiler options
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fopenmp -std=c++1z -O3")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fopenmp -std=c++1z -O3")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
 # Generate the binary
 add_executable (${TARGET} ${SOURCES})
