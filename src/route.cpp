@@ -14,16 +14,12 @@
 
 Route::Route()
 {
-  this->path.push_back(inst.get_depot());
-  this->path.push_back(inst.get_depot());
   this->cost = 0.0;
 }
 
 Route::Route(Vehicle *vehicle)
 {
   this->vehicle = vehicle;
-  this->path.push_back(inst.get_depot());
-  this->path.push_back(inst.get_depot());
   this->cost = 0.0;
 }
 

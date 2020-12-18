@@ -24,7 +24,7 @@ void Run::persist(std::string file_name)
   // TODO: CHECK INFEASIBLE SOLUTIONS
   // Write the actual data
   file << std::fixed << std::setprecision(2)
-       << best.obj_func_value() << ';' << best_init.obj_func_value() << ';' << elapsed_minutes << '\n';
+       << best.obj_func_value() << ';' << best_init.obj_func_value() << ';' << elapsed_seconds << '\n';
 }
 
 std::string Run::to_string()
@@ -36,7 +36,7 @@ std::string Run::to_string()
   s << best.to_string() << '\n';
   s << "-> Initial = " << best_init.obj_func_value() << '\n';
   s << "-> Best    = " << best.obj_func_value() << '\n';
-  s << "-> CPU     = " << elapsed_minutes << " min\n";
+  s << "-> CPU     = " << elapsed_seconds << "s\n";
 
   return s.str();
 }

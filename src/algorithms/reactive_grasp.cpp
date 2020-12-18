@@ -85,7 +85,7 @@ namespace algorithms
     for (auto [alpha, info] : alphas_map)
       run.alphas_prob_distribution[alpha] = info.probability;
 
-    run.elapsed_minutes = (finish - start)/60;
+    run.elapsed_seconds = finish - start;
     gnuplot::plot_run(run, "../data/plots/");
 
     return run;
@@ -115,8 +115,12 @@ namespace algorithms
     {
       Solution solution;
 
-      for (Vehicle *v : inst.vehicles)
-        solution.add_route(v, Route(v));
+      for (Vehicle *v : inst.vehicles) {
+        Route r = Route(v);
+        r.path.push_back(inst.get_depot());
+        r.path.push_back(inst.get_depot());
+        solution.add_route(v, r);
+      }
 
       struct Candidate {
         Route route;
@@ -254,37 +258,70 @@ namespace algorithms
 
     Solution reinsert(Solution s)
     {
-      Solution best = s;
-      double best_obj = best.obj_func_value();
+      #ifdef DEBUG
+        printf("\n\033[1m\033[33m-> Entering reinsert operator...\033[0m\n");
+      #endif
 
       for (auto [v, r] : s.routes) {
-        for (Node *node : r.path) {
-          if (node->is_pickup()) {
-            Request *req = inst.get_request(node);
-            Route curr = r;
+        Route best_reinsertion = r;
 
-            // Erase request by value
-            curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->pickup), curr.path.end());
-            curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->delivery), curr.path.end());
+        #ifdef DEBUG
+          printf("\n<<<<<< Initial cost of route %d = %.2f >>>>>>\n", best_reinsertion.vehicle->id, best_reinsertion.cost);
+        #endif
 
-            // Reinsert the request
-            curr = get_cheapest_insertion(req, curr);
+        // Perform reinsert only in routes with more than one request accommodated
+        if (r.path.size() > 4) {
+          for (Node *node : r.path) {
+            if (node->is_pickup()) {
+              Request *req = inst.get_request(node);
+              Route curr = r;
 
-            if (curr.feasible()) {
-              Solution neighbor = s;
-              neighbor.add_route(curr.vehicle, curr);
-              double neighbor_obj = neighbor.obj_func_value();
+              // Erase request by value
+              curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->pickup), curr.path.end());
+              curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->delivery), curr.path.end());
 
-              if (neighbor_obj < best_obj) {
-                best = neighbor;
-                best_obj = neighbor_obj;
-              }
+              // Reinsert the request
+              curr = get_cheapest_insertion(req, curr);
+
+              if (curr.cost < best_reinsertion.cost)
+                best_reinsertion = curr;
+
+              #ifdef DEBUG
+                printf("\nReinserting request (%d, %d) in route %d\n", req->pickup->id, req->delivery->id, r.vehicle->id);
+                printf("\t-> ");
+
+                for (Node *n : r.path)
+                  if (n == req->pickup || n == req->delivery)
+                    printf("\033[1m\033[31m%d\033[0m ", n->id);
+                  else
+                    printf("%d ", n->id);
+
+                printf("(c = %.2lf)\n", r.cost);
+                printf("\t-> ");
+
+                for (Node *n : curr.path)
+                  if (n == req->pickup || n == req->delivery)
+                    printf("\033[1m\033[32m%d\033[0m ", n->id);
+                  else
+                    printf("%d ", n->id);
+
+                if (curr.cost < r.cost)
+                  printf("(c = \033[1m\033[32m%.2lf\033[0m)\n", curr.cost);
+                else
+                  printf("(c = %.2lf)\n", curr.cost);
+              #endif
             }
           }
         }
+
+        #ifdef DEBUG
+          printf("\n<<<<<< Updated cost of route %d = %.2f >>>>>>\n", best_reinsertion.vehicle->id, best_reinsertion.cost);
+        #endif
+
+        s.add_route(best_reinsertion.vehicle, best_reinsertion);
       }
 
-      return best;
+      return s;
     }
 
     Solution repair(Solution s)
@@ -317,7 +354,7 @@ namespace algorithms
         }
 
         if (delta == MAXFLOAT) {
-          // Add a null route to make solution infeasible again
+          // Add a null vehicle to make solution infeasible again
           s.add_route(nullptr, Route());
           return s;
         }
@@ -335,50 +372,82 @@ namespace algorithms
       double best_obj = best.obj_func_value();
 
       for (auto [v1, r1] : s.routes) {
-        int r1_load = 0;
+        for (auto [v2, r2] : s.routes) {
+          if (v1 != v2) {
+            int r1_load = 0;
 
-        for (int i = 1; i < r1.path.size() - 2; i++) {
-          r1_load += r1.path[i]->load;
+            for (int i = 0; i < r1.path.size() - 1; i++) {
+              r1_load += r1.path[i]->load;
 
-          if (r1_load == 0) {
-            for (auto [v2, r2] : s.routes) {
-              if (r1 != r2) {
+              if (r1_load == 0) {
                 int r2_load = 0;
 
-                for (int j = 1; j < r2.path.size() - 2; j++) {
+                for (int j = 0; j < r2.path.size() - 1; j++) {
                   r2_load += r2.path[j]->load;
 
                   if (r2_load == 0) {
-                    Route new_r1(r1.vehicle);
-                    Route new_r2(r2.vehicle);
+                    /* There is no point in exchanging segments when they're both immediately after depot
+                     * or immediately before depot, since this operation will yield the original routes.
+                     */
+                    if (!(i == 0 && j == 0) && !(i == r1.path.size() - 2 && j == r2.path.size() - 2)) {
+                      Route new_r1(r1.vehicle);
+                      Route new_r2(r2.vehicle);
 
-                    // Add first segment of r1 to new_r1
-                    for (int k = 0; k <= i; k++)
-                      new_r1.path.push_back(r1.path[k]);
+                      new_r1.path.insert(new_r1.path.end(), r1.path.begin(), r1.path.begin() + i + 1);
+                      new_r1.path.insert(new_r1.path.end(), r2.path.begin() + j + 1, r2.path.end());
 
-                    // Add first segment of r2 to new_r2
-                    for (int k = 0; k <= j; k++)
-                      new_r2.path.push_back(r2.path[k]);
+                      new_r2.path.insert(new_r2.path.end(), r2.path.begin(), r2.path.begin() + j + 1);
+                      new_r2.path.insert(new_r2.path.end(), r1.path.begin() + i + 1, r1.path.end());
 
-                    // Add second segment of r2 to new_r1
-                    for (int k = j + 1; k < r2.path.size(); k++)
-                      new_r1.path.push_back(r2.path[k]);
+                      // Neighbor solution will be feasible if and only if both routes can be evaluated
+                      if (new_r1.evaluate() && new_r2.evaluate()) {
+                        Solution neighbor = s;
+                        neighbor.add_route(new_r1.vehicle, new_r1);
+                        neighbor.add_route(new_r2.vehicle, new_r2);
+                        double neighbor_obj = neighbor.obj_func_value();
 
-                    // Add second segment of r1 to new_r2
-                    for (int k = i + 1; k < r1.path.size(); k++)
-                      new_r2.path.push_back(r1.path[k]);
-
-                    // Neighbor solution will be feasible if and only if both routes can be evaluated to true
-                    if (new_r1.evaluate() && new_r2.evaluate()) {
-                      Solution neighbor = s;
-                      neighbor.add_route(new_r1.vehicle, new_r1);
-                      neighbor.add_route(new_r2.vehicle, new_r2);
-                      double neighbor_obj = neighbor.obj_func_value();
-
-                      if (neighbor_obj < best_obj) {
-                        best = neighbor;
-                        best_obj = neighbor_obj;
+                        if (neighbor_obj < best_obj) {
+                          best = neighbor;
+                          best_obj = neighbor_obj;
+                        }
                       }
+
+                      #ifdef DEBUG
+                        printf("\nApplying 2-opt* to routes:");
+                        printf("\n\tR%d: ", r1.vehicle->id);
+                        for (int k = 0; k < r1.path.size(); k++) {
+                          printf("%d ", r1.path[k]->id);
+
+                          if (k == i)
+                            printf("\033[1m\033[31m|\033[0m ");
+                        }
+
+                        printf("\n\tR%d: ", r2.vehicle->id);
+                        for (int k = 0; k < r2.path.size(); k++) {
+                          printf("%d ", r2.path[k]->id);
+
+                          if (k == j)
+                            printf("\033[1m\033[31m|\033[0m ");
+                        }
+
+                        printf("\n\n\tR%d': ", new_r1.vehicle->id);
+                        for (int k = 0; k < new_r1.path.size(); k++) {
+                          printf("%d ", new_r1.path[k]->id);
+
+                          if (k == i)
+                            printf("\033[1m\033[34m|\033[0m ");
+                        }
+
+                        printf("\n\tR%d': ", new_r2.vehicle->id);
+                        for (int k = 0; k < new_r2.path.size(); k++) {
+                          printf("%d ", new_r2.path[k]->id);
+
+                          if (k == j)
+                            printf("\033[1m\033[34m|\033[0m ");
+                        }
+
+                        printf("\n");
+                      #endif
                     }
                   }
                 }
@@ -393,38 +462,71 @@ namespace algorithms
 
     Solution shift_1_0(Solution s)
     {
-      Solution best = s;
-      double best_obj = best.obj_func_value();
+      #ifdef DEBUG
+        printf("\n\033[1m\033[33m-> Entering shift-1-0 operator...\033[0m\n");
+      #endif
+
+      std::pair<Route, Route> best_shift;
+
+      /* Let delta be the gain of shifting a given request from one route to another.
+       * We want to find the shift that yields the minimum possible delta value (maximum gain).
+       */
+      double delta = 0;
 
       for (auto [v1, r1] : s.routes) {
-        for (Node *node : r1.path) {
-          if (node->is_pickup()) {
-            Request *req = inst.get_request(node);
-            Route curr1 = r1;
+        for (auto [v2, r2] : s.routes) {
+          if (v1 != v2) {
+            for (Node *node : r1.path) {
+              if (node->is_pickup()) {
+                Request *req = inst.get_request(node);
+                Route new_r1 = r1;
+                Route new_r2 = get_cheapest_insertion(req, r2);
 
-            // Erase request by value
-            curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req->pickup),   curr1.path.end());
-            curr1.path.erase(std::remove(curr1.path.begin(), curr1.path.end(), req->delivery), curr1.path.end());
+                // Erase request by value
+                new_r1.path.erase(std::remove(new_r1.path.begin(), new_r1.path.end(), req->pickup), new_r1.path.end());
+                new_r1.path.erase(std::remove(new_r1.path.begin(), new_r1.path.end(), req->delivery), new_r1.path.end());
+                new_r1.evaluate(); // TODO: Optimize?
 
-            for (auto [v2, r2] : s.routes) {
-              if (r1 != r2) {
-                // Insert req in the new route
-                Route curr2 = get_cheapest_insertion(req, r2);
+                double gain = (new_r1.get_total_distance() + new_r2.cost) - (r1.cost + r2.cost);
 
-                if (curr2.feasible()) {
-                  // TODO: Optimize.
-                  // Call evaluate to update cost and schedule even though this route is feasible at this point
-                  curr1.evaluate();
+                #ifdef DEBUG
+                  printf("\nShifting request (%d, %d) from R%d to R%d\n", req->pickup->id, req->delivery->id, v1->id, v2->id);
 
-                  Solution neighbor = s;
-                  neighbor.add_route(curr1.vehicle, curr1);
-                  neighbor.add_route(curr2.vehicle, curr2);
-                  double neighbor_obj = neighbor.obj_func_value();
+                  printf("\tR%d: ", v1->id);
+                  for (Node *n : r1.path)
+                    if (n == req->pickup || n == req->delivery)
+                      printf("\033[1m\033[31m%d\033[0m ", n->id);
+                    else
+                      printf("%d ", n->id);
+                  printf("(c = %.2lf)\n", r1.cost);
 
-                  if (neighbor_obj < best_obj) {
-                    best = neighbor;
-                    best_obj = neighbor_obj;
-                  }
+                  printf("\tR%d: ", v2->id);
+                  for (Node *n : r2.path)
+                    printf("%d ", n->id);
+                  printf("(c = %.2lf)\n", r2.cost);
+
+                  printf("\n\tR%d': ", v1->id);
+                  for (Node *n : new_r1.path)
+                      printf("%d ", n->id);
+                  printf("(c = %.2lf)\n", new_r1.cost);
+
+                  printf("\tR%d': ", v2->id);
+                  for (Node *n : new_r2.path)
+                    if (n == req->pickup || n == req->delivery)
+                      printf("\033[1m\033[32m%d\033[0m ", n->id);
+                    else
+                      printf("%d ", n->id);
+                  printf("(c = %.2lf)\n", new_r2.cost);
+
+                  if (gain < delta)
+                    printf("\n\t\033[1m\033[34mΔf = %.2f\033[0m\n", gain);
+                  else
+                    printf("\n\tΔf = %.2f\n", gain);
+                #endif
+
+                if (gain < delta) {
+                  best_shift = std::make_pair(new_r1, new_r2);
+                  delta = gain;
                 }
               }
             }
@@ -432,7 +534,13 @@ namespace algorithms
         }
       }
 
-      return best;
+      // We found a pair of routes that reduces the total distance of current solution
+      if (delta < 0) {
+        s.add_route(best_shift.first.vehicle, best_shift.first);
+        s.add_route(best_shift.second.vehicle, best_shift.second);
+      }
+
+      return s;
     }
 
     void update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost)

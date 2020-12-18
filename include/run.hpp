@@ -19,7 +19,7 @@ class Run
 public:
   Solution best_init;
   Solution best;
-  double elapsed_minutes;
+  double elapsed_seconds;
   std::map<double, double> alphas_prob_distribution;
 
  /**
