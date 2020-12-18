@@ -28,7 +28,7 @@ namespace algorithms
       alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
     // Moves to be used within RVND
-    std::vector<Move> moves = {reinsert, shift_1_0, two_opt_star};
+    std::vector<Move> moves = {two_opt_star, shift_1_0, reinsert};
 
     if (threads < 1 || threads > omp_get_max_threads())
       threads = omp_get_max_threads();
@@ -59,11 +59,10 @@ namespace algorithms
           run.best = curr;
         }
 
-        int penalty = init.feasible() ? 1 : init.routes.size();
-
         #pragma omp critical
         {
           alphas_map[alpha].count++;
+          int penalty = init.feasible() ? 1 : init.routes.size();
           alphas_map[alpha].sum += init.obj_func_value() * penalty;
         }
 
@@ -145,8 +144,8 @@ namespace algorithms
         }
         else {
           // Activate new vehicle to accomodate the request (thus solution will be infeasible)
-          Vehicle v = Vehicle(solution.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration);
-          Route r(&v);
+          Vehicle *v = new Vehicle(solution.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration);
+          Route r(v);
 
           r.path.push_back(inst.get_depot());
           r.path.push_back(chosen_candidate->request->pickup);
@@ -156,7 +155,7 @@ namespace algorithms
                    inst.get_travel_time(chosen_candidate->request->pickup, chosen_candidate->request->delivery) +
                    inst.get_travel_time(chosen_candidate->request->delivery, inst.get_depot());
 
-          solution.add_route(&v, r);
+          solution.add_route(v, r);
         }
 
         candidates.erase(chosen_candidate);
@@ -326,34 +325,79 @@ namespace algorithms
 
     Solution repair(Solution s)
     {
-      std::vector<Request*> unplanned;
       int extra_vehicles = s.routes.size() - inst.vehicles.size();
 
-      for (int i = 0; i < extra_vehicles; i++) {
-        auto random_route = Random::get(s.routes);
+      #ifdef DEBUG
+        printf("\n\033[1m\033[33m-> Repairing infeasible solution with %d extra vehicle(s)...\033[0m\n", extra_vehicles);
+      #endif
 
-        for (Node *node : random_route->second.path)
+      // Need a vector to sort routes by decreasing cost
+      std::vector<std::pair<Vehicle*, Route>> routes(s.routes.begin(), s.routes.end());
+
+      std::sort(routes.begin(), routes.end(), [] (auto &p1, auto &p2) {
+        return p1.second.cost > p2.second.cost;
+      });
+
+      #ifdef DEBUG
+        int count = 0;
+
+        printf("\nRoutes ordered by decreasing cost:\n");
+        for (auto [v, r] : routes) {
+          const char* color = count < extra_vehicles ? "\033[1m\033[33m" : "\033[0m";
+          printf("\t%sR%d: ", color, v->id);
+
+          for (Node *n : r.path)
+            printf("%d ", n->id);
+
+          printf("%s(c = %.2lf)\033[0m\n", color, r.cost);
+          count++;
+        }
+      #endif
+
+      std::vector<Request*> unplanned;
+
+      for (int i = 0; i < extra_vehicles; i++) {
+        for (Node *node : routes.begin()->second.path)
           if (node->is_pickup())
             unplanned.push_back(inst.get_request(node));
 
-        s.routes.erase(random_route);
+        s.routes.erase(routes.begin()->first);
       }
 
       while (!unplanned.empty()) {
         auto request = Random::get(unplanned);
         Route best;
-        double delta = MAXFLOAT;
+        double min_increase = MAXFLOAT;
+
+        #ifdef DEBUG
+          printf("\n\tSelected request (%d, %d):\n", (*request)->pickup->id, (*request)->delivery->id);
+        #endif
 
         for (auto [v, r] : s.routes) {
           Route test = get_cheapest_insertion(*request, r);
 
-          if (test.feasible() && test.cost - r.cost < delta) {
-            delta = test.cost - r.cost;
+          if (test.cost - r.cost < min_increase) {
+            min_increase = test.cost - r.cost;
             best = test;
           }
+
+          #ifdef DEBUG
+            printf("\t\tR%d: ", v->id);
+            for (Node *n : test.path)
+              if (n == (*request)->pickup || n == (*request)->delivery)
+                printf("\033[1m\033[32m%d\033[0m ", n->id);
+              else
+                printf("%d ", n->id);
+
+            printf("(Δf = %.2lf)\n", test.cost - r.cost);
+          #endif
         }
 
-        if (delta == MAXFLOAT) {
+        if (min_increase == MAXFLOAT) {
+          #ifdef DEBUG
+            printf("\n\t\t-> No feasible insertion found! Solution will remain infeasible.\n");
+          #endif
+
           // Add a null vehicle to make solution infeasible again
           s.add_route(nullptr, Route());
           return s;
@@ -361,7 +405,15 @@ namespace algorithms
 
         s.add_route(best.vehicle, best);
         unplanned.erase(request);
+
+        #ifdef DEBUG
+          printf("\n\t\t-> Selected route R%d with Δf = %.2f\n", best.vehicle->id, min_increase);
+        #endif
       }
+
+      #ifdef DEBUG
+        printf("\n\t\033[1m\033[32mSolution repaired successfully!\033[0m\n");
+      #endif
 
       return s;
     }

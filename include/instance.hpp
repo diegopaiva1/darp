@@ -53,12 +53,12 @@ public:
  /**
   * Instances should not be cloneable.
   */
-  Instance(const Instance &) = delete;
+  Instance(const Instance&) = delete;
 
  /**
   * Instances should not be assignable.
   */
-  void operator=(const Instance &) = delete;
+  void operator=(const Instance&) = delete;
 
  /**
   * Get the instance.

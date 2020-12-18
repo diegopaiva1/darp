@@ -84,11 +84,11 @@ void Instance::init_distance_matrix()
 
   for (int i = 0; i < distance_matrix.size(); i++) {
     distance_matrix[i].resize(nodes.size());
-    Node *n1 = nodes.at(i);
 
     for (int j = 0; j < distance_matrix.size(); j++) {
-      Node *n2 = nodes.at(j);
-      distance_matrix[i][j] = sqrt(pow(n1->latitude - n2->latitude, 2) + pow(n1->longitude - n2->longitude, 2));
+      distance_matrix[i][j] = sqrt(
+        pow(nodes[i]->latitude - nodes[j]->latitude, 2) + pow(nodes[i]->longitude - nodes[j]->longitude, 2)
+      );
     }
   }
 }
