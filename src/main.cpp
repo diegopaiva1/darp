@@ -21,7 +21,7 @@ int main(const int argc, const char* argv[])
   inst.init(argv[1]);
 
   Run run = algorithms::reactive_grasp(
-    1000, 50, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[2])
+    1600, 160, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[2])
   );
 
   std::cout << run.to_string();

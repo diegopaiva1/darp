@@ -28,7 +28,7 @@ namespace algorithms
       alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
 
     // Moves to be used within RVND
-    std::vector<Move> moves = {two_opt_star, shift_1_0, reinsert};
+    std::vector<Move> moves = {reinsert, two_opt_star, shift_1_0};
 
     if (threads < 1 || threads > omp_get_max_threads())
       threads = omp_get_max_threads();
@@ -42,14 +42,14 @@ namespace algorithms
       Random::seed(seed);
 
       #pragma omp for
-      for (int it = 0; it < iterations; it++) {
+      for (int it = 1; it <= iterations; it++) {
         double alpha = get_random_alpha(alphas_map);
         Solution init = build_greedy_randomized_solution(alpha);
 
         if (!init.feasible())
           init = repair(init);
 
-        Solution curr = vnd(init, moves, true);
+        Solution curr = vnd(init, moves);
         double curr_obj = curr.obj_func_value();
 
         #pragma omp critical
@@ -62,11 +62,11 @@ namespace algorithms
         #pragma omp critical
         {
           alphas_map[alpha].count++;
-          int penalty = init.feasible() ? 1 : init.routes.size();
+          int penalty = init.feasible() ? 1 : 10;
           alphas_map[alpha].sum += init.obj_func_value() * penalty;
         }
 
-        if (it > 0 && it % blocks == 0) {
+        if (it % blocks == 0) {
           #pragma omp critical
           update_probs(alphas_map, best_obj);
         }
@@ -118,7 +118,7 @@ namespace algorithms
         Route r = Route(v);
         r.path.push_back(inst.get_depot());
         r.path.push_back(inst.get_depot());
-        solution.add_route(v, r);
+        solution.add_route(r);
       }
 
       struct Candidate {
@@ -140,7 +140,7 @@ namespace algorithms
         auto chosen_candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
 
         if (chosen_candidate->route.feasible()) {
-          solution.add_route(chosen_candidate->route.vehicle, chosen_candidate->route);
+          solution.add_route(chosen_candidate->route);
         }
         else {
           // Activate new vehicle to accomodate the request (thus solution will be infeasible)
@@ -155,7 +155,7 @@ namespace algorithms
                    inst.get_travel_time(chosen_candidate->request->pickup, chosen_candidate->request->delivery) +
                    inst.get_travel_time(chosen_candidate->request->delivery, inst.get_depot());
 
-          solution.add_route(v, r);
+          solution.add_route(r);
         }
 
         candidates.erase(chosen_candidate);
@@ -237,18 +237,16 @@ namespace algorithms
       if (!s.feasible())
         return s;
 
-      std::vector<Move> vnd_moves = moves;
-
-      while (!vnd_moves.empty()) {
-        auto move = use_randomness ? Random::get(vnd_moves) : vnd_moves.begin();
+      for (int k = 0; k < moves.size(); /* conditional update */) {
+        auto move = use_randomness ? Random::get(moves.begin() + k, moves.end()) : moves.begin() + k;
         Solution neighbor = (*move)(s);
 
         if (neighbor.obj_func_value() < s.obj_func_value()) {
           s = neighbor;
-          vnd_moves = moves;
+          k = 0;
         }
         else {
-          vnd_moves.erase(move);
+          k++;
         }
       }
 
@@ -317,7 +315,7 @@ namespace algorithms
           printf("\n<<<<<< Updated cost of route %d = %.2f >>>>>>\n", best_reinsertion.vehicle->id, best_reinsertion.cost);
         #endif
 
-        s.add_route(best_reinsertion.vehicle, best_reinsertion);
+        s.add_route(best_reinsertion);
       }
 
       return s;
@@ -399,11 +397,11 @@ namespace algorithms
           #endif
 
           // Add a null vehicle to make solution infeasible again
-          s.add_route(nullptr, Route());
+          s.add_route(Route(nullptr));
           return s;
         }
 
-        s.add_route(best.vehicle, best);
+        s.add_route(best);
         unplanned.erase(request);
 
         #ifdef DEBUG
@@ -454,8 +452,8 @@ namespace algorithms
                       // Neighbor solution will be feasible if and only if both routes can be evaluated
                       if (new_r1.evaluate() && new_r2.evaluate()) {
                         Solution neighbor = s;
-                        neighbor.add_route(new_r1.vehicle, new_r1);
-                        neighbor.add_route(new_r2.vehicle, new_r2);
+                        neighbor.add_route(new_r1);
+                        neighbor.add_route(new_r2);
                         double neighbor_obj = neighbor.obj_func_value();
 
                         if (neighbor_obj < best_obj) {
@@ -588,8 +586,8 @@ namespace algorithms
 
       // We found a pair of routes that reduces the total distance of current solution
       if (delta < 0) {
-        s.add_route(best_shift.first.vehicle, best_shift.first);
-        s.add_route(best_shift.second.vehicle, best_shift.second);
+        s.add_route(best_shift.first);
+        s.add_route(best_shift.second);
       }
 
       return s;

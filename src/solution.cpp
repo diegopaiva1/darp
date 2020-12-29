@@ -9,15 +9,10 @@
 
 #include <cmath>
 
-void Solution::add_route(Vehicle *v, Route r)
+void Solution::add_route(Route r)
 {
-  routes[v] = r;
+  routes[r.vehicle] = r;
 }
-
-// void Solution::set_route(Vehicle *v, Route r)
-// {
-//   routes[v->id - 1] = r;
-// }
 
 bool Solution::feasible()
 {
