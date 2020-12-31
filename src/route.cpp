@@ -83,11 +83,13 @@ bool Route::evaluate()
 
   double forward_time_slack_at_0;
 
-  STEP1:
+  nodes_indexes[path[0]] = 0;
+
+  // STEP 1
   departure_times[0] = path[0]->arrival_time;
   service_beginning_times[0] = departure_times[0];
 
-  STEP2:
+  // STEP 2
   for (int i = 1; i < path.size(); i++) {
     compute_load(i);
 
@@ -104,19 +106,21 @@ bool Route::evaluate()
 
     compute_waiting_time(i);
     compute_departure_time(i);
+
+    nodes_indexes[path[i]] = i;
   }
 
-  STEP3:
+  // STEP 3
   forward_time_slack_at_0 = get_forward_time_slack(0);
 
-  STEP4:
+  // STEP 4
   departure_times[0] = path[0]->arrival_time + std::min(
     forward_time_slack_at_0, std::accumulate(waiting_times.begin() + 1, waiting_times.end() - 1, 0.0)
   );
 
   service_beginning_times[0] = departure_times[0];
 
-  STEP5:
+  // STEP 5
   for (int i = 1; i < path.size(); i++) {
     compute_arrival_time(i);
     compute_service_beginning_time(i);
@@ -124,12 +128,12 @@ bool Route::evaluate()
     compute_departure_time(i);
   }
 
-  STEP6:
+  // STEP 6
   for (int i = 1; i < path.size() - 1; i++)
     if (path[i]->is_pickup())
       compute_ride_time(i);
 
-  STEP7:
+  // STEP 7
   for (int j = 1; j < path.size() - 1; j++) {
     if (path[j]->is_pickup()) {
       STEP7a:
@@ -154,7 +158,7 @@ bool Route::evaluate()
       STEP7d:
       for (int i = j + 1; i < path.size() - 1; i++)
         if (path[i]->is_delivery())
-          compute_ride_time(get_index(inst.get_request(path[i])->pickup, i));
+          compute_ride_time(nodes_indexes[inst.get_request(path[i])->pickup]);
     }
   }
 
@@ -186,8 +190,8 @@ double Route::get_forward_time_slack(int i)
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;
 
-    if (path[j]->is_delivery() && get_index(inst.get_request(path[j])->pickup, j) < i)
-      pj = ride_times[get_index(inst.get_request(path[j])->pickup, j)];
+    if (path[j]->is_delivery() && nodes_indexes[inst.get_request(path[j])->pickup] < i)
+      pj = ride_times[nodes_indexes[inst.get_request(path[j])->pickup]];
 
     double time_slack = std::accumulate(waiting_times.begin() + i + 1, waiting_times.begin() + j + 1, 0.0) +
                         std::max(0.0, std::min(path[j]->departure_time - service_beginning_times[j], 90.0 - pj));
@@ -237,7 +241,7 @@ void Route::compute_departure_time(int i)
 
 void Route::compute_ride_time(int i)
 {
-  ride_times[i] = service_beginning_times[get_index(inst.get_request(path[i])->delivery, i)] - departure_times[i];
+  ride_times[i] = service_beginning_times[nodes_indexes[inst.get_request(path[i])->delivery]] - departure_times[i];
 }
 
 double Route::duration()
@@ -276,24 +280,6 @@ std::string Route::to_string()
   }
 
   return table.to_string();
-}
-
-int Route::get_index(Node *node, int start)
-{
-  if (node->is_delivery()) {
-    // We want to find the delivery, so we must perform a forward loop
-    for (int i = start; i < path.size() - 1; i++)
-      if (path[i] == node)
-        return i;
-  }
-  else {
-    // Perform the loop backwards for pickups
-    for (int i = start; i >= 0; i--)
-      if (path[i] == node)
-        return i;
-  }
-
-  throw "error";
 }
 
 double Route::get_total_distance()

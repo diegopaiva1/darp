@@ -14,9 +14,13 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 class Route
 {
+private:
+  std::unordered_map<Node*, int> nodes_indexes;
+
 public:
   Vehicle *vehicle;
   std::vector<Node*> path;
@@ -158,8 +162,6 @@ public:
   * @param i Index.
   */
   void compute_ride_time(int i);
-
-  int get_index(Node *node, int start);
 };
 
 #endif // ROUTE_HPP_INCLUDED
