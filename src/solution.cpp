@@ -37,13 +37,3 @@ double Solution::obj_func_value()
 
   return sum;
 }
-
-std::string Solution::to_string()
-{
-  std::string s;
-
-  for (auto [vehicle, route] : routes)
-    s.append('\n' + route.to_string());
-
-  return s;
-}

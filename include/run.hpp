@@ -12,8 +12,6 @@
 #include "solution.hpp"
 
 #include <map>
-#include <memory>
-
 class Run
 {
 public:
@@ -21,6 +19,7 @@ public:
   Solution best;
   double elapsed_seconds;
   std::map<double, double> alphas_prob_distribution;
+  std::vector<unsigned int> seeds;
 
  /**
   * Default constructor.
@@ -31,18 +30,6 @@ public:
   * Default destructor.
   */
   ~Run() {};
-
- /**
-  * Persist run data to file.
-  *
-  * @param file_name File name.
-  */
-  void persist(std::string file_name);
-
- /**
-  * Convert Run to string representation.
-  */
-  std::string to_string();
 };
 
 #endif // RUN_H_INCLUDED

@@ -8,10 +8,9 @@
 #define REACTIVE_GRASP_HPP_INCLUDED
 
 #include "run.hpp"
-#include "effolkronium/random.hpp"
+#include "random.hpp"
 
 #include <map>
-#include <memory>
 
 namespace algorithms
 {

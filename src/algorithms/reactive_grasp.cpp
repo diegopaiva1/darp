@@ -41,6 +41,9 @@ namespace algorithms
       unsigned int seed = std::random_device{}();
       Random::seed(seed);
 
+      #pragma omp critical
+      run.seeds.push_back(seed);
+
       #pragma omp for
       for (int it = 1; it <= iterations; it++) {
         double alpha = get_random_alpha(alphas_map);

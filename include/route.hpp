@@ -108,11 +108,6 @@ public:
   double duration();
 
  /**
-  * Convert Route to string representation.
-  */
-  std::string to_string();
-
- /**
   * The forward time slack at index i in path is the maximum amount of time that the departure
   * from i can be delayed without violating time constraints for the later nodes.
   *

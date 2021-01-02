@@ -53,11 +53,6 @@ public:
   * @return Objective function value.
   */
   double obj_func_value();
-
- /**
-  * Convert Solution to string representation.
-  */
-  std::string to_string();
 };
 
 #endif // SOLUTION_HPP_INCLUDED
