@@ -11,6 +11,10 @@
 #include <iostream> // std::cerr, std::cout
 #include <iomanip>  // std::setprecision, std::setw
 #include <fstream>  // std::ofstream
+#include <ctime>    // std::chrono
+
+// Register date computation started
+std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
 /*
  * Save execution information and statistics as JSON file.
@@ -48,16 +52,11 @@ int main(const int argc, const char* argv[])
 
 void to_json(std::vector<Run> runs, std::string file_name)
 {
-  nlohmann::json j;
+  nlohmann::ordered_json j;
   double best_cost = MAXFLOAT, mean_cost, mean_cpu, standard_deviation = 0.0;
 
   for (int i = 0; i < runs.size(); i++) {
     double value = runs[i].best.obj_func_value();
-
-    if (value < best_cost) {
-      j["best_run"] = i + 1;
-      best_cost = value;
-    }
 
     mean_cost += value;
     mean_cpu += runs[i].elapsed_seconds;
@@ -80,6 +79,12 @@ void to_json(std::vector<Run> runs, std::string file_name)
       ss >> j["runs"][std::to_string(i + 1)]["vehicles"];
     }
 
+    {
+      std::stringstream ss;
+      ss << std::setprecision(2) << std::fixed << runs[i].elapsed_seconds;
+      ss >> j["runs"][std::to_string(i + 1)]["cpu_time_in_seconds"];
+    }
+
     j["runs"][std::to_string(i + 1)]["feasible"] = runs[i].best.feasible();
 
     for (auto [alpha, prob] : runs[i].alphas_prob_distribution) {
@@ -94,6 +99,11 @@ void to_json(std::vector<Run> runs, std::string file_name)
 
     j["runs"][std::to_string(i + 1)]["threads"] = runs[i].seeds.size();
     j["runs"][std::to_string(i + 1)]["seeds"] = runs[i].seeds;
+
+    if (value < best_cost) {
+      j["best_run"] = i + 1;
+      best_cost = value;
+    }
   }
 
   mean_cost /= runs.size();
@@ -129,6 +139,10 @@ void to_json(std::vector<Run> runs, std::string file_name)
     ss << std::setprecision(2) << std::fixed << mean_cpu;
     ss >> j["mean_cpu_time_in_seconds"];
   }
+
+  j["start_date"] = std::ctime(&now);
+  now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  j["end_date"] = std::ctime(&now);
 
   // Write prettified JSON to another file
   std::ofstream out(file_name);
