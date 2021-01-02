@@ -1,6 +1,0 @@
-[submodule "third-party/libfort"]
-	path = third-party/libfort
-	url = https://github.com/seleznevae/libfort.git
-[submodule "third-party/random"]
-	path = third-party/random
-	url = https://github.com/effolkronium/random.git
