@@ -8,12 +8,11 @@
 #include "json.hpp"
 #include "algorithms/reactive_grasp.hpp"
 
-#include <iostream> // std::cerr, std::cout
 #include <iomanip>  // std::setprecision, std::setw
 #include <fstream>  // std::ofstream
 #include <ctime>    // std::chrono
 
-// Register date computation started
+// Register computation start date
 std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
 /*
@@ -29,7 +28,7 @@ int main(const int argc, const char* argv[])
   const int min_args = 4, max_args = 4, args_given = argc - 1;
 
   if (args_given < min_args || args_given > max_args) {
-    std::cerr << "Usage: " << argv[0] << " <instance> <runs> <threads> <output file name>\n";
+    fprintf(stderr, "Usage: %s <instance> <runs> <threads> <output file name>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -37,10 +36,12 @@ int main(const int argc, const char* argv[])
 
   std::vector<Run> runs;
 
-  for (int i = 0; i < std::stoi(argv[2]); i++) {
+  for (int i = 1; i <= std::stoi(argv[2]); i++) {
     Run run = algorithms::reactive_grasp(
       1600, 160, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[3])
     );
+
+    printf("Run %d of %d ......... c = %.2f\n", i, std::stoi(argv[2]), run.best.obj_func_value());
 
     runs.push_back(run);
   }
@@ -53,7 +54,7 @@ int main(const int argc, const char* argv[])
 void to_json(std::vector<Run> runs, std::string file_name)
 {
   nlohmann::ordered_json j;
-  double best_cost = MAXFLOAT, mean_cost, mean_cpu, standard_deviation = 0.0;
+  double best_cost = MAXFLOAT, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
 
   for (int i = 0; i < runs.size(); i++) {
     double value = runs[i].best.obj_func_value();

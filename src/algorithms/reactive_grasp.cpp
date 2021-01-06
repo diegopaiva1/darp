@@ -74,8 +74,8 @@ namespace algorithms
           update_probs(alphas_map, best_obj);
         }
 
-        if (omp_get_thread_num() == 0)
-          show_progress(run.best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
+        // if (omp_get_thread_num() == 0)
+        //   show_progress(run.best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
       }
     }
 
