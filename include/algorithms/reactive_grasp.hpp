@@ -137,15 +137,6 @@ namespace algorithms
     * @param best_cost  Cost of best solution found at the moment.
     */
     void update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost);
-
-   /**
-    * Show current solution's feasibility and obj. value within a progress bar.
-    *
-    * @param feasibility    Solution's feasibility.
-    * @param obj_func_value Solution's obj. func. value.
-    * @param fraction       Fraction of completed iterations.
-    */
-    void show_progress(bool feasibility, double obj_func_value, double fraction);
   } // namespace reactivw_grasp_impl
 } // namespace algorithms
 

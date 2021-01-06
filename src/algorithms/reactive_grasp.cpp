@@ -73,9 +73,6 @@ namespace algorithms
           #pragma omp critical
           update_probs(alphas_map, best_obj);
         }
-
-        // if (omp_get_thread_num() == 0)
-        //   show_progress(run.best.feasible(), best_obj, (double) it/(iterations/omp_get_num_threads()));
       }
     }
 
@@ -606,31 +603,6 @@ namespace algorithms
 
       for (auto &[alpha, info] : alphas_map)
         info.probability = (best_cost/info.avg())/q_sum;
-    }
-
-    void show_progress(bool feasibility, double obj_func_value, double fraction)
-    {
-      // Some ANSI-based text style definitions
-      std::string bold_red = "\033[1m\033[31m";
-      std::string bold_green = "\033[1m\033[32m";
-      std::string bold_blue = "\033[1m\033[34m";
-      std::string bold_white = "\033[1m\033[37m";
-      std::string reset = "\033[0m";
-
-      std::string progress_bar = std::string(60, '#');
-      int percentage = (int) (fraction * 100);
-      int left_length = (int) (fraction * progress_bar.size());
-      int right_length = progress_bar.size() - left_length;
-
-      std::cout << std::fixed << std::setprecision(2)
-                << bold_white
-                << "\rComputing solution... Best found = " << (feasibility ? bold_green : bold_red) << obj_func_value
-                << bold_blue
-                << " [" << progress_bar.substr(0, left_length) << std::string(right_length, ' ') << "] "
-                << percentage << "\%"
-                << reset;
-
-      fflush(stdout);
     }
   } // namespace reactive_grasp_impl
 } // namespace algorithms

@@ -35,13 +35,16 @@ int main(const int argc, const char* argv[])
   inst.init(argv[1]);
 
   std::vector<Run> runs;
+  int num_runs = std::stoi(argv[2]);
 
-  for (int i = 1; i <= std::stoi(argv[2]); i++) {
+  for (int i = 1; i <= num_runs; i++) {
     Run run = algorithms::reactive_grasp(
       1600, 160, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[3])
     );
 
-    printf("Run %d of %d ......... c = %.2f\n", i, std::stoi(argv[2]), run.best.obj_func_value());
+    printf(
+      "Run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, run.best.obj_func_value(), run.elapsed_seconds
+    );
 
     runs.push_back(run);
   }
