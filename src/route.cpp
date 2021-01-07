@@ -7,7 +7,7 @@
 #include "route.hpp"
 #include "instance.hpp"
 
-#include <cmath>   // MAXFLOAT
+#include <cfloat>   // FLT_MAX
 #include <numeric> // std::accumulate
 
 Route::Route()
@@ -33,7 +33,7 @@ bool Route::operator!=(Route &r) const
 
 bool Route::feasible()
 {
-  return cost < MAXFLOAT;
+  return cost < FLT_MAX;
 }
 
 void Route::compute_earliest_time(int i)
@@ -183,7 +183,7 @@ bool Route::evaluate()
 
 double Route::get_forward_time_slack(int i)
 {
-  double min_time_slack = MAXFLOAT;
+  double min_time_slack = FLT_MAX;
 
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;

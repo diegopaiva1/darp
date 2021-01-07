@@ -21,8 +21,8 @@ void gnuplot::plot_run(Run run, std::string dir)
   details::plot_solution_graph(run.best_init, dir + "init.png");
   details::plot_solution_graph(run.best, dir + "best.png");
 
-  for (auto [v, r] : run.best.routes)
-    details::plot_schedule(r, dir + "schedule" + std::to_string(r.vehicle->id) + ".png");
+  for (auto pair : run.best.routes)
+    details::plot_schedule(pair.second, dir + "schedule" + std::to_string(pair.first->id) + ".png");
 
   details::plot_alphas_probs(run.alphas_prob_distribution, dir + "alphas.png");
 
@@ -66,7 +66,9 @@ void gnuplot::details::plot_solution_graph(Solution s, std::string output)
 
   data_stream << "\n\n";
 
-  for (auto [v, r] : s.routes) {
+  for (auto pair : s.routes) {
+    Vehicle *v = pair.first;
+    Route r = pair.second;
     data_stream << "# x1, y1, x2 - x1, y2 - y1" << "\n";
 
     for (int i = 0; i < r.path.size() - 1; i++) {
@@ -156,8 +158,8 @@ void gnuplot::details::plot_alphas_probs(std::map<double, double> alphas_probs, 
   std::string data_file = "alphas.tmp";
   std::ofstream data_stream(data_file, std::ofstream::out | std::ofstream::trunc);
 
-  for (auto [alpha, prob] : alphas_probs)
-    data_stream << std::fixed << std::setprecision(2) << alpha << " " << prob << '\n';
+  for (auto pair : alphas_probs)
+    data_stream << std::fixed << std::setprecision(2) << pair.first << " " << pair.second << '\n';
 
   call_gnuplot({
     alpha_probs_script,

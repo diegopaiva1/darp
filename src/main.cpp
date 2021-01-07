@@ -11,6 +11,8 @@
 #include <iomanip>  // std::setprecision, std::setw
 #include <fstream>  // std::ofstream
 #include <ctime>    // std::chrono
+#include <cfloat>   // FLT_MAX 
+#include <sstream>  // std::stringstream
 
 // Register computation start date
 std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -57,8 +59,8 @@ int main(const int argc, const char* argv[])
 void to_json(std::vector<Run> runs, std::string file_name)
 {
   nlohmann::ordered_json j;
-  double best_cost = MAXFLOAT, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
-
+  double best_cost = FLT_MAX, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
+ 
   for (int i = 0; i < runs.size(); i++) {
     double value = runs[i].best.obj_func_value();
 
@@ -91,12 +93,12 @@ void to_json(std::vector<Run> runs, std::string file_name)
 
     j["runs"][std::to_string(i + 1)]["feasible"] = runs[i].best.feasible();
 
-    for (auto [alpha, prob] : runs[i].alphas_prob_distribution) {
+    for (std::pair<double, double> pair : runs[i].alphas_prob_distribution) {
       std::stringstream ss1;
       std::stringstream ss2;
 
-      ss1 << std::setprecision(2) << std::fixed << alpha;
-      ss2 << std::setprecision(2) << std::fixed << prob;
+      ss1 << std::setprecision(2) << std::fixed << pair.first;
+      ss2 << std::setprecision(2) << std::fixed << pair.second;
 
       ss2 >> j["runs"][std::to_string(i + 1)]["alphas_probability_distribution"][ss1.str()];
     }

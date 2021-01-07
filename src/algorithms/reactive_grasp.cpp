@@ -10,6 +10,7 @@
 
 #include <iostream> // std::cout
 #include <iomanip>  // std::setprecision
+#include <cfloat>   // FLT_MAX
 #include <omp.h>    // OpenMP
 
 namespace algorithms
@@ -19,7 +20,7 @@ namespace algorithms
     using namespace reactive_grasp_impl;
 
     Run run;
-    double best_obj = MAXFLOAT;
+    double best_obj = FLT_MAX;
 
     // A map to track each alpha performance
     std::map<double, AlphaInfo> alphas_map;
@@ -81,8 +82,8 @@ namespace algorithms
 
     double finish = omp_get_wtime();
 
-    for (auto [alpha, info] : alphas_map)
-      run.alphas_prob_distribution[alpha] = info.probability;
+    for (std::pair<double, AlphaInfo> pair : alphas_map)
+      run.alphas_prob_distribution[pair.first] = pair.second.probability;
 
     run.elapsed_seconds = finish - start;
     gnuplot::plot_run(run, "../data/plots/");
@@ -100,11 +101,11 @@ namespace algorithms
       double rand = Random::get(0.0, 1.0);
       double sum = 0.0;
 
-      for (auto [alpha, info] : alphas_map) {
-        sum += info.probability;
+      for (std::pair<double, AlphaInfo> pair : alphas_map) {
+        sum += pair.second.probability;
 
         if (rand <= sum)
-          return alpha;
+          return pair.first;
       }
 
       return 0;
@@ -133,7 +134,7 @@ namespace algorithms
         candidates.push_back({get_cheapest_insertion(req, solution), req});
 
       while (!candidates.empty()) {
-        std::sort(candidates.begin(), candidates.end(), [] (Candidate &c1, Candidate &c2) {
+        std::sort(candidates.begin(), candidates.end(), [] (const Candidate &c1, const Candidate &c2) {
           return c1.route.cost < c2.route.cost;
         });
 
@@ -171,9 +172,10 @@ namespace algorithms
     Route get_cheapest_insertion(Request *req, Solution s)
     {
       Route best;
-      double delta = best.cost = MAXFLOAT;
-
-      for (auto [v, r] : s.routes) {
+      double delta = best.cost = FLT_MAX;
+ 
+      for (std::pair<Vehicle*, Route> pair : s.routes) {
+	Route r = pair.second;
         Route curr = get_cheapest_insertion(req, r);
 
         if (curr.feasible() && curr.cost - r.cost < delta) {
@@ -188,7 +190,7 @@ namespace algorithms
     Route get_cheapest_insertion(Request *req, Route r)
     {
       Route best;
-      best.cost = MAXFLOAT;
+      best.cost = FLT_MAX;
 
       for (int p = 1; p < r.path.size(); p++) {
         r.path.insert(r.path.begin() + p, req->pickup);
@@ -259,7 +261,9 @@ namespace algorithms
         printf("\n\033[1m\033[33m-> Entering reinsert operator...\033[0m\n");
       #endif
 
-      for (auto [v, r] : s.routes) {
+      for (std::pair<Vehicle*, Route> pair : s.routes) {
+	Vehicle *v = pair.first;
+	Route r = pair.second;
         Route best_reinsertion = r;
 
         #ifdef DEBUG
@@ -332,7 +336,7 @@ namespace algorithms
       // Need a vector to sort routes by decreasing cost
       std::vector<std::pair<Vehicle*, Route>> routes(s.routes.begin(), s.routes.end());
 
-      std::sort(routes.begin(), routes.end(), [] (auto &p1, auto &p2) {
+      std::sort(routes.begin(), routes.end(), [] (const std::pair<Vehicle*, Route> &p1, const std::pair<Vehicle*, Route> &p2) {
         return p1.second.cost > p2.second.cost;
       });
 
@@ -365,13 +369,14 @@ namespace algorithms
       while (!unplanned.empty()) {
         auto request = Random::get(unplanned);
         Route best;
-        double min_increase = MAXFLOAT;
+        double min_increase = FLT_MAX;
 
         #ifdef DEBUG
           printf("\n\tSelected request (%d, %d):\n", (*request)->pickup->id, (*request)->delivery->id);
         #endif
 
-        for (auto [v, r] : s.routes) {
+        for (std::pair<Vehicle*, Route> pair : s.routes) {
+	  Route r = pair.second;
           Route test = get_cheapest_insertion(*request, r);
 
           if (test.cost - r.cost < min_increase) {
@@ -391,7 +396,7 @@ namespace algorithms
           #endif
         }
 
-        if (min_increase == MAXFLOAT) {
+        if (min_increase == FLT_MAX) {
           #ifdef DEBUG
             printf("\n\t\t-> No feasible insertion found! Solution will remain infeasible.\n");
           #endif
@@ -421,8 +426,14 @@ namespace algorithms
       Solution best = s;
       double best_obj = best.obj_func_value();
 
-      for (auto [v1, r1] : s.routes) {
-        for (auto [v2, r2] : s.routes) {
+      for (std::pair<Vehicle*, Route> p1 : s.routes) {
+	Vehicle *v1 = p1.first;
+	Route r1 = p1.second;
+
+        for (std::pair<Vehicle*, Route> p2 : s.routes) {
+	  Vehicle *v2 = p2.first;
+	  Route r2 = p2.second;
+
           if (v1 != v2) {
             int r1_load = 0;
 
@@ -523,8 +534,14 @@ namespace algorithms
        */
       double delta = 0;
 
-      for (auto [v1, r1] : s.routes) {
-        for (auto [v2, r2] : s.routes) {
+      for (std::pair<Vehicle*, Route> pair1 : s.routes) {
+	Vehicle *v1 = pair1.first;
+        Route r1 = pair1.second;
+
+        for (std::pair<Vehicle*, Route> pair2 : s.routes) {
+	  Vehicle *v2 = pair2.first;
+	  Route r2 = pair2.second;
+
           if (v1 != v2) {
             for (Node *node : r1.path) {
               if (node->is_pickup()) {
@@ -597,12 +614,12 @@ namespace algorithms
     {
       double q_sum = 0.0;
 
-      for (auto [alpha, info] : alphas_map)
-        if (info.avg() > 0)
-          q_sum += best_cost/info.avg();
+      for (std::pair<double, AlphaInfo> pair : alphas_map)
+        if (pair.second.avg() > 0)
+          q_sum += best_cost/pair.second.avg();
 
-      for (auto &[alpha, info] : alphas_map)
-        info.probability = (best_cost/info.avg())/q_sum;
+      for (std::pair<double, AlphaInfo> pair : alphas_map)
+        pair.second.probability = (best_cost/pair.second.avg())/q_sum;
     }
   } // namespace reactive_grasp_impl
 } // namespace algorithms

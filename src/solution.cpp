@@ -32,8 +32,8 @@ double Solution::obj_func_value()
 {
   double sum = 0.0;
 
-  for (auto [vehicle, route] : routes)
-    sum += route.cost;
+  for (std::pair<Vehicle*, Route> pair : routes)
+    sum += pair.second.cost;
 
   return sum;
 }
