@@ -25,10 +25,6 @@ obj/
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -40,13 +36,12 @@ obj/
 *.out
 *.app
 
-# Codeblocks IDE
-*.layout
-*.depend
-
 # Visual Studio Code
 .vscode/
 .code-workspace
 
 # OS X
 .DS_Store
+
+# Job files
+*.job
