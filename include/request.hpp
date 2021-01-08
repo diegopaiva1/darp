@@ -27,12 +27,12 @@ public:
   Node *delivery;
 
  /**
-  * Default constructor.
+  * Constructor 1.
   */
   Request() {};
 
  /**
-  * Constructor with pickup and delivery nodes as argument.
+  * Constructor 2.
   */
   Request(Node *pickup, Node *delivery);
 

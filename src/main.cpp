@@ -1,7 +1,7 @@
 /**
- * @file    main.cpp
- * @author  Diego Paiva
- * @date    24/09/2019
+ * @file   main.cpp
+ * @author Diego Paiva
+ * @date   24/09/2019
  */
 
 #include "algorithms/reactive_grasp.hpp"

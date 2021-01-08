@@ -17,12 +17,16 @@ public:
   double max_route_duration;
 
  /**
-  * Default constructor.
+  * Constructor 1.
   */
   Vehicle() {};
 
  /**
-  * Constructor with all instance variables args.
+  * Constructor 2.
+  *
+  * @param id                 Id
+  * @param capacity           Capacity
+  * @param max_route_duration Vehicle's maximum route duration
   */
   Vehicle(int id, int capacity, double max_route_duration);
 

@@ -1,7 +1,7 @@
 /**
- * @file    instance.hpp
- * @author  Diego Paiva
- * @date    25/09/2019
+ * @file   instance.hpp
+ * @author Diego Paiva
+ * @date   25/09/2019
  */
 
 #ifndef INSTANCE_HPP_INCLUDED

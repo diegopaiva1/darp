@@ -1,7 +1,7 @@
 /**
- * @file    Gnuplot.hpp
- * @author  Diego Paiva
- * @date    23/10/2019
+ * @file   gnuplot.hpp
+ * @author Diego Paiva
+ * @date   23/10/2019
  */
 
 #ifndef GNUPLOT_HPP_INCLUDED

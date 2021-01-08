@@ -1,7 +1,7 @@
 /**
- * @file    instance.cpp
- * @author  Diego Paiva
- * @date    25/09/2019
+ * @file   instance.cpp
+ * @author Diego Paiva
+ * @date   25/09/2019
  */
 
 #include "instance.hpp"

@@ -18,8 +18,8 @@ void gnuplot::plot_run(Run run, std::string dir)
     dir.append("/");
 
   // TODO: REVISAR INFEASIBLE SOLUTIONS
-  details::plot_solution_graph(run.best_init, dir + "init.png");
   details::plot_solution_graph(run.best, dir + "best.png");
+  details::plot_solution_graph(run.best_init, dir + "init.png");
 
   for (auto pair : run.best.routes)
     details::plot_schedule(pair.second, dir + "schedule" + std::to_string(pair.first->id) + ".png");

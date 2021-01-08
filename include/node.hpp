@@ -1,7 +1,7 @@
 /**
- * @file    node.hpp
- * @author  Diego Paiva
- * @date    22/09/2019
+ * @file   node.hpp
+ * @author Diego Paiva
+ * @date   22/09/2019
  *
  * A class to represent a node for the DARP.
  */
@@ -28,14 +28,14 @@ public:
   double max_ride_time;
 
  /**
-  * Default constructor.
+  * Constructor 1.
   */
   Node() {};
 
  /**
-  * Constructor with id.
+  * Constructor 2.
   *
-  * @param id Node's id.
+  * @param id Id.
   */
   Node(int id);
 
@@ -45,21 +45,21 @@ public:
   ~Node() {};
 
  /**
-  * Checks if this is pickup node.
+  * Checks if this node is a pickup.
   *
   * @return `true` if pickup node.
   */
   bool is_pickup();
 
  /**
-  * Checks if this is delivery node.
+  * Checks if this node is a delivery.
   *
   * @return `true` if delivery node.
   */
   bool is_delivery();
 
  /**
-  * Checks if this is depot node.
+  * Checks if this node is a depot.
   *
   * @return `true` if depot node.
   */
