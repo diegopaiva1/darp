@@ -19,7 +19,7 @@
 class Route
 {
 private:
-  std::unordered_map<Node*, int> nodes_indexes;
+  std::unordered_map<Node*, int> nodes_indices;
 
 public:
   Vehicle *vehicle;
@@ -61,22 +61,6 @@ public:
   * @return `true` if feasible.
   */
   bool feasible();
-
- /**
-  * Overload of '==' operator.
-  *
-  * @param r A route to be compared to this.
-  * @return  True if r is equal this.
-  */
-  bool operator==(Route &r) const;
-
- /**
-  * Overload of '!=' operator.
-  *
-  * @param r A route to be compared to this.
-  * @return  True if r is not equal this.
-  */
-  bool operator!=(Route &r) const;
 
  /**
   * Perform eight-step evaluation scheme to compute route cost and feasibility.

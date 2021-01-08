@@ -7,7 +7,7 @@
 #include "route.hpp"
 #include "instance.hpp"
 
-#include <cfloat>   // FLT_MAX
+#include <cfloat>  // FLT_MAX
 #include <numeric> // std::accumulate
 
 Route::Route()
@@ -19,16 +19,6 @@ Route::Route(Vehicle *vehicle)
 {
   this->vehicle = vehicle;
   this->cost = 0.0;
-}
-
-bool Route::operator==(Route &r) const
-{
-  return vehicle == r.vehicle;
-}
-
-bool Route::operator!=(Route &r) const
-{
-  return !operator==(r);
 }
 
 bool Route::feasible()
@@ -81,7 +71,7 @@ bool Route::evaluate()
 
   double forward_time_slack_at_0;
 
-  nodes_indexes[path[0]] = 0;
+  nodes_indices[path[0]] = 0;
 
   // STEP 1
   departure_times[0] = path[0]->arrival_time;
@@ -105,7 +95,7 @@ bool Route::evaluate()
     compute_waiting_time(i);
     compute_departure_time(i);
 
-    nodes_indexes[path[i]] = i;
+    nodes_indices[path[i]] = i;
   }
 
   // STEP 3
@@ -134,10 +124,10 @@ bool Route::evaluate()
   // STEP 7
   for (int j = 1; j < path.size() - 1; j++) {
     if (path[j]->is_pickup()) {
-      STEP7a:
+      // STEP 7 (a)
       double forward_time_slack = get_forward_time_slack(j);
 
-      STEP7b:
+      // STEP 7 (b)
       waiting_times[j] += std::min(
         forward_time_slack, std::accumulate(waiting_times.begin() + j + 1, waiting_times.end() - 1, 0.0)
       );
@@ -145,7 +135,7 @@ bool Route::evaluate()
       service_beginning_times[j] = arrival_times[j] + waiting_times[j];
       departure_times[j] = service_beginning_times[j] + path[j]->service_time;
 
-      STEP7c:
+      // STEP 7 (c):
       for (int i = j + 1; i < path.size(); i++) {
         compute_arrival_time(i);
         compute_service_beginning_time(i);
@@ -153,10 +143,10 @@ bool Route::evaluate()
         compute_departure_time(i);
       }
 
-      STEP7d:
+      // STEP 7 (d):
       for (int i = j + 1; i < path.size() - 1; i++)
         if (path[i]->is_delivery())
-          compute_ride_time(nodes_indexes[inst.get_request(path[i])->pickup]);
+          compute_ride_time(nodes_indices[inst.get_request(path[i])->pickup]);
     }
   }
 
@@ -188,8 +178,8 @@ double Route::get_forward_time_slack(int i)
   for (int j = i; j < path.size(); j++) {
     double pj = 0.0;
 
-    if (path[j]->is_delivery() && nodes_indexes[inst.get_request(path[j])->pickup] < i)
-      pj = ride_times[nodes_indexes[inst.get_request(path[j])->pickup]];
+    if (path[j]->is_delivery() && nodes_indices[inst.get_request(path[j])->pickup] < i)
+      pj = ride_times[nodes_indices[inst.get_request(path[j])->pickup]];
 
     double time_slack = std::accumulate(waiting_times.begin() + i + 1, waiting_times.begin() + j + 1, 0.0) +
                         std::max(0.0, std::min(path[j]->departure_time - service_beginning_times[j], 90.0 - pj));
@@ -239,7 +229,7 @@ void Route::compute_departure_time(int i)
 
 void Route::compute_ride_time(int i)
 {
-  ride_times[i] = service_beginning_times[nodes_indexes[inst.get_request(path[i])->delivery]] - departure_times[i];
+  ride_times[i] = service_beginning_times[nodes_indices[inst.get_request(path[i])->delivery]] - departure_times[i];
 }
 
 double Route::duration()

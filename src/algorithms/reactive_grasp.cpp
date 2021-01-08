@@ -48,7 +48,7 @@ namespace algorithms
       #pragma omp for
       for (int it = 1; it <= iterations; it++) {
         double alpha = get_random_alpha(alphas_map);
-        Solution init = build_greedy_randomized_solution(alpha);
+        Solution init = construct_greedy_randomized_solution(alpha);
 
         if (!init.feasible())
           init = repair(init);
@@ -72,7 +72,7 @@ namespace algorithms
 
         if (it % blocks == 0) {
           #pragma omp critical
-          update_probs(alphas_map, best_obj);
+          update_probs(&alphas_map, best_obj);
         }
       }
     }
@@ -111,7 +111,7 @@ namespace algorithms
       return 0;
     }
 
-    Solution build_greedy_randomized_solution(double alpha)
+    Solution construct_greedy_randomized_solution(double alpha)
     {
       Solution solution;
 
@@ -173,9 +173,9 @@ namespace algorithms
     {
       Route best;
       double delta = best.cost = FLT_MAX;
- 
+
       for (std::pair<Vehicle*, Route> pair : s.routes) {
-	Route r = pair.second;
+	      Route r = pair.second;
         Route curr = get_cheapest_insertion(req, r);
 
         if (curr.feasible() && curr.cost - r.cost < delta) {
@@ -262,8 +262,7 @@ namespace algorithms
       #endif
 
       for (std::pair<Vehicle*, Route> pair : s.routes) {
-	Vehicle *v = pair.first;
-	Route r = pair.second;
+	      Route r = pair.second;
         Route best_reinsertion = r;
 
         #ifdef DEBUG
@@ -376,7 +375,7 @@ namespace algorithms
         #endif
 
         for (std::pair<Vehicle*, Route> pair : s.routes) {
-	  Route r = pair.second;
+	        Route r = pair.second;
           Route test = get_cheapest_insertion(*request, r);
 
           if (test.cost - r.cost < min_increase) {
@@ -427,12 +426,12 @@ namespace algorithms
       double best_obj = best.obj_func_value();
 
       for (std::pair<Vehicle*, Route> p1 : s.routes) {
-	Vehicle *v1 = p1.first;
-	Route r1 = p1.second;
+	      Vehicle *v1 = p1.first;
+	      Route r1 = p1.second;
 
         for (std::pair<Vehicle*, Route> p2 : s.routes) {
-	  Vehicle *v2 = p2.first;
-	  Route r2 = p2.second;
+	        Vehicle *v2 = p2.first;
+	        Route r2 = p2.second;
 
           if (v1 != v2) {
             int r1_load = 0;
@@ -535,12 +534,12 @@ namespace algorithms
       double delta = 0;
 
       for (std::pair<Vehicle*, Route> pair1 : s.routes) {
-	Vehicle *v1 = pair1.first;
+	      Vehicle *v1 = pair1.first;
         Route r1 = pair1.second;
 
         for (std::pair<Vehicle*, Route> pair2 : s.routes) {
-	  Vehicle *v2 = pair2.first;
-	  Route r2 = pair2.second;
+	        Vehicle *v2 = pair2.first;
+	        Route r2 = pair2.second;
 
           if (v1 != v2) {
             for (Node *node : r1.path) {
@@ -610,16 +609,18 @@ namespace algorithms
       return s;
     }
 
-    void update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost)
+    void update_probs(std::map<double, AlphaInfo> *alphas_map, double best_cost)
     {
+      std::map<double, double> q;
       double q_sum = 0.0;
 
-      for (std::pair<double, AlphaInfo> pair : alphas_map)
-        if (pair.second.avg() > 0)
-          q_sum += best_cost/pair.second.avg();
+      for (std::pair<double, AlphaInfo> pair : *alphas_map) {
+        q[pair.first] = best_cost/pair.second.avg();
+        q_sum += q[pair.first];
+      }
 
-      for (std::pair<double, AlphaInfo> pair : alphas_map)
-        pair.second.probability = (best_cost/pair.second.avg())/q_sum;
+      for (std::pair<const double, AlphaInfo> &pair : *alphas_map)
+        pair.second.probability = q[pair.first]/q_sum;
     }
   } // namespace reactive_grasp_impl
 } // namespace algorithms

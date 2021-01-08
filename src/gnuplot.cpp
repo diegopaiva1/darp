@@ -67,7 +67,6 @@ void gnuplot::details::plot_solution_graph(Solution s, std::string output)
   data_stream << "\n\n";
 
   for (auto pair : s.routes) {
-    Vehicle *v = pair.first;
     Route r = pair.second;
     data_stream << "# x1, y1, x2 - x1, y2 - y1" << "\n";
 

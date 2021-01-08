@@ -57,7 +57,7 @@ namespace algorithms
     };
 
    /**
-    * Make a draw and select an alpha based in their probabilities.
+    * Choose an alpha value based in their probabilities.
     *
     * @param alphas_map A map with each alpha performance info.
     * @return          A (double) alpha value.
@@ -65,12 +65,20 @@ namespace algorithms
     double get_random_alpha(std::map<double, AlphaInfo> alphas_map);
 
    /**
-    * Build a random greedy solution.
+    * Construct a random greedy solution.
     *
     * @param alpha A random factor to allow restricted selection from the list of candidates.
     * @return      A Solution.
     */
-    Solution build_greedy_randomized_solution(double alpha);
+    Solution construct_greedy_randomized_solution(double alpha);
+
+   /**
+    * Repair an infeasible solution.
+    *
+    * @param s A solution to be updated.
+    * @return  Updated solution.
+    */
+    Solution repair(Solution s);
 
    /**
     * For a given request and a given solution, return the route (with the request inserted, if feasible)
@@ -99,8 +107,8 @@ namespace algorithms
     *
     * @param s              A solution to be updated.
     * @param moves          A vector containing move methods.
-    * @param use_randomness Set to RVND (moves will be chosen randomly rather than order in the vector).
-    * @return      Updated solution.
+    * @param use_randomness Set to RVND (moves will be chosen randomly rather than the order they appear in vector).
+    * @return               Updated solution.
     */
     Solution vnd(Solution s, std::vector<Move> moves, bool use_randomness = false);
 
@@ -128,16 +136,14 @@ namespace algorithms
     */
     Solution two_opt_star(Solution s);
 
-    Solution repair(Solution s);
-
    /**
     * Update probability of each random alpha based in the best solution found so far.
     *
     * @param alphas_map A map with each alpha performance info.
     * @param best_cost  Cost of best solution found at the moment.
     */
-    void update_probs(std::map<double, AlphaInfo> &alphas_map, double best_cost);
-  } // namespace reactivw_grasp_impl
+    void update_probs(std::map<double, AlphaInfo> *alphas_map, double best_cost);
+  } // namespace reactive_grasp_impl
 } // namespace algorithms
 
 #endif // REACTIVE_GRASP_HPP_INCLUDED

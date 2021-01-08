@@ -4,15 +4,14 @@
  * @date    24/09/2019
  */
 
+#include "algorithms/reactive_grasp.hpp"
 #include "instance.hpp"
 #include "json.hpp"
-#include "algorithms/reactive_grasp.hpp"
 
-#include <iomanip>  // std::setprecision, std::setw
-#include <fstream>  // std::ofstream
-#include <ctime>    // std::chrono
-#include <cfloat>   // FLT_MAX 
-#include <sstream>  // std::stringstream
+#include <ctime>   // std::chrono
+#include <fstream> // std::ofstream
+#include <iomanip> // std::setprecision, std::setw
+#include <sstream> // std::stringstream
 
 // Register computation start date
 std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -30,7 +29,7 @@ int main(const int argc, const char* argv[])
   const int min_args = 4, max_args = 4, args_given = argc - 1;
 
   if (args_given < min_args || args_given > max_args) {
-    fprintf(stderr, "Usage: %s <instance> <runs> <threads> <output file name>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <instance> <runs> <threads> <output json name>\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -41,7 +40,7 @@ int main(const int argc, const char* argv[])
 
   for (int i = 1; i <= num_runs; i++) {
     Run run = algorithms::reactive_grasp(
-      1600, 160, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[3])
+      1600, 20, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[3])
     );
 
     printf(
@@ -52,15 +51,14 @@ int main(const int argc, const char* argv[])
   }
 
   to_json(runs, argv[4]);
-
   return EXIT_SUCCESS;
 }
 
 void to_json(std::vector<Run> runs, std::string file_name)
 {
   nlohmann::ordered_json j;
-  double best_cost = FLT_MAX, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
- 
+  double best_cost, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
+
   for (int i = 0; i < runs.size(); i++) {
     double value = runs[i].best.obj_func_value();
 
@@ -106,7 +104,7 @@ void to_json(std::vector<Run> runs, std::string file_name)
     j["runs"][std::to_string(i + 1)]["threads"] = runs[i].seeds.size();
     j["runs"][std::to_string(i + 1)]["seeds"] = runs[i].seeds;
 
-    if (value < best_cost) {
+    if (i == 0 || value < best_cost) {
       j["best_run"] = i + 1;
       best_cost = value;
     }
@@ -115,12 +113,11 @@ void to_json(std::vector<Run> runs, std::string file_name)
   mean_cost /= runs.size();
   mean_cpu /= runs.size();
 
-  if (runs.size() > 1) {
-    for (int i = 0; i < runs.size(); i++)
-      standard_deviation += pow(runs[i].best.obj_func_value() - mean_cost, 2);
+  for (int i = 0; i < runs.size(); i++)
+    standard_deviation += pow(runs[i].best.obj_func_value() - mean_cost, 2);
 
+  if (runs.size() > 1)
     standard_deviation = sqrt(standard_deviation/(runs.size() - 1));
-  }
 
   {
     std::stringstream ss;
