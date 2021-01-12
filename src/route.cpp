@@ -237,16 +237,6 @@ double Route::duration()
   return service_beginning_times.back() - service_beginning_times.front();
 }
 
-double Route::get_total_distance()
-{
-  double total_distance = 0.0;
-
-  for (int i = 1; i < path.size(); i++)
-    total_distance += inst.get_travel_time(path[i - 1], path[i]);
-
-  return total_distance;
-}
-
 void Route::insert_node(Node *node, int index)
 {
   path.insert(path.begin() + index, node);

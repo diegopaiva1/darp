@@ -82,8 +82,6 @@ public:
 
   void compute_latest_time(int i);
 
-  double get_total_distance();
-
  /**
   * Get Route's total duration.
   *
@@ -142,8 +140,19 @@ public:
   */
   void compute_ride_time(int i);
 
+ /**
+  * Insert a new node in the route's path.
+  *
+  * @param node  The node.
+  * @param index Position in the route.
+  */
   void insert_node(Node *node, int index);
 
+ /**
+  * Erase node in a given position of the route's path.
+  *
+  * @param index Position in the route.
+  */
   void erase_node(int index);
 };
 
