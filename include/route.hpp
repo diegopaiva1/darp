@@ -141,6 +141,10 @@ public:
   * @param i Index.
   */
   void compute_ride_time(int i);
+
+  void insert_node(Node *node, int index);
+
+  void erase_node(int index);
 };
 
 #endif // ROUTE_HPP_INCLUDED

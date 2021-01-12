@@ -7,11 +7,21 @@
 #include "solution.hpp"
 #include "instance.hpp"
 
-#include <cmath>
+#include <cfloat>
+
+Solution::Solution()
+{
+  cost = 0.0;
+}
 
 void Solution::add_route(Route r)
 {
+  // In case we are updating the vehicle's route...
+  if (routes.find(r.vehicle) != routes.end())
+    cost -= routes[r.vehicle].cost;
+
   routes[r.vehicle] = r;
+  cost += r.cost;
 }
 
 bool Solution::feasible()
@@ -26,14 +36,4 @@ void Solution::delete_empty_routes()
       it = routes.erase(it);
     else
       ++it;
-}
-
-double Solution::obj_func_value()
-{
-  double sum = 0.0;
-
-  for (std::pair<Vehicle*, Route> pair : routes)
-    sum += pair.second.cost;
-
-  return sum;
 }

@@ -16,7 +16,15 @@
 class Solution
 {
 public:
+ /*
+  * Hash map to assign each vehicle to a particular route.
+  */
   std::unordered_map<Vehicle*, Route> routes;
+
+ /*
+  * Solution's total cost.
+  */
+  double cost;
 
  /**
   * Add (or update) the route traversed by vehicle of route `r`.
@@ -28,7 +36,7 @@ public:
  /**
   * Default constructor.
   */
-  Solution() {};
+  Solution();
 
  /**
   * Default destructor.

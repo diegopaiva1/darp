@@ -12,13 +12,13 @@
 #include "solution.hpp"
 
 #include <map>
+
 class Run
 {
 public:
   Solution best_init;
   Solution best;
   double elapsed_seconds;
-  std::map<double, double> alphas_prob_distribution;
   std::vector<unsigned int> seeds;
 
  /**

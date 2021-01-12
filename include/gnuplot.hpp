@@ -17,7 +17,6 @@ namespace gnuplot
   *   1. Initial solution graph;
   *   2. Best solution graph;
   *   3. Schedule for every route in best solution;
-  *   4. Alphas probability distribution.
   *
   * @param run Run object.
   * @param dir Directory where generated plots will be stored.
@@ -41,14 +40,6 @@ namespace gnuplot
     * @param output Output file name.
     */
     void plot_schedule(Route r, std::string output);
-
-   /**
-    * Plot alphas probability distribution.
-    *
-    * @param alphas_probs Map containing the alpha values and their probabilities.
-    * @param output       Output file name.
-    */
-    void plot_alphas_probs(std::map<double, double> alphas_probs, std::string output);
 
    /**
     * Open a pipe to send commands to gnuplot.

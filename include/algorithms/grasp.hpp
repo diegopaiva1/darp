@@ -1,5 +1,5 @@
 /**
- * @file    reactive_grasp.hpp
+ * @file    grasp.hpp
  * @author  Diego Paiva
  * @date    26/09/2019
  */
@@ -15,17 +15,16 @@
 namespace algorithms
 {
  /**
-  * Use reactive GRASP to solve the instance.
+  * Use GRASP to solve the instance.
   *
-  * @param iterations Total number of iterations.
-  * @param blocks     Frequency of iterations on which probabilities are updated.
-  * @param alphas     GRASP's vector of random factors.
-  * @param threads    Number of threads to run.
-  * @return           A Run object.
+  * @param iterations   Total number of iterations.
+  * @param random_param GRASP's randomness parameter.
+  * @param thread_count Number of threads to run.
+  * @return             A Run object.
   */
-  Run reactive_grasp(int iterations, int blocks, std::vector<double> alphas, int threads);
+  Run grasp(int iterations, double random_param, int thread_count);
 
-  namespace reactive_grasp_impl
+  namespace details
   {
    /**
     * Get base random alias.
@@ -38,39 +37,12 @@ namespace algorithms
     typedef Solution (*Move)(Solution s);
 
    /**
-    * Auxiliary data type to track performance of each alpha in Reactive GRASP.
-    */
-    struct AlphaInfo
-    {
-      double probability;
-      double sum;
-      int count;
-
-     /**
-      * Get the average value of all solutions found using the attached alpha.
-      *
-      * @return The average.
-      */
-      double avg() {
-        return count > 0 ? sum/count : 0;
-      }
-    };
-
-   /**
-    * Choose an alpha value based in their probabilities.
-    *
-    * @param alphas_map A map with each alpha performance info.
-    * @return          A (double) alpha value.
-    */
-    double get_random_alpha(std::map<double, AlphaInfo> alphas_map);
-
-   /**
     * Construct a random greedy solution.
     *
-    * @param alpha A random factor to allow restricted selection from the list of candidates.
-    * @return      A Solution.
+    * @param random_param A random parameter in range [0, 1] to allow restricted selection from the candidate list.
+    * @return             A Solution.
     */
-    Solution construct_greedy_randomized_solution(double alpha);
+    Solution construct_greedy_randomized_solution(double random_param);
 
    /**
     * Repair an infeasible solution.
@@ -135,15 +107,7 @@ namespace algorithms
     * @return  Updated solution.
     */
     Solution two_opt_star(Solution s);
-
-   /**
-    * Update probability of each random alpha based in the best solution found so far.
-    *
-    * @param alphas_map A map with each alpha performance info.
-    * @param best_cost  Cost of best solution found at the moment.
-    */
-    void update_probs(std::map<double, AlphaInfo> *alphas_map, double best_cost);
-  } // namespace reactive_grasp_impl
+  } // namespace grasp_impl
 } // namespace algorithms
 
 #endif // REACTIVE_GRASP_HPP_INCLUDED

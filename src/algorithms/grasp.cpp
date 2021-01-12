@@ -4,7 +4,7 @@
  * @date   26/09/2019
  */
 
-#include "algorithms/reactive_grasp.hpp"
+#include "algorithms/grasp.hpp"
 #include "instance.hpp"
 #include "gnuplot.hpp"
 
@@ -15,28 +15,20 @@
 
 namespace algorithms
 {
-  Run reactive_grasp(int iterations, int blocks, std::vector<double> alphas, int threads)
+  Run grasp(int iterations, double random_param, int thread_count)
   {
-    using namespace reactive_grasp_impl;
+    using namespace details;
+
+    if (thread_count < 1 || thread_count > omp_get_max_threads())
+      thread_count = omp_get_max_threads();
 
     Run run;
-    double best_obj = FLT_MAX;
-
-    // A map to track each alpha performance
-    std::map<double, AlphaInfo> alphas_map;
-
-    for (double a : alphas)
-      alphas_map[a] = {1.0/alphas.size(), 0.0, 0};
-
-    // Moves to be used within RVND
+    run.best.cost = FLT_MAX;
     std::vector<Move> moves = {reinsert, two_opt_star, shift_1_0};
-
-    if (threads < 1 || threads > omp_get_max_threads())
-      threads = omp_get_max_threads();
 
     double start = omp_get_wtime();
 
-    #pragma omp parallel num_threads(threads)
+    #pragma omp parallel num_threads(thread_count)
     {
       // Use std::random_device to generate seed to Random engine to each thread
       unsigned int seed = std::random_device{}();
@@ -47,71 +39,36 @@ namespace algorithms
 
       #pragma omp for
       for (int it = 1; it <= iterations; it++) {
-        double alpha = get_random_alpha(alphas_map);
-        Solution init = construct_greedy_randomized_solution(alpha);
+        Solution init = construct_greedy_randomized_solution(random_param);
 
         if (!init.feasible())
           init = repair(init);
 
         Solution curr = vnd(init, moves);
-        double curr_obj = curr.obj_func_value();
 
         #pragma omp critical
-        if (curr.feasible() && curr_obj < best_obj) {
-          best_obj = curr_obj;
-          run.best_init = init;
+        if (curr.feasible() && curr.cost < run.best.cost) {
           run.best = curr;
-        }
-
-        #pragma omp critical
-        {
-          alphas_map[alpha].count++;
-          int penalty = init.feasible() ? 1 : 10;
-          alphas_map[alpha].sum += init.obj_func_value() * penalty;
-        }
-
-        if (it % blocks == 0) {
-          #pragma omp critical
-          update_probs(&alphas_map, best_obj);
+          run.best_init = init;
         }
       }
     }
 
-    run.best_init.delete_empty_routes();
     run.best.delete_empty_routes();
+    run.best_init.delete_empty_routes();
 
     double finish = omp_get_wtime();
-
-    for (std::pair<double, AlphaInfo> pair : alphas_map)
-      run.alphas_prob_distribution[pair.first] = pair.second.probability;
-
     run.elapsed_seconds = finish - start;
-    gnuplot::plot_run(run, "../data/plots/");
 
     return run;
   }
 
   /******************************************/
-  /* Reactive GRASP implementations details */
+  /* GRASP implementations details */
   /******************************************/
-  namespace reactive_grasp_impl
+  namespace details
   {
-    double get_random_alpha(std::map<double, AlphaInfo> alphas_map)
-    {
-      double rand = Random::get(0.0, 1.0);
-      double sum = 0.0;
-
-      for (std::pair<double, AlphaInfo> pair : alphas_map) {
-        sum += pair.second.probability;
-
-        if (rand <= sum)
-          return pair.first;
-      }
-
-      return 0;
-    }
-
-    Solution construct_greedy_randomized_solution(double alpha)
+    Solution construct_greedy_randomized_solution(double random_param)
     {
       Solution solution;
 
@@ -138,7 +95,7 @@ namespace algorithms
           return c1.route.cost < c2.route.cost;
         });
 
-        auto chosen_candidate = Random::get(candidates.begin(), candidates.begin() + (int) (alpha * candidates.size()));
+        auto chosen_candidate = Random::get(candidates.begin(), candidates.begin() + (int) (random_param * candidates.size()));
 
         if (chosen_candidate->route.feasible()) {
           solution.add_route(chosen_candidate->route);
@@ -152,6 +109,7 @@ namespace algorithms
           r.path.push_back(chosen_candidate->request->pickup);
           r.path.push_back(chosen_candidate->request->delivery);
           r.path.push_back(inst.get_depot());
+
           r.cost = inst.get_travel_time(inst.get_depot(), chosen_candidate->request->pickup) +
                    inst.get_travel_time(chosen_candidate->request->pickup, chosen_candidate->request->delivery) +
                    inst.get_travel_time(chosen_candidate->request->delivery, inst.get_depot());
@@ -193,7 +151,7 @@ namespace algorithms
       best.cost = FLT_MAX;
 
       for (int p = 1; p < r.path.size(); p++) {
-        r.path.insert(r.path.begin() + p, req->pickup);
+        r.insert_node(req->pickup, p);
 
         for (int i = p - 1; i < r.path.size(); i++) {
           r.compute_earliest_time(i);
@@ -202,15 +160,14 @@ namespace algorithms
 
         if ((r.earliest_times[p] < r.path[p]->departure_time) && (r.load[p - 1] + r.path[p]->load <= r.vehicle->capacity)) {
           for (int d = p + 1; d < r.path.size(); d++) {
-            r.path.insert(r.path.begin() + d, req->delivery);
+            r.insert_node(req->delivery, d);
 
             for (int i = d - 1; i < r.path.size(); i++) {
               r.compute_earliest_time(i);
               r.compute_load(i);
             }
 
-            // TODO: Otimizar para O(1)
-            if (r.get_total_distance() < best.cost) {
+            if (r.cost < best.cost) {
               for (int i = p + 1; i <= d + 1; i++) {
                 if ((r.earliest_times[i] > r.path[i]->departure_time) || (r.load[i - 1] + r.path[i]->load > r.vehicle->capacity))
                   // Violation found
@@ -223,11 +180,11 @@ namespace algorithms
                 best = r;
             }
 
-            r.path.erase(r.path.begin() + d);
+            r.erase_node(d);
           }
         }
 
-        r.path.erase(r.path.begin() + p);
+        r.erase_node(p);
       }
 
       return best;
@@ -243,7 +200,7 @@ namespace algorithms
         auto move = use_randomness ? Random::get(moves.begin() + k, moves.end()) : moves.begin() + k;
         Solution neighbor = (*move)(s);
 
-        if (neighbor.obj_func_value() < s.obj_func_value()) {
+        if (neighbor.cost < s.cost) {
           s = neighbor;
           k = 0;
         }
@@ -271,14 +228,23 @@ namespace algorithms
 
         // Perform reinsert only in routes with more than one request accommodated
         if (r.path.size() > 4) {
-          for (Node *node : r.path) {
+          for (int i = 0; i < r.path.size(); i++) {
+            Node *node = r.path[i];
+
             if (node->is_pickup()) {
               Request *req = inst.get_request(node);
               Route curr = r;
+              int delivery_index;
 
-              // Erase request by value
-              curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->pickup), curr.path.end());
-              curr.path.erase(std::remove(curr.path.begin(), curr.path.end(), req->delivery), curr.path.end());
+              for (int j = i; j < r.path.size(); j++) {
+                if (r.path[j] == req->delivery) {
+                  delivery_index = j;
+                  break;
+                }
+              }
+
+              curr.erase_node(delivery_index);
+              curr.erase_node(i);
 
               // Reinsert the request
               curr = get_cheapest_insertion(req, curr);
@@ -375,6 +341,7 @@ namespace algorithms
         #endif
 
         for (std::pair<Vehicle*, Route> pair : s.routes) {
+          Vehicle *v = pair.first;
 	        Route r = pair.second;
           Route test = get_cheapest_insertion(*request, r);
 
@@ -423,7 +390,6 @@ namespace algorithms
     Solution two_opt_star(Solution s)
     {
       Solution best = s;
-      double best_obj = best.obj_func_value();
 
       for (std::pair<Vehicle*, Route> p1 : s.routes) {
 	      Vehicle *v1 = p1.first;
@@ -464,12 +430,9 @@ namespace algorithms
                         Solution neighbor = s;
                         neighbor.add_route(new_r1);
                         neighbor.add_route(new_r2);
-                        double neighbor_obj = neighbor.obj_func_value();
 
-                        if (neighbor_obj < best_obj) {
+                        if (neighbor.cost < best.cost)
                           best = neighbor;
-                          best_obj = neighbor_obj;
-                        }
                       }
 
                       #ifdef DEBUG
@@ -542,18 +505,26 @@ namespace algorithms
 	        Route r2 = pair2.second;
 
           if (v1 != v2) {
-            for (Node *node : r1.path) {
+            for (int i = 0; i < r1.path.size(); i++) {
+              Node *node = r1.path[i];
+
               if (node->is_pickup()) {
                 Request *req = inst.get_request(node);
                 Route new_r1 = r1;
                 Route new_r2 = get_cheapest_insertion(req, r2);
+                int delivery_index;
 
-                // Erase request by value
-                new_r1.path.erase(std::remove(new_r1.path.begin(), new_r1.path.end(), req->pickup), new_r1.path.end());
-                new_r1.path.erase(std::remove(new_r1.path.begin(), new_r1.path.end(), req->delivery), new_r1.path.end());
-                new_r1.evaluate(); // TODO: Optimize?
+                for (int j = i; j < r1.path.size(); j++) {
+                  if (r1.path[j] == req->delivery) {
+                    delivery_index = j;
+                    break;
+                  }
+                }
 
-                double gain = (new_r1.get_total_distance() + new_r2.cost) - (r1.cost + r2.cost);
+                new_r1.erase_node(delivery_index);
+                new_r1.erase_node(i);
+
+                double gain = (new_r1.cost + new_r2.cost) - (r1.cost + r2.cost);
 
                 #ifdef DEBUG
                   printf("\nShifting request (%d, %d) from R%d to R%d\n", req->pickup->id, req->delivery->id, v1->id, v2->id);
@@ -607,20 +578,6 @@ namespace algorithms
       }
 
       return s;
-    }
-
-    void update_probs(std::map<double, AlphaInfo> *alphas_map, double best_cost)
-    {
-      std::map<double, double> q;
-      double q_sum = 0.0;
-
-      for (std::pair<double, AlphaInfo> pair : *alphas_map) {
-        q[pair.first] = best_cost/pair.second.avg();
-        q_sum += q[pair.first];
-      }
-
-      for (std::pair<const double, AlphaInfo> &pair : *alphas_map)
-        pair.second.probability = q[pair.first]/q_sum;
     }
   } // namespace reactive_grasp_impl
 } // namespace algorithms

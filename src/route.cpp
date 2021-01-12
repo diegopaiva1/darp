@@ -246,3 +246,25 @@ double Route::get_total_distance()
 
   return total_distance;
 }
+
+void Route::insert_node(Node *node, int index)
+{
+  path.insert(path.begin() + index, node);
+
+  if (index > 0)
+    // Recalculate route's total cost
+    cost = cost + inst.get_travel_time(path[index - 1], path[index])
+                + inst.get_travel_time(path[index], path[index + 1])
+                - inst.get_travel_time(path[index - 1], path[index + 1]);
+}
+
+void Route::erase_node(int index)
+{
+  if (index > 0)
+    // Recalculate route's total cost
+    cost = cost - inst.get_travel_time(path[index - 1], path[index])
+                - inst.get_travel_time(path[index], path[index + 1])
+                + inst.get_travel_time(path[index - 1], path[index + 1]);
+
+  path.erase(path.begin() + index);
+}

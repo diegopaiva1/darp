@@ -17,14 +17,11 @@ void gnuplot::plot_run(Run run, std::string dir)
   if (dir.back() != '/')
     dir.append("/");
 
-  // TODO: REVISAR INFEASIBLE SOLUTIONS
   details::plot_solution_graph(run.best, dir + "best.png");
   details::plot_solution_graph(run.best_init, dir + "init.png");
 
   for (auto pair : run.best.routes)
     details::plot_schedule(pair.second, dir + "schedule" + std::to_string(pair.first->id) + ".png");
-
-  details::plot_alphas_probs(run.alphas_prob_distribution, dir + "alphas.png");
 
   // Sleep to avoid concurrence issues with gnuplot process
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
@@ -50,12 +47,12 @@ void gnuplot::details::plot_solution_graph(Solution s, std::string output)
   const std::string graph_script = "../extras/scripts/gnuplot/graph.gp";
 
   // Data to be used in the plot
-  std::string data_file = std::to_string(s.obj_func_value()) + ".tmp";
+  std::string data_file = std::to_string(s.cost) + ".tmp";
   std::ofstream data_stream(data_file, std::ofstream::out | std::ofstream::trunc);
 
   // Header metadata
   data_stream << "# Instance name, Solution cost, Number of routes, Number of requests" << "\n"
-              << inst.name << ' ' << s.obj_func_value() << ' ' << s.routes.size() << ' ' <<  inst.requests.size() << "\n";
+              << inst.name << ' ' << s.cost << ' ' << s.routes.size() << ' ' <<  inst.requests.size() << "\n";
 
   // Each datablock must be separated by two line breaks
   data_stream << "\n\n";
@@ -147,25 +144,4 @@ void gnuplot::details::plot_schedule(Route r, std::string output)
   }
 
   call_gnuplot({schedule_script, data_file, output, std::to_string(r.path.size())});
-}
-
-void gnuplot::details::plot_alphas_probs(std::map<double, double> alphas_probs, std::string output)
-{
-  const std::string alpha_probs_script = "../extras/scripts/gnuplot/alphas.gp";
-
-  // Data to be used in the plot
-  std::string data_file = "alphas.tmp";
-  std::ofstream data_stream(data_file, std::ofstream::out | std::ofstream::trunc);
-
-  for (auto pair : alphas_probs)
-    data_stream << std::fixed << std::setprecision(2) << pair.first << " " << pair.second << '\n';
-
-  call_gnuplot({
-    alpha_probs_script,
-    data_file,
-    output,
-    std::to_string(alphas_probs.size()),
-    std::to_string(alphas_probs.begin()->first),
-    std::to_string(alphas_probs.rbegin()->first)
-  });
 }

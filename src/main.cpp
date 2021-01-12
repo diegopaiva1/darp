@@ -4,7 +4,7 @@
  * @date   24/09/2019
  */
 
-#include "algorithms/reactive_grasp.hpp"
+#include "algorithms/grasp.hpp"
 #include "instance.hpp"
 #include "json.hpp"
 
@@ -39,12 +39,10 @@ int main(const int argc, const char* argv[])
   int num_runs = std::stoi(argv[2]);
 
   for (int i = 1; i <= num_runs; i++) {
-    Run run = algorithms::reactive_grasp(
-      1600, 20, {0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0}, std::stoi(argv[3])
-    );
+    Run run = algorithms::grasp(2048, 0.85, std::stoi(argv[3]));
 
     printf(
-      "Run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, run.best.obj_func_value(), run.elapsed_seconds
+      "Run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, run.best.cost, run.elapsed_seconds
     );
 
     runs.push_back(run);
@@ -60,20 +58,20 @@ void to_json(std::vector<Run> runs, std::string file_name)
   double best_cost, mean_cost = 0.0, mean_cpu = 0.0, standard_deviation = 0.0;
 
   for (int i = 0; i < runs.size(); i++) {
-    double value = runs[i].best.obj_func_value();
+    double value = runs[i].best.cost;
 
     mean_cost += value;
     mean_cpu += runs[i].elapsed_seconds;
 
     {
       std::stringstream ss;
-      ss << std::setprecision(2) << std::fixed << runs[i].best_init.obj_func_value();
+      ss << std::setprecision(2) << std::fixed << runs[i].best_init.cost;
       ss >> j["runs"][std::to_string(i + 1)]["init"];
     }
 
     {
       std::stringstream ss;
-      ss << std::setprecision(2) << std::fixed << runs[i].best.obj_func_value();
+      ss << std::setprecision(2) << std::fixed << runs[i].best.cost;
       ss >> j["runs"][std::to_string(i + 1)]["best"];
     }
 
@@ -90,17 +88,6 @@ void to_json(std::vector<Run> runs, std::string file_name)
     }
 
     j["runs"][std::to_string(i + 1)]["feasible"] = runs[i].best.feasible();
-
-    for (std::pair<double, double> pair : runs[i].alphas_prob_distribution) {
-      std::stringstream ss1;
-      std::stringstream ss2;
-
-      ss1 << std::setprecision(2) << std::fixed << pair.first;
-      ss2 << std::setprecision(2) << std::fixed << pair.second;
-
-      ss2 >> j["runs"][std::to_string(i + 1)]["alphas_probability_distribution"][ss1.str()];
-    }
-
     j["runs"][std::to_string(i + 1)]["threads"] = runs[i].seeds.size();
     j["runs"][std::to_string(i + 1)]["seeds"] = runs[i].seeds;
 
@@ -114,7 +101,7 @@ void to_json(std::vector<Run> runs, std::string file_name)
   mean_cpu /= runs.size();
 
   for (int i = 0; i < runs.size(); i++)
-    standard_deviation += pow(runs[i].best.obj_func_value() - mean_cost, 2);
+    standard_deviation += pow(runs[i].best.cost - mean_cost, 2);
 
   if (runs.size() > 1)
     standard_deviation = sqrt(standard_deviation/(runs.size() - 1));
