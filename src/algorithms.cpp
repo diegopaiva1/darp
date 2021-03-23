@@ -1,30 +1,27 @@
 /**
- * @file   reactive_grasp.cpp
+ * @file   algorithms.cpp
  * @author Diego Paiva
  * @date   26/09/2019
  */
 
-#include "algorithms/grasp.hpp"
+#include "algorithms.hpp"
 #include "instance.hpp"
 #include "gnuplot.hpp"
 
-#include <iostream> // std::cout
-#include <iomanip>  // std::setprecision
-#include <cfloat>   // FLT_MAX
-#include <omp.h>    // OpenMP
+#include <cfloat> // FLT_MAX
+#include <omp.h>  // OpenMP
 
 namespace algorithms
 {
+  using namespace details;
+
   Run grasp(int iterations, double random_param, int thread_count)
   {
-    using namespace details;
-
     if (thread_count < 1 || thread_count > omp_get_max_threads())
       thread_count = omp_get_max_threads();
 
     Run run;
     run.best.cost = FLT_MAX;
-    std::vector<Move> moves = {reinsert, two_opt_star, shift_1_0};
 
     double start = omp_get_wtime();
 
@@ -44,18 +41,18 @@ namespace algorithms
         if (!init.feasible())
           init = repair(init);
 
-        Solution curr = vnd(init, moves);
+        Solution curr = vnd(init);
 
         #pragma omp critical
         if (curr.feasible() && curr.cost < run.best.cost) {
           run.best = curr;
-          run.best_init = init;
+          run.init = init;
         }
       }
     }
 
     run.best.delete_empty_routes();
-    run.best_init.delete_empty_routes();
+    run.init.delete_empty_routes();
 
     double finish = omp_get_wtime();
     run.elapsed_seconds = finish - start;
@@ -63,9 +60,50 @@ namespace algorithms
     return run;
   }
 
-  /******************************************/
-  /* GRASP implementations details */
-  /******************************************/
+  Run ils(int max_iterations, int no_improvement_iterations, double random_param)
+  {
+    Run run;
+    double start = omp_get_wtime();
+
+    // Use std::random_device to generate seed to Random engine to each thread
+    unsigned int seed = std::random_device{}();
+    Random::seed(seed);
+    run.seeds.push_back(seed);
+
+    do {
+      run.init = construct_greedy_randomized_solution(random_param);
+
+      if (!run.init.feasible())
+        run.init = repair(run.init);
+    }
+    while (!run.init.feasible());
+
+    run.best = vnd(run.init);
+
+    for (int it = 0, n = 0; it <= max_iterations; it++, n++) {
+      Solution s = vnd(perturb(run.best));
+
+      if (s.feasible() && s.cost < run.best.cost) {
+        run.best = s;
+        n = 0;
+      }
+      else {
+        n++;
+      }
+
+      if (n == no_improvement_iterations)
+        break;
+    }
+
+    run.init.delete_empty_routes();
+    run.best.delete_empty_routes();
+
+    double finish = omp_get_wtime();
+    run.elapsed_seconds = finish - start;
+
+    return run;
+  }
+
   namespace details
   {
     Solution construct_greedy_randomized_solution(double random_param)
@@ -109,11 +147,7 @@ namespace algorithms
           r.path.push_back(chosen_candidate->request->pickup);
           r.path.push_back(chosen_candidate->request->delivery);
           r.path.push_back(inst.get_depot());
-
-          r.cost = inst.get_travel_time(inst.get_depot(), chosen_candidate->request->pickup) +
-                   inst.get_travel_time(chosen_candidate->request->pickup, chosen_candidate->request->delivery) +
-                   inst.get_travel_time(chosen_candidate->request->delivery, inst.get_depot());
-
+          r.evaluate();
           solution.add_route(r);
         }
 
@@ -151,50 +185,54 @@ namespace algorithms
       best.cost = FLT_MAX;
 
       for (int p = 1; p < r.path.size(); p++) {
+        bool discard = false;
         r.insert_node(req->pickup, p);
 
-        for (int i = p - 1; i < r.path.size(); i++) {
-          r.compute_earliest_time(i);
-          r.compute_load(i);
-        }
-
-        if ((r.earliest_times[p] < r.path[p]->departure_time) && (r.load[p - 1] + r.path[p]->load <= r.vehicle->capacity)) {
+        if ((r.get_earliest_time(p) <= r.path[p]->departure_time) && (r.get_load(p - 1) + r.path[p]->load <= r.vehicle->capacity)) {
           for (int d = p + 1; d < r.path.size(); d++) {
             r.insert_node(req->delivery, d);
 
-            for (int i = d - 1; i < r.path.size(); i++) {
-              r.compute_earliest_time(i);
-              r.compute_load(i);
-            }
-
             if (r.cost < best.cost) {
-              for (int i = p + 1; i <= d + 1; i++) {
-                if ((r.earliest_times[i] > r.path[i]->departure_time) || (r.load[i - 1] + r.path[i]->load > r.vehicle->capacity))
-                  // Violation found
-                  break;
+              for (int i = p + 1; i <= d; i++) {
+                if ((r.get_earliest_time(i) > r.path[i]->departure_time) || (r.get_load(i - 1) + r.path[i]->load > r.vehicle->capacity)) {
+                  discard = true;
+                  goto ERASE_DELIVERY;
+                }
               }
 
-              double time_gap_between_pickup_delivery = r.earliest_times[d] - r.path[p]->departure_time - r.path[p]->service_time;
+              double time_gap_between_pickup_delivery = r.get_earliest_time(d) - r.path[p]->departure_time - r.path[p]->service_time;
 
-              if (time_gap_between_pickup_delivery <= r.path[p]->max_ride_time && r.evaluate())
+              if (time_gap_between_pickup_delivery > r.path[p]->max_ride_time) {
+                discard = true;
+                goto ERASE_DELIVERY;
+              }
+              else if (r.evaluate()) {
                 best = r;
+              }
             }
 
+            ERASE_DELIVERY:
             r.erase_node(d);
+
+            if (discard)
+              goto ERASE_PICKUP;
           }
         }
 
+        ERASE_PICKUP:
         r.erase_node(p);
       }
 
       return best;
     }
 
-    Solution vnd(Solution s, std::vector<Move> moves, bool use_randomness)
+    Solution vnd(Solution s, bool use_randomness)
     {
       // Only feasible solutions are allowed
       if (!s.feasible())
         return s;
+
+      std::vector<Move> moves = {two_opt_star, reinsert, shift_1_0};
 
       for (int k = 0; k < moves.size(); /* conditional update */) {
         auto move = use_randomness ? Random::get(moves.begin() + k, moves.end()) : moves.begin() + k;
@@ -234,19 +272,8 @@ namespace algorithms
             if (node->is_pickup()) {
               Request *req = inst.get_request(node);
               Route curr = r;
-              int delivery_index;
 
-              for (int j = i; j < r.path.size(); j++) {
-                if (r.path[j] == req->delivery) {
-                  delivery_index = j;
-                  break;
-                }
-              }
-
-              curr.erase_node(delivery_index);
-              curr.erase_node(i);
-
-              // Reinsert the request
+              curr.erase_request(req);
               curr = get_cheapest_insertion(req, curr);
 
               if (curr.cost < best_reinsertion.cost)
@@ -324,47 +351,20 @@ namespace algorithms
       std::vector<Request*> unplanned;
 
       for (int i = 0; i < extra_vehicles; i++) {
-        for (Node *node : routes.begin()->second.path)
+        for (Node *node : routes[i].second.path)
           if (node->is_pickup())
             unplanned.push_back(inst.get_request(node));
 
-        s.routes.erase(routes.begin()->first);
+        s.routes.erase(routes[i].first);
       }
 
       while (!unplanned.empty()) {
         auto request = Random::get(unplanned);
-        Route best;
-        double min_increase = FLT_MAX;
+        Route best = get_cheapest_insertion(*request, s);
 
-        #ifdef DEBUG
-          printf("\n\tSelected request (%d, %d):\n", (*request)->pickup->id, (*request)->delivery->id);
-        #endif
-
-        for (std::pair<Vehicle*, Route> pair : s.routes) {
-          Vehicle *v = pair.first;
-	        Route r = pair.second;
-          Route test = get_cheapest_insertion(*request, r);
-
-          if (test.cost - r.cost < min_increase) {
-            min_increase = test.cost - r.cost;
-            best = test;
-          }
-
+        if (!best.feasible()) {
           #ifdef DEBUG
-            printf("\t\tR%d: ", v->id);
-            for (Node *n : test.path)
-              if (n == (*request)->pickup || n == (*request)->delivery)
-                printf("\033[1m\033[32m%d\033[0m ", n->id);
-              else
-                printf("%d ", n->id);
-
-            printf("(Δf = %.2lf)\n", test.cost - r.cost);
-          #endif
-        }
-
-        if (min_increase == FLT_MAX) {
-          #ifdef DEBUG
-            printf("\n\t\t-> No feasible insertion found! Solution will remain infeasible.\n");
+            printf("\n\t-> No feasible insertion found! Solution will remain infeasible.\n");
           #endif
 
           // Add a null vehicle to make solution infeasible again
@@ -374,14 +374,178 @@ namespace algorithms
 
         s.add_route(best);
         unplanned.erase(request);
-
-        #ifdef DEBUG
-          printf("\n\t\t-> Selected route R%d with Δf = %.2f\n", best.vehicle->id, min_increase);
-        #endif
       }
 
       #ifdef DEBUG
         printf("\n\t\033[1m\033[32mSolution repaired successfully!\033[0m\n");
+
+        for (auto pair : s.routes) {
+          Vehicle *v = pair.first;
+          Route r = pair.second;
+
+          printf("\tR%d: ", v->id);
+
+          for (Node *node : r.path)
+            printf("%d ", node->id);
+
+          printf("(c = %.2f)\n", r.cost);
+        }
+      #endif
+
+      return s;
+    }
+
+    Solution perturb(Solution s)
+    {
+      #ifdef DEBUG
+        printf("\n\033[1m\033[33m-> Perturbing solution...\033[0m\n\n");
+
+        for (auto pair : s.routes) {
+          Vehicle *v = pair.first;
+          Route r = pair.second;
+
+          printf("R%d: ", v->id);
+
+          for (Node *node : r.path)
+            printf("%d ", node->id);
+
+          printf("(c = %.2f)\n", r.cost);
+        }
+      #endif
+
+      int non_empty_routes = 0;
+
+      for (auto pair : s.routes)
+        if (!pair.second.empty())
+          non_empty_routes++;
+
+      if (non_empty_routes < 3)
+        return s;
+
+      Vehicle *v1, *v2, *v3;
+
+      do {
+        v1 = Random::get(s.routes)->first;
+      }
+      while (s.routes[v1].empty());
+
+      do {
+        v2 = Random::get(s.routes)->first;
+      }
+      while (s.routes[v2].empty() || v2 == v1);
+
+      do {
+        v3 = Random::get(s.routes)->first;
+      }
+      while (s.routes[v3].empty() || v3 == v1 || v3 == v2);
+
+      Request *req1 = inst.get_request(s.routes[v1].path[Random::get(1, (int) s.routes[v1].path.size() - 2)]);
+      Request *req2 = inst.get_request(s.routes[v2].path[Random::get(1, (int) s.routes[v2].path.size() - 2)]);
+      Request *req3 = inst.get_request(s.routes[v3].path[Random::get(1, (int) s.routes[v3].path.size() - 2)]);
+
+      // s.routes[v1].erase_request(req1);
+      // s.routes[v2].erase_request(req2);
+      // s.routes[v3].erase_request(req3);
+
+      s.routes[v1].path.erase(std::remove(s.routes[v1].path.begin(), s.routes[v1].path.end(), req1->pickup), s.routes[v1].path.end());
+      s.routes[v1].path.erase(std::remove(s.routes[v1].path.begin(), s.routes[v1].path.end(), req1->delivery), s.routes[v1].path.end());
+
+      s.routes[v2].path.erase(std::remove(s.routes[v2].path.begin(), s.routes[v2].path.end(), req2->pickup), s.routes[v2].path.end());
+      s.routes[v2].path.erase(std::remove(s.routes[v2].path.begin(), s.routes[v2].path.end(), req2->delivery), s.routes[v2].path.end());
+
+      s.routes[v3].path.erase(std::remove(s.routes[v3].path.begin(), s.routes[v3].path.end(), req3->pickup), s.routes[v3].path.end());
+      s.routes[v3].path.erase(std::remove(s.routes[v3].path.begin(), s.routes[v3].path.end(), req3->delivery), s.routes[v3].path.end());
+
+      #ifdef DEBUG
+        printf("\n\033[1m\033[32mRemoved request (%d, %d) from R%d:\033[0m\n", req1->pickup->id, req1->delivery->id, v1->id);
+        printf("R%d: ", v1->id);
+
+        for (Node *node : s.routes[v1].path)
+          printf("%d ", node->id);
+
+        printf("(c = %.2f)\n", s.routes[v1].cost);
+
+        printf("\n\033[1m\033[32mRemoved request (%d, %d) from R%d:\033[0m\n", req2->pickup->id, req2->delivery->id, v2->id);
+        printf("R%d: ", v2->id);
+
+        for (Node *node : s.routes[v2].path)
+          printf("%d ", node->id);
+
+        printf("(c = %.2f)\n", s.routes[v2].cost);
+      #endif
+
+      Route best1 = get_cheapest_insertion(req1, s.routes[v2]);
+      Route best2 = get_cheapest_insertion(req2, s.routes[v3]);
+      Route best3 = get_cheapest_insertion(req3, s.routes[v1]);
+
+      if (!best1.feasible()) {
+        // Activate new vehicle to accomodate the request
+        Vehicle *v = new Vehicle(s.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration);
+        Route r(v);
+
+        r.path.push_back(inst.get_depot());
+        r.path.push_back(req1->pickup);
+        r.path.push_back(req1->delivery);
+        r.path.push_back(inst.get_depot());
+        r.evaluate();
+        s.add_route(r);
+      }
+      else {
+        s.add_route(best1);
+      }
+
+      if (!best2.feasible()) {
+        // Activate new vehicle to accomodate the request
+        Vehicle *v = new Vehicle(s.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration);
+        Route r(v);
+
+        r.path.push_back(inst.get_depot());
+        r.path.push_back(req2->pickup);
+        r.path.push_back(req2->delivery);
+        r.path.push_back(inst.get_depot());
+        r.evaluate();
+        s.add_route(r);
+      }
+      else {
+        s.add_route(best2);
+      }
+
+      if (!best3.feasible()) {
+        // Activate new vehicle to accomodate the request
+        Vehicle *v = new Vehicle(s.routes.size() + 1, inst.vehicles[0]->capacity, inst.vehicles[0]->max_route_duration);
+        Route r(v);
+
+        r.path.push_back(inst.get_depot());
+        r.path.push_back(req3->pickup);
+        r.path.push_back(req3->delivery);
+        r.path.push_back(inst.get_depot());
+        r.evaluate();
+        s.add_route(r);
+      }
+      else {
+        s.add_route(best3);
+      }
+
+      #ifdef DEBUG
+        printf("\n\033[1m\033[34mInserting request (%d, %d) in R%d:\033[0m\n", req1->pickup->id, req1->delivery->id, v2->id);
+
+        for (Node *n : best1.path)
+          if (n == req1->pickup || n == req1->delivery)
+            printf("\033[1m\033[31m%d\033[0m ", n->id);
+          else
+            printf("%d ", n->id);
+
+        printf("(c = %.2lf)\n", best1.cost);
+
+        printf("\n\033[1m\033[34mInserting request (%d, %d) in R%d:\033[0m\n", req2->pickup->id, req2->delivery->id, v1->id);
+
+        for (Node *n : best2.path)
+          if (n == req2->pickup || n == req2->delivery)
+            printf("\033[1m\033[31m%d\033[0m ", n->id);
+          else
+            printf("%d ", n->id);
+
+        printf("(c = %.2lf)\n", best2.cost);
       #endif
 
       return s;
@@ -389,6 +553,10 @@ namespace algorithms
 
     Solution two_opt_star(Solution s)
     {
+      #ifdef DEBUG
+        printf("\n\033[1m\033[33m-> Entering 2-opt* operator...\033[0m\n");
+      #endif
+
       Solution best = s;
 
       for (std::pair<Vehicle*, Route> p1 : s.routes) {
@@ -510,60 +678,54 @@ namespace algorithms
 
               if (node->is_pickup()) {
                 Request *req = inst.get_request(node);
-                Route new_r1 = r1;
                 Route new_r2 = get_cheapest_insertion(req, r2);
-                int delivery_index;
 
-                for (int j = i; j < r1.path.size(); j++) {
-                  if (r1.path[j] == req->delivery) {
-                    delivery_index = j;
-                    break;
+                if (new_r2.feasible()) {
+                  Route new_r1 = r1;
+                  new_r1.erase_request(req);
+
+                  double gain = (new_r1.cost + new_r2.cost) - (r1.cost + r2.cost);
+
+                  #ifdef DEBUG
+                    printf("\nShifting request (%d, %d) from R%d to R%d\n", req->pickup->id, req->delivery->id, v1->id, v2->id);
+
+                    printf("\tR%d: ", v1->id);
+                    for (Node *n : r1.path)
+                      if (n == req->pickup || n == req->delivery)
+                        printf("\033[1m\033[31m%d\033[0m ", n->id);
+                      else
+                        printf("%d ", n->id);
+                    printf("(c = %.2lf)\n", r1.cost);
+
+                    printf("\tR%d: ", v2->id);
+                    for (Node *n : r2.path)
+                      printf("%d ", n->id);
+                    printf("(c = %.2lf)\n", r2.cost);
+
+                    printf("\n\tR%d': ", v1->id);
+                    for (Node *n : new_r1.path)
+                        printf("%d ", n->id);
+                    printf("(c = %.2lf)\n", new_r1.cost);
+
+                    printf("\tR%d': ", v2->id);
+                    for (Node *n : new_r2.path)
+                      if (n == req->pickup || n == req->delivery)
+                        printf("\033[1m\033[32m%d\033[0m ", n->id);
+                      else
+                        printf("%d ", n->id);
+                    printf("(c = %.2lf)\n", new_r2.cost);
+
+                    if (gain < delta)
+                      printf("\n\t\033[1m\033[34mΔf = %.2f\033[0m\n", gain);
+                    else
+                      printf("\n\tΔf = %.2f\n", gain);
+                  #endif
+
+                  if (gain < delta) {
+                    new_r1.evaluate(); // Update decision variables
+                    best_shift = std::make_pair(new_r1, new_r2);
+                    delta = gain;
                   }
-                }
-
-                new_r1.erase_node(delivery_index);
-                new_r1.erase_node(i);
-
-                double gain = (new_r1.cost + new_r2.cost) - (r1.cost + r2.cost);
-
-                #ifdef DEBUG
-                  printf("\nShifting request (%d, %d) from R%d to R%d\n", req->pickup->id, req->delivery->id, v1->id, v2->id);
-
-                  printf("\tR%d: ", v1->id);
-                  for (Node *n : r1.path)
-                    if (n == req->pickup || n == req->delivery)
-                      printf("\033[1m\033[31m%d\033[0m ", n->id);
-                    else
-                      printf("%d ", n->id);
-                  printf("(c = %.2lf)\n", r1.cost);
-
-                  printf("\tR%d: ", v2->id);
-                  for (Node *n : r2.path)
-                    printf("%d ", n->id);
-                  printf("(c = %.2lf)\n", r2.cost);
-
-                  printf("\n\tR%d': ", v1->id);
-                  for (Node *n : new_r1.path)
-                      printf("%d ", n->id);
-                  printf("(c = %.2lf)\n", new_r1.cost);
-
-                  printf("\tR%d': ", v2->id);
-                  for (Node *n : new_r2.path)
-                    if (n == req->pickup || n == req->delivery)
-                      printf("\033[1m\033[32m%d\033[0m ", n->id);
-                    else
-                      printf("%d ", n->id);
-                  printf("(c = %.2lf)\n", new_r2.cost);
-
-                  if (gain < delta)
-                    printf("\n\t\033[1m\033[34mΔf = %.2f\033[0m\n", gain);
-                  else
-                    printf("\n\tΔf = %.2f\n", gain);
-                #endif
-
-                if (gain < delta) {
-                  best_shift = std::make_pair(new_r1, new_r2);
-                  delta = gain;
                 }
               }
             }

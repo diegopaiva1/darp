@@ -4,11 +4,12 @@
  * @date   24/09/2019
  */
 
-#include "algorithms/grasp.hpp"
+#include "algorithms.hpp"
+#include "gnuplot.hpp"
 #include "instance.hpp"
 #include "json.hpp"
 
-#include <ctime>   // std::chrono
+#include <chrono>  // std::chrono
 #include <fstream> // std::ofstream
 #include <iomanip> // std::setprecision, std::setw
 #include <sstream> // std::stringstream
@@ -29,7 +30,7 @@ int main(const int argc, const char* argv[])
   const int min_args = 4, max_args = 4, args_given = argc - 1;
 
   if (args_given < min_args || args_given > max_args) {
-    fprintf(stderr, "Usage: %s <instance> <runs> <threads> <output json name>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <instance> <runs> <threads> <output json name> \n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -39,16 +40,25 @@ int main(const int argc, const char* argv[])
   int num_runs = std::stoi(argv[2]);
 
   for (int i = 1; i <= num_runs; i++) {
-    Run run = algorithms::grasp(2048, 0.85, std::stoi(argv[3]));
+    // Run grasp_run = algorithms::grasp(2048, 0.2, std::stoi(argv[3]));
+
+    // printf(
+    //   "GRASP run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, grasp_run.best.cost, grasp_run.elapsed_seconds
+    // );
+
+    // runs.push_back(grasp_run);
+
+    Run ils_run = algorithms::ils(20000, 2500, 0.2);
 
     printf(
-      "Run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, run.best.cost, run.elapsed_seconds
+      "ILS run %d of %d ......... [c = %.2f, t = %.2fs]\n", i, num_runs, ils_run.best.cost, ils_run.elapsed_seconds
     );
 
-    runs.push_back(run);
+    runs.push_back(ils_run);
   }
 
   to_json(runs, argv[4]);
+
   return EXIT_SUCCESS;
 }
 
@@ -65,7 +75,7 @@ void to_json(std::vector<Run> runs, std::string file_name)
 
     {
       std::stringstream ss;
-      ss << std::setprecision(2) << std::fixed << runs[i].best_init.cost;
+      ss << std::setprecision(2) << std::fixed << runs[i].init.cost;
       ss >> j["runs"][std::to_string(i + 1)]["init"];
     }
 

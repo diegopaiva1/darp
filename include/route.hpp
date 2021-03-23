@@ -18,10 +18,8 @@
 
 class Route
 {
-private:
-  std::unordered_map<Node*, int> nodes_indices;
-
 public:
+  std::unordered_map<Node*, int> nodes_indices;
   Vehicle *vehicle;
   std::vector<Node*> path;
   std::vector<int> load;
@@ -30,8 +28,6 @@ public:
   std::vector<double> departure_times;
   std::vector<double> waiting_times;
   std::vector<double> ride_times;
-  std::vector<double> earliest_times;
-  std::vector<double> latest_times;
   double cost;
   double load_violation;
   double time_window_violation;
@@ -78,9 +74,19 @@ public:
   */
   bool empty();
 
-  void compute_earliest_time(int i);
+ /**
+  * Get the earliest time that node at position `i` in the route can be served.
+  *
+  * @return Earliest time.
+  */
+  double get_earliest_time(int i);
 
-  void compute_latest_time(int i);
+ /**
+  * Get vehicle's load at position `i` in the route.
+  *
+  * @return Load.
+  */
+  int get_load(int i);
 
  /**
   * Get Route's total duration.
@@ -154,6 +160,13 @@ public:
   * @param index Position in the route.
   */
   void erase_node(int index);
+
+ /**
+  * Erase a request in the route.
+  *
+  * @param request A request.
+  */
+  void erase_request(Request *request);
 };
 
 #endif // ROUTE_HPP_INCLUDED

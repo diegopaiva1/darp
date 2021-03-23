@@ -9,6 +9,7 @@
 #include <iostream> // std::cerr
 #include <fstream>  // std::ifstream
 #include <cmath>    // sqrt, pow
+#include <regex>
 
 Instance::~Instance()
 {
@@ -22,7 +23,7 @@ Instance::~Instance()
     delete req;
 }
 
-void Instance::init(std::string instance_file_name)
+void Instance::init(const std::string instance_file_name)
 {
   std::ifstream file(instance_file_name);
 
@@ -31,7 +32,11 @@ void Instance::init(std::string instance_file_name)
     exit(1);
   }
 
-  name = instance_file_name;
+  std::regex rgx("R(\\d+)(a|b)");
+  std::smatch match;
+
+  if (std::regex_search(instance_file_name.begin(), instance_file_name.end(), match, rgx))
+    name = match[0];
 
   // Header metadata
   int vehicles_num, nodes_num, vehicle_capacity;

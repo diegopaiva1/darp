@@ -15,10 +15,10 @@ class Request
 {
 private:
  /**
-  * Perform time window tightening of Request as stated in (Cordeau and Laporte, 2003).
+  * Perform time window tightening of request as stated in (Cordeau and Laporte, 2003).
   *
-  * @param max_ride_time    Maximum ride time value.
-  * @param planning_horizon Planning horizon value.
+  * @param max_ride_time    Maximum ride time.
+  * @param planning_horizon Planning horizon.
   */
   void tighten_time_windows(double max_ride_time, double planning_horizon = 1440);
 

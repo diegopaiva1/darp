@@ -9,6 +9,7 @@
 
 #include <cfloat>  // FLT_MAX
 #include <numeric> // std::accumulate
+#include <algorithm>
 
 Route::Route()
 {
@@ -17,8 +18,8 @@ Route::Route()
 
 Route::Route(Vehicle *vehicle)
 {
-  this->vehicle = vehicle;
   this->cost = 0.0;
+  this->vehicle = vehicle;
 }
 
 bool Route::feasible()
@@ -26,29 +27,22 @@ bool Route::feasible()
   return cost < FLT_MAX;
 }
 
-void Route::compute_earliest_time(int i)
+int Route::get_load(int i)
 {
-  earliest_times.resize(path.size());
-
   if (i == 0)
-    earliest_times[i] = path[i]->arrival_time;
+    return 0;
   else
-    earliest_times[i] = std::max(
-      path[i]->arrival_time,
-      earliest_times[i - 1] + path[i - 1]->service_time + inst.get_travel_time(path[i - 1], path[i])
-    );
+    return get_load(i - 1) + path[i]->load;
 }
 
-void Route::compute_latest_time(int i)
+double Route::get_earliest_time(int i)
 {
-  latest_times.resize(path.size());
-
-  if (i == path.size() - 1)
-    latest_times[i] = path[i]->departure_time;
+  if (i == 0)
+    return path[i]->arrival_time;
   else
-    latest_times[i] = std::min(
-      path[i]->departure_time,
-      latest_times[i + 1] - inst.get_travel_time(path[i], path[i + 1]) - path[i]->service_time
+    return std::max(
+      path[i]->arrival_time,
+      get_earliest_time(i - 1) + path[i - 1]->service_time + inst.get_travel_time(path[i - 1], path[i])
     );
 }
 
@@ -199,8 +193,6 @@ bool Route::empty()
 
 void Route::compute_load(int i)
 {
-  load.resize(path.size());
-
   if (i == 0)
     load[i] = 0;
   else
@@ -239,22 +231,44 @@ double Route::duration()
 
 void Route::insert_node(Node *node, int index)
 {
-  path.insert(path.begin() + index, node);
+  if (index > 0) {
+    path.insert(path.begin() + index, node);
 
-  if (index > 0)
     // Recalculate route's total cost
     cost = cost + inst.get_travel_time(path[index - 1], path[index])
                 + inst.get_travel_time(path[index], path[index + 1])
                 - inst.get_travel_time(path[index - 1], path[index + 1]);
+  }
 }
 
 void Route::erase_node(int index)
 {
-  if (index > 0)
+  if (index > 0 && index < path.size() - 1) {
     // Recalculate route's total cost
     cost = cost - inst.get_travel_time(path[index - 1], path[index])
                 - inst.get_travel_time(path[index], path[index + 1])
                 + inst.get_travel_time(path[index - 1], path[index + 1]);
 
-  path.erase(path.begin() + index);
+    path.erase(path.begin() + index);
+  }
+}
+
+void Route::erase_request(Request *request)
+{
+  int pickup_index, delivery_index;
+
+  for (int i = path.size() - 2; i > 0; i--) {
+    if (path[i] == request->pickup) {
+      pickup_index = i;
+
+      // Once the pickup index has been spotted we can break, since it always comes before the delivery node
+      break;
+    }
+    else if (path[i] == request->delivery) {
+      delivery_index = i;
+    }
+  }
+
+  erase_node(delivery_index);
+  erase_node(pickup_index);
 }

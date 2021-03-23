@@ -72,7 +72,7 @@ public:
   *
   * @param instance_file_name File containing instance data.
   */
-  void init(std::string instance_file_name);
+  void init(const std::string instance_file_name);
 
  /**
   * Get depot node.

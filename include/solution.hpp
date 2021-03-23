@@ -11,8 +11,6 @@
 
 #include "route.hpp"
 
-#include <unordered_map>
-
 class Solution
 {
 public:
@@ -61,6 +59,13 @@ public:
   * @return Objective function value.
   */
   double obj_func_value();
+
+ /**
+  * Convert solution to a unique key representation.
+  *
+  * @return Unique key string.
+  */
+  std::string to_key();
 };
 
 #endif // SOLUTION_HPP_INCLUDED

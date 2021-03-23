@@ -23,6 +23,23 @@ namespace gnuplot
   */
   void plot_run(Run run, std::string dir);
 
+ /**
+  * Plot convergence analysis of runs.
+  *
+  * @param runs   Hash map from algorithm name to runs.
+  * @param output Output file name.
+  */
+  void plot_convergence_analysis(std::unordered_map<std::string, std::vector<Run>> runs, std::string output);
+
+ /**
+  * Produce time-to-target plot (tttplot).
+  *
+  * @param runs   Hash map from algorithm name to runs.
+  * @param target Target value.
+  * @param output Output file name.
+  */
+  void tttplot(std::unordered_map<std::string, std::vector<Run>> runs, double target, std::string output);
+
   namespace details
   {
    /**

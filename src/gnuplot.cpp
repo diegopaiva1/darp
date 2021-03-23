@@ -1,5 +1,5 @@
 /**
- * @file    Gnuplot.cpp
+ * @file    gnuplot.cpp
  * @author  Diego Paiva
  * @date    23/10/2019
  */
@@ -7,10 +7,12 @@
 #include "gnuplot.hpp"
 #include "instance.hpp"
 
-#include <thread>   // std::this_thread
-#include <fstream>  // std::ofstream
-#include <iomanip>  // std::setprecision
-#include <iostream> // std::cout
+#include <algorithm> // std::sort
+#include <fstream>   // std::ofstream
+#include <iomanip>   // std::setprecision
+#include <iostream>  // std::cout
+#include <thread>    // std::this_thread
+#include <sstream>   // std::stringstream
 
 void gnuplot::plot_run(Run run, std::string dir)
 {
@@ -18,7 +20,7 @@ void gnuplot::plot_run(Run run, std::string dir)
     dir.append("/");
 
   details::plot_solution_graph(run.best, dir + "best.png");
-  details::plot_solution_graph(run.best_init, dir + "init.png");
+  details::plot_solution_graph(run.init, dir + "init.png");
 
   for (auto pair : run.best.routes)
     details::plot_schedule(pair.second, dir + "schedule" + std::to_string(pair.first->id) + ".png");
@@ -40,6 +42,64 @@ void gnuplot::details::call_gnuplot(std::vector<std::string> args)
     cmd.append(" " + arg);
 
   popen(cmd.c_str(), "w");
+}
+
+void gnuplot::plot_convergence_analysis(std::unordered_map<std::string, std::vector<Run>> runs, std::string output)
+{
+  const std::string script = "../extras/scripts/gnuplot/convergence_analysis.gp";
+
+  // Data to be used in the plot
+  std::string data_file = "conv-" + inst.name + ".dat";
+  std::ofstream data_stream(data_file, std::ofstream::out | std::ofstream::trunc);
+
+  for (Run run : runs["grasp"]) {
+    for (auto pair : run.convergence)
+      data_stream << pair.first << ' ' << pair.second << '\n';
+
+    data_stream << "\n\n";
+  }
+
+  for (Run run : runs["ils"]) {
+    for (auto pair : run.convergence)
+      data_stream << pair.first << ' ' << pair.second << '\n';
+
+    data_stream << "\n\n";
+  }
+
+  details::call_gnuplot({script, data_file, output});
+}
+
+void gnuplot::tttplot(std::unordered_map<std::string, std::vector<Run>> runs, double target, std::string output)
+{
+  const std::string script = "../extras/scripts/gnuplot/tttplot.gp";
+
+  // Data to be used in the plot
+  std::string data_file = "tttplot-" + inst.name + ".dat";
+  std::ofstream data_stream(data_file, std::ofstream::out | std::ofstream::trunc);
+  std::vector<double> grasp_times_to_target;
+  std::vector<double> ils_times_to_target;
+
+  for (Run run : runs["grasp"])
+    grasp_times_to_target.push_back(run.elapsed_seconds);
+
+  for (Run run : runs["ils"])
+    ils_times_to_target.push_back(run.elapsed_seconds);
+
+  std::sort(grasp_times_to_target.begin(), grasp_times_to_target.end());
+  std::sort(ils_times_to_target.begin(), ils_times_to_target.end());
+
+  for (int i = 0; i < grasp_times_to_target.size(); i++)
+    data_stream << i + 1 << ' ' << grasp_times_to_target[i] << '\n';
+
+  data_stream << "\n\n";
+
+  for (int i = 0; i < ils_times_to_target.size(); i++)
+    data_stream << i + 1 << ' ' << ils_times_to_target[i] << '\n';
+
+  std::stringstream target_ss;
+  target_ss << std::fixed << std::setprecision(2) << target;
+
+  details::call_gnuplot({script, data_file, target_ss.str(), output});
 }
 
 void gnuplot::details::plot_solution_graph(Solution s, std::string output)

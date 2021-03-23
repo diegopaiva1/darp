@@ -1,16 +1,14 @@
 /**
- * @file    grasp.hpp
- * @author  Diego Paiva
- * @date    26/09/2019
+ * @file   algorithms.hpp
+ * @author Diego Paiva
+ * @date   26/01/2021
  */
 
-#ifndef REACTIVE_GRASP_HPP_INCLUDED
-#define REACTIVE_GRASP_HPP_INCLUDED
+#ifndef ALGORITHMS_HPP_INCLUDED
+#define ALGORITHMS_HPP_INCLUDED
 
 #include "run.hpp"
 #include "random.hpp"
-
-#include <map>
 
 namespace algorithms
 {
@@ -18,11 +16,21 @@ namespace algorithms
   * Use GRASP to solve the instance.
   *
   * @param iterations   Total number of iterations.
-  * @param random_param GRASP's randomness parameter.
+  * @param random_param Randomness parameter to be used in the constructive algorithm.
   * @param thread_count Number of threads to run.
   * @return             A Run object.
   */
   Run grasp(int iterations, double random_param, int thread_count);
+
+ /**
+  * Use Iterated Local Search (ILS) to solve the instance.
+  *
+  * @param max_iterations            Maximum number of iterations.
+  * @param no_improvement_iterations Number of iterations without improvement.
+  * @param random_param              Randomness parameter to be used in the constructive algorithm.
+  * @return                          A Run object.
+  */
+  Run ils(int max_iterations, int no_improvement_iterations, double random_param);
 
   namespace details
   {
@@ -53,6 +61,14 @@ namespace algorithms
     Solution repair(Solution s);
 
    /**
+    * Generate a new starting point for the local search by perturbing solution `s`.
+    *
+    * @param s A solution to be perturbed.
+    * @return  Updated solution.
+    */
+    Solution perturb(Solution s);
+
+   /**
     * For a given request and a given solution, return the route (with the request inserted, if feasible)
     * of solution which results in the least increase in the objective function.
     *
@@ -78,11 +94,10 @@ namespace algorithms
     * Implementation of Variable Neighborhood Descent procedure.
     *
     * @param s              A solution to be updated.
-    * @param moves          A vector containing move methods.
     * @param use_randomness Set to RVND (moves will be chosen randomly rather than the order they appear in vector).
     * @return               Updated solution.
     */
-    Solution vnd(Solution s, std::vector<Move> moves, bool use_randomness = false);
+    Solution vnd(Solution s, bool use_randomness = false);
 
    /**
     * Update a given solution by performing the "reinsert" movement.
@@ -107,7 +122,7 @@ namespace algorithms
     * @return  Updated solution.
     */
     Solution two_opt_star(Solution s);
-  } // namespace grasp_impl
+  } // namespace details
 } // namespace algorithms
 
-#endif // REACTIVE_GRASP_HPP_INCLUDED
+#endif // ALGORITHMS_HPP_INCLUDED

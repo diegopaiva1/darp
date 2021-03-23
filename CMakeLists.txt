@@ -14,7 +14,7 @@ include_directories("include" "third-party")
 
 # Manually add the sources (*.cpp) using the set command as follows
 set(SOURCES src/main.cpp
-            src/algorithms/grasp.cpp
+            src/algorithms.cpp
             src/node.cpp
             src/request.cpp
             src/route.cpp

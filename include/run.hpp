@@ -16,10 +16,11 @@
 class Run
 {
 public:
-  Solution best_init;
+  Solution init;
   Solution best;
   double elapsed_seconds;
   std::vector<unsigned int> seeds;
+  std::vector<std::pair<double, double>> convergence;
 
  /**
   * Default constructor.
