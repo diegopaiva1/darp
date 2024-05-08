@@ -1,4 +1,8 @@
-# Dial-a-ride problem (DARP)
+# Heuristic Approaches to the Dial-a-ride Problem (DARP)
+
+The code in this repository was developed as the foundation for my research to obtain a BSc in Computer Science.
+
+[Click here](https://github.com/diegopaiva1/darp/blob/master/papers/Heuristic%20Approaches%20to%20the%20Dial-a-Ride%20Problem.pdf) to read the paper containing details and results of the algorithms.
 
 ## Requirements
 
